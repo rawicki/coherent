@@ -1,1 +1,12 @@
+src/config/version.h
 src/include/version.h
+CMakeCache.txt
+CMakeFiles/
+Makefile
+bin/
+cmake_install.cmake
+cscope.files
+cscope.out
+~*
+*.swp
+src/config/compile.h
