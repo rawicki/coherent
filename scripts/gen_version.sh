@@ -25,7 +25,7 @@ fi
 if [ $GIT_DIR_PRESENT = "YES" -a $GIT_PRESENT = "YES" ] ; then
 	ON_BRANCH=YES
 	GIT_BRANCH=`git branch | head -1 | cut -c3-`
-	if [ ${GIT_BRANCH} = "(no branch)" ] ;then
+	if [ "${GIT_BRANCH}" = "(no branch)" ] ;then
 		ON_BRANCH=NO
 	fi
 
@@ -43,6 +43,7 @@ OS=`uname -s`
 ARCH=`uname -m`
 UNAME=`uname -a`
 
+(
 echo "#ifndef VERSION_H_5373"
 echo "#define VERSION_H_5373"
 echo ""
@@ -69,4 +70,4 @@ fi
 echo ""
 echo ""
 echo "#endif /* VERSION_H_5373 */"
-
+) > src/include/version.h
