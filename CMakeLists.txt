@@ -62,7 +62,7 @@ else(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 
 message(STATUS "Currnet build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Selected CXXFLAGS: ${CMAKE_CXX_FLAGS}")
+message(STATUS "Selected CXXFLAGS: ${EFFECTIVE_CXX_FLAGS}")
 
 find_package(Boost COMPONENTS program_options)
 if (Boost_FOUND)
