@@ -1,0 +1,71 @@
+(C) Copyright 2010 Marek Dopiera
+
+This file is part of CherentDB.
+
+CoherentDB is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoherentDB is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with CoherentDB. If not, see
+http://www.gnu.org/licenses/.
+
+
+
+DIRECTORY STRUCTURE
+
+1. Purpose
+This file describes the directory structure of CoherentDB
+
+2. The structure
+The structure looks as follows:
+/
+|---src                    All source files
+|    |---lib1              Library 1 source and internal headers
+|    |     |---test        Library 1 tests and test libraries source
+|    |
+|    |---lib2              Library 2 source and internal headers
+|    |     |---test        Library 2 tests and test libraries source
+|    |
+|    |---...
+|    |
+|    |---include
+|          |
+|          |---lib1        Library 1 external headers
+|          |     |---test  Library 1 headers for testing (mocks, etc.)
+|          |
+|          |---lib2        Library 2 external headers
+|          |     |---test  Library 1 headers for testing (mocks, etc.)
+|          |
+|          |---...
+|
+|---doc                    Project documentation.
+|    |---general           General project documentation
+|    |---lib1              lib1 specific documentation
+|    |---lib2              lib2 specific documentation
+|    |---...
+|
+|---bin                    Binary files produced by the compilation process
+|    |---test              Those binary files which are for tests only
+|
+|---scripts                Various scripts
+  
+3. Explanation
+It is assumed that libraries don't have any circular dependencies. Their
+dependencies are expressed in the buldsystem configuration files.
+
+Each library exposes a public interface in the form of header files. This is
+what goes to /src/include/XXX directories. Header files which are internal to a
+library go to the same directory where the implementation is: /src/XXX
+
+Tests implementation and tests internal header files go to /src/XXX/test
+directories. If a library has some extra code to ease testing other modules
+(e.g. mocks), their implementation should be in the same directory as other
+tests' but their external interfaces to be used in other libraries should be put
+to /src/include/XXX/test.
