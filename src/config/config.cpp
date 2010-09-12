@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <cstdlib>
 
 #include "version.h"
 #include <compile.h>

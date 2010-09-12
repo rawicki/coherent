@@ -22,6 +22,9 @@ cmake_minimum_required (VERSION 2.6)
 
 project (Coherent)
 
+#path to addtional modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeScripts")
+
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Content addressable, history enabled DB")
 set(CPACK_PACKAGE_VENDOR "Marek Dopiera")
 set(CPACK_PACKAGE_CONTACT "Marek Dopiera")
@@ -64,13 +67,23 @@ endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 message(STATUS "Currnet build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected CXXFLAGS: ${EFFECTIVE_CXX_FLAGS}")
 
-find_package(Boost COMPONENTS program_options)
+find_package(Boost COMPONENTS program_options REQUIRED)
 if (Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
 	set(CORELIBS ${CORELIBS} ${Boost_LIBRARIES})
 else (Boost_FOUND)
 	message(FATAL_ERROR "Boost library not found")
 endif (Boost_FOUND)
+include_directories(${Boost_INCLUDE_DIRS})
+set(CORELIBS ${CORELIBS} ${Boost_LIBRARIES})
+
+find_package(Log4Cxx REQUIRED)
+if (Log4cxx_FOUND)
+	include_directories(${LOG4CXX_INCLUDE_DIR})
+	set(CORELIBS ${CORELIBS} ${LOG4CXX_LIBRARIES})
+else(Log4cxx_FOUND)
+	message(FATAL_ERROR "Log4CXX library not found")
+endif(Log4cxx_FOUND)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
