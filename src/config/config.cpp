@@ -22,9 +22,10 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "version.h"
-#include <compile.h>
 #include <config/config.h>
+
+#include <version.h>
+#include <compile.h>
 
 using namespace std;
 
@@ -67,6 +68,6 @@ void print_running_information()
 		cout << "(unable to obtain)" << endl;
 }
 
-}
-}
+} // namespace config
+} // namespace coherent
 

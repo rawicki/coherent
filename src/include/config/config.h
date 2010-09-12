@@ -30,7 +30,7 @@ std::string get_version_string();
 std::string get_build_information();
 void print_running_information();
 
-}
-}
+} // namespace config
+} // namespace coherent
 
 #endif /* CONFIG_H_2944 */

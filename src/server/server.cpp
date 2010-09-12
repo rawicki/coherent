@@ -23,13 +23,15 @@
 #include <boost/program_options.hpp>
 #include <boost/math/distributions/normal.hpp>
 
+#include <log/log.h>
 #include <config/config.h>
 
 using namespace std;
 using namespace boost::program_options;
 
-#define verOpt "version"
-#define helpOpt "help"
+#define ver_opt "version"
+#define help_opt "help"
+#define log_opt "log_path"
 
 namespace coherent {
 namespace server {
@@ -41,11 +43,10 @@ class user_args
 public:
 	user_args(int const argc, char * argv[]) :
 		vm(this->gen_vm(argc, argv)),
-		help(this->vm.count(helpOpt)),
-		version(this->vm.count(verOpt))
+		help(this->vm.count(help_opt)),
+		version(this->vm.count(ver_opt)),
+		log_path(this->extract_req_opt<string>(log_opt))
 	{
-		if (!this->help && !this->version)
-			this->usage_exit("", 1);
 		if (this->help)
 			this->usage_exit("", 0);
 	}
@@ -63,8 +64,9 @@ private:
 	{
 		options_description desc("");
 		desc.add_options()
-			(verOpt",v", "print version and exit")
-			(helpOpt",h", "print this message and exit");
+			(ver_opt",v", "print version and exit")
+			(help_opt",h", "print this message and exit")
+			(log_opt",l", value<string>(), "log file path");
 		return desc;
 	}
 
@@ -82,14 +84,35 @@ private:
 		}
 	}
 
+	template <class T>
+	T extract_req_opt(string const & opt)
+	{
+		if (this->vm.count(opt) != 1) {
+			if (!this->help)
+				this->usage_exit(string("Error: option ") + opt + " not specified", 1);
+			else
+				return T();
+		}
+		return this->vm[opt].as<T>();
+	}
 
-	
 	variables_map const vm;
 
 public:
 	bool const help;
 	bool const version;
+	string const log_path;
 };
+
+string welcome_string()
+{
+	stringstream ss;
+	ss << coherent::config::get_version_string() << endl << endl;
+	ss << "Copyright (C) 2010 Marek Dopiera" << endl;
+	ss << "This is free software; see the source for copying conditions.  There is NO" << endl;
+	ss << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE." << endl << endl;
+	return ss.str();
+}
 
 } //namespace server
 } //namespace coherent
@@ -97,16 +120,23 @@ public:
 int main(int const argc, char * argv[])
 {
 	using namespace std;
-	cout << coherent::config::get_version_string() << endl << endl;
-	cout << "Copyright (C) 2010 Marek Dopiera" << endl;
-	cout << "This is free software; see the source for copying conditions.  There is NO" << endl;
-	cout << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE." << endl << endl;
-	coherent::server::user_args const u_args(argc, argv);
+	using namespace coherent::server;
+	
+	cout << welcome_string() << endl;
+
+	user_args const u_args(argc, argv);
+
+	coherent::log::setup_logger_prod(u_args.log_path);
+
+	LOG(INFO, welcome_string());
+
 	if (u_args.version)
 	{
 		cout << coherent::config::get_build_information() << endl;
 		coherent::config::print_running_information();
+		return 0;
 	}
+	LOG(INFO, "CoherentDB exiting.");
 	return 0;
 }
 

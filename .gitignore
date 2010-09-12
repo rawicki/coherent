@@ -11,3 +11,4 @@ cscope.out
 *.swp
 src/config/compile.h
 coverage
+server.core

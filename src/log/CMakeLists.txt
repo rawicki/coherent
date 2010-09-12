@@ -16,9 +16,9 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
-set(SOURCES
-	server.cpp
-	)
 
-add_executable(server ${SOURCES})
-target_link_libraries(server config log ${CORELIBS})
+set(SOURCES
+	log.cpp
+	)
+add_library(log ${SOURCES})
+
