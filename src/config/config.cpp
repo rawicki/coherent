@@ -62,7 +62,9 @@ string get_build_information()
 void print_running_information()
 {
 	cout << "Running on:" << endl;
-	system("uname -a");
+	int ret = system("uname -a");
+	if (ret == -1)
+		cout << "(unable to obtain)" << endl;
 }
 
 }
