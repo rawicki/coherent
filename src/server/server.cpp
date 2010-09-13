@@ -88,7 +88,7 @@ private:
 	T extract_req_opt(string const & opt)
 	{
 		if (this->vm.count(opt) != 1) {
-			if (!this->help)
+			if (!this->help && !this->version)
 				this->usage_exit(string("Error: option ") + opt + " not specified", 1);
 			else
 				return T();
@@ -126,16 +126,17 @@ int main(int const argc, char * argv[])
 
 	user_args const u_args(argc, argv);
 
-	coherent::log::setup_logger_prod(u_args.log_path);
-
-	LOG(INFO, welcome_string());
-
 	if (u_args.version)
 	{
 		cout << coherent::config::get_build_information() << endl;
 		coherent::config::print_running_information();
 		return 0;
 	}
+
+	coherent::log::setup_logger_prod(u_args.log_path);
+
+	LOG(INFO, welcome_string());
+
 	LOG(INFO, "CoherentDB exiting.");
 	return 0;
 }

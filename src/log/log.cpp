@@ -102,7 +102,11 @@ void setup_logger_test(string const & log_path, LevelPtr const & log_level)
 
 void setup_logger_prod(string const & log_path)
 {
+#ifndef NDEBUG
+	setup_logger(log_path, Level::getInfo(), Level::getTrace());
+#else
 	setup_logger(log_path, Level::getInfo(), Level::getInfo());
+#endif
 }
 
 } // namespace log
