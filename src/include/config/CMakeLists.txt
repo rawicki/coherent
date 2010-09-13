@@ -16,16 +16,9 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
+include (CheckIncludeFiles)
+include (CheckFunctionExists)
 
-set(SOURCES
-	config.cpp
-	)
-#set_property(SOURCE config.cpp APPEND PROPERTY DEPENDS genver)
-add_library(config ${SOURCES})
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-add_custom_target(
-	genver "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/gen_version.sh" "${CMAKE_CURRENT_BINARY_DIR}/version.h"
-	COMMAND "touch" "config.cpp" #couldn't find a better way to force rebuilding
-	)
-add_dependencies(config genver)
+CHECK_INCLUDE_FILES (execinfo.h HAVE_EXECINFO_H)
+CHECK_FUNCTION_EXISTS (backtrace HAVE_BACKTRACE)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_config.h)

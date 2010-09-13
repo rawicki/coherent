@@ -25,6 +25,7 @@
 
 #include <log/log.h>
 #include <config/config.h>
+#include <debug/asserts.h>
 
 using namespace std;
 using namespace boost::program_options;

@@ -79,11 +79,19 @@ string convert_pretty_function(string const & s)
 }
 
 static void setup_logger(string const & log_path, LevelPtr const & log_level,
-		LevelPtr const & globl_log_limit_arg)
+		LevelPtr const &  global_log_limit_arg)
 {
 	LoggerPtr root_logger = Logger::getRootLogger();
 	root_logger->setLevel(log_level);
-	global_log_limit = globl_log_limit_arg;
+	char buf[sizeof(LevelPtr)];
+
+	LevelPtr gl2(global_log_limit_arg);
+	memcpy(buf, &gl2, sizeof(global_log_limit_arg));
+	memcpy(&gl2, &global_log_limit, sizeof(global_log_limit));
+	memcpy(&global_log_limit, buf, sizeof(global_log_limit));
+//	global_log_limit = global_log_limit_arg; <--- should be that way but log4cxx
+//	is ugly ano compiler complains
+
 	root_logger->addAppender(
 		new FileAppender(
 			new PatternLayout("%r %p %m [%c (%F:%L)]%n"),
@@ -107,6 +115,16 @@ void setup_logger_prod(string const & log_path)
 #else
 	setup_logger(log_path, Level::getInfo(), Level::getInfo());
 #endif
+}
+
+void flush_logger()
+{
+	AppenderList apps = log4cxx::Logger::getRootLogger()->getAllAppenders();
+	for (AppenderList::iterator i = apps.begin(); i != apps.end(); ++i) {
+		FileAppender * app = dynamic_cast<FileAppender *>(&(**i));
+		if (app)
+			app->setImmediateFlush(true);
+	}
 }
 
 } // namespace log

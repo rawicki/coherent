@@ -41,6 +41,7 @@ void setup_logger_test(
 	log4cxx::LevelPtr const & log_level = log4cxx::Level::getDebug()
 	);
 void setup_logger_prod(std::string const & log_path);
+void flush_logger();
 
 extern log4cxx::LevelPtr global_log_limit; //XXX move to log.h
 extern log4cxx::LevelPtr log_FATAL;

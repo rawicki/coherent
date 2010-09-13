@@ -21,4 +21,4 @@ set(SOURCES
 	)
 
 add_executable(server ${SOURCES})
-target_link_libraries(server config log ${CORELIBS})
+target_link_libraries(server config log debug2 ${CORELIBS})

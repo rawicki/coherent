@@ -12,3 +12,4 @@ cscope.out
 src/config/compile.h
 coverage
 server.core
+src/include/config/cmake_config.h

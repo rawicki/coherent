@@ -18,6 +18,8 @@
 
 
 include_directories("include")
+add_subdirectory(include)
 add_subdirectory(config)
 add_subdirectory(server)
 add_subdirectory(log)
+add_subdirectory(debug)

@@ -18,14 +18,7 @@
 
 
 set(SOURCES
-	config.cpp
+	stacktrace.cpp
 	)
-#set_property(SOURCE config.cpp APPEND PROPERTY DEPENDS genver)
-add_library(config ${SOURCES})
+add_library(debug2 ${SOURCES})
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-add_custom_target(
-	genver "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/gen_version.sh" "${CMAKE_CURRENT_BINARY_DIR}/version.h"
-	COMMAND "touch" "config.cpp" #couldn't find a better way to force rebuilding
-	)
-add_dependencies(config genver)

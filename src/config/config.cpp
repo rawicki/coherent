@@ -21,11 +21,12 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <string>
 
 #include <config/config.h>
+#include <config/cmake_config.h>
 
 #include <version.h>
-#include <compile.h>
 
 using namespace std;
 
@@ -56,7 +57,7 @@ string get_build_information()
 	stringstream ss;
 	ss << "Built for " BUILD_OS "(" BUILD_ARCH ") on " BUILD_TIME << endl << 
 		"Full build sytem information:" << endl << FULL_UNAME << endl <<
-		"Compiled with CXXFLAGS:" << COMPILED_CXXFLAGS << endl << "CFLAGS:" << COMPILED_CFLAGS;
+		"Compiled with CXXFLAGS:" << COMPILED_CXX_FLAGS << endl << "CFLAGS:" << COMPILED_C_FLAGS;
 	return ss.str();
 }
 

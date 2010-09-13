@@ -16,8 +16,6 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
-#Parts of code taken from LoXiM.
-
 cmake_minimum_required (VERSION 2.6)
 
 project (Coherent)
@@ -30,7 +28,7 @@ set(CPACK_PACKAGE_VENDOR "Marek Dopiera")
 set(CPACK_PACKAGE_CONTACT "Marek Dopiera")
 
 
-set(COMMON_FLAGS " -D_FILE_OFFSET_BITS=64") #linux needs that to have 64bit off_t
+set(COMMON_FLAGS " -D_FILE_OFFSET_BITS=64 -rdynamic") #linux needs that to have 64bit off_t
 set(WARNING_FLAGS " -Wall -Wunused-function -Wwrite-strings -Wformat -Wformat-security -Wparentheses -Wsequence-point -Wno-system-headers -Werror -Winit-self")
 set(CFLAGS_DEBUG " -g -O0 -fstack-protector-all -D_GLIBXX_DEBUG -D_GLIBXX_DEBUG_PEDANTIC")
 set(CFLAGS_REL " -O2 -DNDEBUG -Wuninitialized")
@@ -69,17 +67,15 @@ message(STATUS "Selected CXXFLAGS: ${EFFECTIVE_CXX_FLAGS}")
 
 find_package(Boost COMPONENTS program_options REQUIRED)
 if (Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS})
+	include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 	set(CORELIBS ${CORELIBS} ${Boost_LIBRARIES})
 else (Boost_FOUND)
 	message(FATAL_ERROR "Boost library not found")
 endif (Boost_FOUND)
-include_directories(${Boost_INCLUDE_DIRS})
-set(CORELIBS ${CORELIBS} ${Boost_LIBRARIES})
 
 find_package(Log4Cxx REQUIRED)
 if (Log4cxx_FOUND)
-	include_directories(${LOG4CXX_INCLUDE_DIR})
+	include_directories(SYSTEM ${LOG4CXX_INCLUDE_DIR})
 	set(CORELIBS ${CORELIBS} ${LOG4CXX_LIBRARIES})
 else(Log4cxx_FOUND)
 	message(FATAL_ERROR "Log4CXX library not found")
