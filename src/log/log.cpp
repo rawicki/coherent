@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <cassert>
+#include <cstring>
 
 #include <log/log.h>
 

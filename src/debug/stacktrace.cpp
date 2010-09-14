@@ -39,7 +39,7 @@ namespace debug {
 
 static pthread_mutex_t stacktrace_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#if HAVE_HEADER_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 #include <execinfo.h>
 
 /* GNU libc ? */
