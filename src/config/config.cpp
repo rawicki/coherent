@@ -18,17 +18,29 @@
  * http://www.gnu.org/licenses/.
  */
 
+#include <ctype.h>
+
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <algorithm>
+#include <functional>
+#include <fstream>
+#include <sstream>
+
+#include <boost/regex.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <config/config.h>
 #include <config/cmake_config.h>
+#include <debug/asserts.h>
+#include <log/log.h>
 
 #include <version.h>
 
 using namespace std;
+using namespace boost;
 
 namespace coherent {
 namespace config {
@@ -67,6 +79,273 @@ void print_running_information()
 	int ret = system("uname -a");
 	if (ret == -1)
 		cout << "(unable to obtain)" << endl;
+}
+
+class ini_config
+{
+public:
+	typedef std::string section;
+	typedef std::vector<section> sections;
+	typedef std::vector<std::string> attribute_names;
+
+	ini_config(std::string const & file);
+	sections get_sections() const;
+	attribute_names get_attribute_names(section const & section) const;
+	std::string get_value(section const & sect, std::string const & attr) const;
+
+private:
+	typedef std::pair<section, std::string> id; //section, attr
+	typedef std::map<id, std::string> value_map;
+	typedef value_map::iterator value_map_it;
+
+	value_map values;
+};
+
+
+//================ ini_config implementation ===================================
+
+struct is_not_blank
+{
+	bool operator()(char c) const
+	{
+		return !isblank(c);
+	}
+};
+
+static bool line_is_white(string const & s)
+{
+	return find_if(s.begin(), s.end(), is_not_blank()) == s.end();
+}
+
+static string strip_comments(string const & s)
+{
+	size_t hash = s.find(';');
+	string res;
+	if (hash == string::npos)
+		res = s;
+	else
+		res = s.substr(0, hash);
+	if (line_is_white(res))
+		return "";
+	else
+		return res;
+}
+
+static string get_attr(string const & attr_line)
+{
+	string tmp = attr_line;
+	size_t pos = tmp.find('=');
+	d_assert(pos != string::npos, "line \"" << tmp << "\" does not contain '=' sign!");
+	tmp.resize(pos);
+	stringstream ss(tmp);
+	string res;
+	ss >> res;
+	return res;
+}
+
+static string get_val(string const & attr_line)
+{
+	size_t const pos = attr_line.find('=');
+	d_assert(pos != string::npos, "line \"" << attr_line << "\" does not contain '=' sign!");
+	d_assert(pos + 1 < attr_line.length(), "line \"" << attr_line <<
+			"\" does not contain a value");
+	string const res = attr_line.substr(pos + 1);
+	d_assert(!line_is_white(res), "line \"" << attr_line <<
+			"\" does not contain a value");
+	return res;
+}
+
+static string get_sect_name(string const & s)
+{
+	size_t const begin = s.find('[');
+	d_assert(begin != string::npos, "section name \"" << s << "\" does not contain '[' sign");
+	size_t const end = s.find(']');
+	d_assert(end != string::npos, "section name \"" << s << "\" does not contain ']' sign");
+	d_assert(begin < end, "']' cannot be before '[' in secton \"" << s << "\"");
+	string const & res_with_white = s.substr(begin + 1, end - begin - 1);
+	d_assert(!line_is_white(res_with_white), "no section name in \"" << s << "\"");
+	stringstream ss(res_with_white);
+	string res;
+	ss >> res;
+	d_assert(!res.empty(), "no section name in \"" << s << "\"");
+	return res;
+}
+
+ini_config::ini_config(string const & file)
+{
+	LOG(TRACE, "parsing file " << file);
+	regex const reg_attr("[ \\t]*[a-zA-Z][a-zA-Z0-9_]*[ \\t]*=[ \\t]*[^ \\t=\\[\\[][^=\\[\\]]*");
+	regex const reg_sect("[ \\t]*\\[[ \\t]*[a-zA-Z][a-zA-Z0-9_]*[ \\t]*\\][ \\t]*");
+
+	section cur_sect;
+	int line_no = 0;
+
+	ifstream in_f(file.c_str());
+	if (!in_f)
+		throw config_exception(string("failed to open file \"") + file + "\"");
+	while (!!in_f) {
+		++line_no;
+		string line;
+		getline(in_f, line);
+		line = strip_comments(line);
+		if (line == "")
+			continue;
+		if (regex_match(line, reg_attr)) {
+			if (cur_sect.empty())
+				throw config_exception(line_no,
+						"each attribute has to be in a section");
+			string const & val = get_val(line);
+			string const & attr = get_attr(line);
+
+			if (!this->values.insert(make_pair(id(cur_sect, attr), val)).second)
+				throw config_exception(line_no, "duplicate entry");
+
+		} else if (regex_match(line, reg_sect)) {
+			cur_sect = get_sect_name(line);
+			value_map_it it = this->values.lower_bound(id(cur_sect, ""));
+			if (it != this->values.end() && it->first.first == cur_sect)
+				throw config_exception(line_no, "section redefinition");
+			LOG(TRACE, "parsing section " << cur_sect);
+		} else
+			throw config_exception(line_no, "invalid line format");
+	}
+
+	LOG(INFO, "Config file dump follows:");
+	for (value_map_it it = this->values.begin(); it != this->values.end(); ++it)
+		LOG(INFO, it->first.first << ", " << it->first.second << " = \"" <<
+				it->second << "\"");
+	LOG(INFO, "Config file dump finished.");
+}
+
+string ini_config::get_value(section const & sect, string const & attr) const
+{
+	value_map::const_iterator const it = this->values.find(id(sect, attr));
+	d_assert(it != this->values.end(), "referring to non-existent sect " << sect
+			<< " attr " << attr);
+	return it->second;
+}
+
+ini_config::attribute_names ini_config::get_attribute_names(section const & sect) const
+{
+	attribute_names res;
+	for (
+		value_map::const_iterator it = this->values.lower_bound(id(sect, ""));
+		it != this->values.end() && it->first.first == sect;
+		++it
+	)
+		res.push_back(it->first.second);
+	return res;
+}
+
+//================= config_exception implementation ============================
+
+config_exception::config_exception(
+	std::string const & descr)
+: 
+	line_no(NO_LINE), descr(descr)
+{
+}
+
+config_exception::config_exception(
+	int line_no, std::string const & descr)
+: 
+	line_no(line_no), descr(descr)
+{
+}
+
+string config_exception::to_string()
+{
+	if (line_no == NO_LINE)
+		return this->descr;
+	else
+		return string("line ") + lexical_cast<string>(this->line_no) + ": " +
+			this->descr;
+}
+
+//================= config_section_base implementation =========================
+
+config_section_base::config_section_base(
+	string const & sect,
+	ini_config const & conf
+) :
+   	conf(conf), name(sect)
+{
+	ini_config::attribute_names const & names =
+		this->conf.get_attribute_names(this->name);
+	this->present_names.insert(names.begin(), names.end());
+}
+
+template<typename T>
+T config_section_base::get_value(std::string const & name, T const & def)
+{
+	bool const insert_res = this->valid_names.insert(name).second;
+	d_assert(insert_res, "Referring to attribute " << name << "in section " <<
+			this->name << " twice");
+	set<string>::const_iterator const i = this->present_names.find(name);
+	if (i == this->present_names.end())
+		return def;
+	else {
+		try {
+			T const & res = lexical_cast<T>(this->conf.get_value(this->name, name));
+			return res;
+		} catch (bad_lexical_cast &) {
+			throw config_exception(string("section ") + this->name
+					+ ", attribute " + name + ": invalid value");
+		}
+	}
+}
+
+template<typename T>
+T config_section_base::get_value(std::string const & name)
+{
+	bool const insert_res = this->valid_names.insert(name).second;
+	d_assert(insert_res, "Referring to attribute " << name << "in section " <<
+			this->name << " twice");
+	set<string>::const_iterator const i = this->present_names.find(name);
+	if (i == this->present_names.end())
+		throw config_exception(string("section ") + this->name + ", attribute "
+				+ name + ": required attribute not present");
+	else {
+		try {
+			T const & res = lexical_cast<T>(this->conf.get_value(this->name, name));
+			return res;
+		} catch (bad_lexical_cast &) {
+			throw config_exception(string("section ") + this->name
+					+ ", attribute " + name + ": invalid value");
+		}
+	}
+}
+
+void config_section_base::check_no_others()
+{
+	for (
+		set<string>::const_iterator it = this->present_names.begin();
+		it != this->present_names.end();
+		++it
+	) {
+		if (this->valid_names.find(*it) == this->valid_names.end())
+			throw config_exception(string("section ") + this->name
+					+ ", attribute " + *it + ": unknown attribute");
+	}
+}
+
+//================= global_config implementation ===============================
+
+global_config::global_config(string const & file_name) throw(config_exception) :
+	conf(new ini_config(file_name)),
+	buffer_cache(*this->conf)
+{
+
+}
+//
+//================= buffer_cache_sect ==========================================
+
+global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) : 
+	config_section_base("buffer_cache", conf),
+	size(this->get_value<uint64_t>("size")),
+	syncer_sleep_time(this->get_value<uint16_t>("syncer_sleep_time", 30))
+{
+	this->check_no_others();
 }
 
 } // namespace config

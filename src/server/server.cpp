@@ -33,6 +33,7 @@ using namespace boost::program_options;
 #define ver_opt "version"
 #define help_opt "help"
 #define log_opt "log_path"
+#define conf_opt "conf_path"
 
 namespace coherent {
 namespace server {
@@ -46,7 +47,8 @@ public:
 		vm(this->gen_vm(argc, argv)),
 		help(this->vm.count(help_opt)),
 		version(this->vm.count(ver_opt)),
-		log_path(this->extract_req_opt<string>(log_opt))
+		log_path(this->extract_req_opt<string>(log_opt)),
+		conf_path(this->extract_req_opt<string>(conf_opt))
 	{
 		if (this->help)
 			this->usage_exit("", 0);
@@ -67,7 +69,8 @@ private:
 		desc.add_options()
 			(ver_opt",v", "print version and exit")
 			(help_opt",h", "print this message and exit")
-			(log_opt",l", value<string>(), "log file path");
+			(log_opt",l", value<string>(), "log file path")
+			(conf_opt",c", value<string>(), "config file path");
 		return desc;
 	}
 
@@ -103,6 +106,7 @@ public:
 	bool const help;
 	bool const version;
 	string const log_path;
+	string const conf_path;
 };
 
 string welcome_string()
@@ -137,6 +141,17 @@ int main(int const argc, char * argv[])
 	coherent::log::setup_logger_prod(u_args.log_path);
 
 	LOG(INFO, welcome_string());
+
+	try {
+		global_config conf(u_args.conf_path);
+		global_config::buffer_cache_sect & bc_sect(conf.buffer_cache);
+		LOG(INFO, "buffer_cache_sect" << endl << "size: " << bc_sect.size <<
+				", syncer_sleep_time: " << bc_sect.syncer_sleep_time);
+	} catch (config_exception & ex) {
+		cerr << "Reading config file failed" << endl;
+		cerr << ex.to_string() << endl;
+		exit(1);
+	}
 
 	LOG(INFO, "CoherentDB exiting.");
 	return 0;

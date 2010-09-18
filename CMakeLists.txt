@@ -65,7 +65,7 @@ endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 message(STATUS "Currnet build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected CXXFLAGS: ${EFFECTIVE_CXX_FLAGS}")
 
-find_package(Boost COMPONENTS program_options REQUIRED)
+find_package(Boost COMPONENTS program_options regex REQUIRED)
 if (Boost_FOUND)
 	include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 	set(CORELIBS ${CORELIBS} ${Boost_LIBRARIES})

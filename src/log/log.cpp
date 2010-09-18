@@ -46,20 +46,25 @@ LevelPtr global_log_limit;
 //XXX rewrite to C - this is probably very slow
 string convert_pretty_function(string const & s)
 {
-	assert(s.size());
-	size_t const space = s.find(' ');
-	assert(space != std::string::npos);
-	assert(space != 0);
-	std::string no_ret(s.substr(space + 1));
-	assert(no_ret.size());
 
-	size_t const paren = no_ret.find('(');
+	size_t const paren = s.find('(');
 	assert(paren != std::string::npos);
 	assert(paren != 0);
-	no_ret.resize(paren);
+	string no_paren(s);
+	no_paren.resize(paren);
+
+	string no_ret;
+	assert(no_paren.size());
+	size_t const space = no_paren.find(' ');
+	if (space != std::string::npos) {
+		assert(space != 0);
+		no_ret = no_paren.substr(space + 1);
+	} else
+		no_ret = no_paren;
+	assert(no_ret.size());
 
 	string res;
-	res.reserve(paren);
+	res.reserve(no_ret.size());
 	size_t last_pos = 0;
 	for (
 		size_t new_pos = no_ret.find(':', last_pos);
@@ -67,7 +72,7 @@ string convert_pretty_function(string const & s)
 		new_pos = no_ret.find(':', last_pos)
 	)
 	{
-		assert(new_pos + 2 < paren);
+		assert(new_pos + 2 < no_ret.size());
 		//I think that every : should be followed by a second one and it can't
 		//be the last token
 		assert(no_ret.at(new_pos + 1) == ':');
@@ -112,7 +117,7 @@ void setup_logger_test(string const & log_path, LevelPtr const & log_level)
 void setup_logger_prod(string const & log_path)
 {
 #ifndef NDEBUG
-	setup_logger(log_path, Level::getInfo(), Level::getTrace());
+	setup_logger(log_path, Level::getDebug(), Level::getTrace());
 #else
 	setup_logger(log_path, Level::getInfo(), Level::getInfo());
 #endif
