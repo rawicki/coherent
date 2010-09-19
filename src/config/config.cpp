@@ -348,6 +348,10 @@ global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) :
 	this->check_no_others();
 }
 
+global_config::~global_config()
+{
+}
+
 } // namespace config
 } // namespace coherent
 

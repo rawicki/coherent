@@ -89,6 +89,9 @@ public:
 	};
 
 	buffer_cache_sect buffer_cache;
+	~global_config(); //the dtor needs to be explicit, because gcc tries to
+	                  //inline it otherwise and the ini_config dtor is not
+					  //visible
 };
 
 } // namespace config
