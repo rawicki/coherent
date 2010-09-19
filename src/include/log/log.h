@@ -24,17 +24,19 @@
 #include <log4cxx/logger.h>
 
 #define LOG(level, message) \
-{ if (coherent::log::log_##level->isGreaterOrEqual(coherent::log::global_log_limit) ) {\
+do { if (coherent::log::log_##level->isGreaterOrEqual(coherent::log::global_log_limit) ) {\
+	char _log_pf_buf[131072]; \
+	coherent::log::convert_pretty_function(__PRETTY_FUNCTION__, _log_pf_buf); \
 	LOG4CXX_##level( \
-		log4cxx::Logger::getLogger(coherent::log::convert_pretty_function(__PRETTY_FUNCTION__)), \
+		log4cxx::Logger::getLogger(_log_pf_buf), \
 		static_cast<std::stringstream const &>(std::stringstream().flush() << message).str() \
 	) \
-} }
+} } while(0)
 
 namespace coherent {
 namespace log {
 
-std::string convert_pretty_function(std::string const & s);
+void convert_pretty_function(char const * s, char * const out);
 
 void setup_logger_test(
 	std::string const & log_path,

@@ -43,45 +43,44 @@ LevelPtr global_log_limit;
 
 //we want to convert pretty function to the format
 //namespace1.namespace2.class1.class2
-//XXX rewrite to C - this is probably very slow
-string convert_pretty_function(string const & s)
+void convert_pretty_function(char const * s, char * const out)
 {
-
-	size_t const paren = s.find('(');
-	assert(paren != std::string::npos);
-	assert(paren != 0);
-	string no_paren(s);
-	no_paren.resize(paren);
-
-	string no_ret;
-	assert(no_paren.size());
-	size_t const space = no_paren.find(' ');
-	if (space != std::string::npos) {
-		assert(space != 0);
-		no_ret = no_paren.substr(space + 1);
-	} else
-		no_ret = no_paren;
-	assert(no_ret.size());
-
-	string res;
-	res.reserve(no_ret.size());
-	size_t last_pos = 0;
-	for (
-		size_t new_pos = no_ret.find(':', last_pos);
-		new_pos != string::npos;
-		new_pos = no_ret.find(':', last_pos)
-	)
-	{
-		assert(new_pos + 2 < no_ret.size());
-		//I think that every : should be followed by a second one and it can't
-		//be the last token
-		assert(no_ret.at(new_pos + 1) == ':');
-		if (!res.empty())
-			res += '.';
-		res += no_ret.substr(last_pos, new_pos - last_pos);
-		last_pos = new_pos + 2;
+	size_t out_off = 0;
+	size_t in_templ = 0; //nest in template
+	size_t last_off = 0;
+	assert(s);
+	for (; s[0] != '('; ++s) {
+		assert(s[0]);
+		
+		if (in_templ) {
+			if (s[0] == '<')
+			   ++in_templ;
+			else if (s[0] == '>') {
+				assert(in_templ);
+				--in_templ;
+			}
+			continue;
+		}
+		if (s[0] == '<') {
+			//check if it is not operatror< also start a template, but nex char
+			//has to be '(' which will successfully break the loop
+			++in_templ;
+			continue;
+		} else if (s[0] == ':') {
+			last_off = out_off;
+			out[out_off++] = '.';
+			++s;
+			assert(s[0] == ':');
+			continue;
+		}
+		if (s[0] == ' ') { //return value separator
+			out_off = 0;
+			last_off = 0;
+			continue;
+		}
+		out[out_off++] = s[0];
 	}
-	return res;
+	out[last_off] = 0;
 }
 
 static void setup_logger(string const & log_path, LevelPtr const & log_level,
