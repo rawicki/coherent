@@ -31,4 +31,5 @@ fi
 rm -rf coverage
 mkdir coverage
 geninfo -o coverage/coverage.out -b . .
-genhtml --frames -t "CoherentDB code coverage" -o coverage coverage/coverage.out
+lcov -r coverage/coverage.out /usr/\* > coverage/cov_stripped.out
+genhtml --frames -t "CoherentDB code coverage" -o coverage coverage/cov_stripped.out
