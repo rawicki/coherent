@@ -21,7 +21,8 @@
 #ifndef ASSERTIONS_H_5673
 #define ASSERTIONS_H_5673
 
-#include <stdio.h>
+#include <cstdio>
+#include <iostream>
 
 #include <util/misc.h>
 #include <log/log.h>
@@ -29,14 +30,14 @@
 
 //XXX flush logs
 #define __assertion_impl2(c, m) \
-	{if (!(c)) { \
+	do {if (!(c)) { \
 		LOG(FATAL, m); \
 		coherent::log::flush_logger(); \
 		LOG(FATAL, "aborting..."); \
 		std::cerr << m << std::endl; \
 		::fflush(stdout); \
 		::abort(); \
-	} }
+	} } while (0)
 
 #define __assertion_impl(x, y, z) \
 	__assertion_impl2(x, z << " assertion failed (" << stringify(x) << ")" << \
@@ -46,7 +47,7 @@
 #ifndef NDEBUG
 #define d_assert(x, y) __assertion_impl(x, y, "Debug")
 #else
-#define d_assert(x, y) { if (false && (x)); }
+#define d_assert(x, y) do { if (false && (x)); } while (0)
 #endif
 
 #define r_assert(x, y) __assertion_impl(x, y, "Release")

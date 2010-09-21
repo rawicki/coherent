@@ -16,16 +16,9 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
-include (CheckIncludeFiles)
-include (CheckFunctionExists)
-include (CheckCSourceCompiles)
+set(SOURCES
+	spin_lock_test.cpp
+	)
 
-CHECK_INCLUDE_FILES (execinfo.h HAVE_EXECINFO_H)
-CHECK_FUNCTION_EXISTS (backtrace HAVE_BACKTRACE)
-CHECK_C_SOURCE_COMPILES("int main()
-{
-    int l;
-	__sync_bool_compare_and_swap(&l, 0, 1);
-	return 0;
-}" HAVE_SYNC_BOOL_COMPARE_AND_SWAP_INT)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_config.h)
+add_executable(spin_lock_test ${SOURCES})
+target_link_libraries(spin_lock_test config log debug2 util ${CORELIBS})

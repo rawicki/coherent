@@ -1,4 +1,4 @@
-/* 
+/*
  * (C) Copyright 2010 Marek Dopiera
  * 
  * This file is part of CoherentDB.
@@ -18,16 +18,10 @@
  * http://www.gnu.org/licenses/.
  */
 
-#ifndef CMAKE_CONFIG_H_2946
-#define CMAKE_CONFIG_H_2946
+#include <util/thread.h>
 
-#define COMPILED_CXX_FLAGS "${EFFECTIVE_CXX_FLAGS}"
-#define COMPILED_C_FLAGS "${EFFECTIVE_C_FLAGS}"
-#define COMPILED_CXX "${CMAKE_CXX_COMPILER}"
-#define COMPILED_C "${CMAKE_C_COMPILER}"
-#define COMPILED_BOOST_VERSION "${Boost_VERSION}"
-#cmakedefine HAVE_EXECINFO_H 1
-#cmakedefine HAVE_BACKTRACE 1
-#cmakedefine HAVE_SYNC_BOOL_COMPARE_AND_SWAP_INT 1
+namespace coherent {
+namespace util {
+} // namespace util
+} // namespace coherent
 
-#endif /* CMAKE_CONFIG_H_2946 */
