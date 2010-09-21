@@ -4,12 +4,14 @@ CMakeCache.txt
 CMakeFiles/
 Makefile
 bin/
-cmake_install.cmake
+*.cmake
 cscope.files
 cscope.out
 ~*
 *.swp
 src/config/compile.h
 coverage
-server.core
+*.core
 src/include/config/cmake_config.h
+Testing
+run

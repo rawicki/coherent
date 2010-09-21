@@ -37,7 +37,7 @@ unsigned const num_iteratrions = 100000000;
 
 void *incrementer(void *)
 {
-	cerr << "Thread started" << endl;
+	LOG(DEBUG, "Thread started");
 	for (unsigned i = 0; i < num_iteratrions; ++i) {
 		spin_mutex::scoped_lock l(mutex);
 		volatile int j = k;
@@ -49,8 +49,8 @@ void *incrementer(void *)
 
 int main(const int /*argc*/, const char *const *const argv)
 {
-	setup_logger_test("/tmp/test_logs");
-	LOG(INFO, "Test " << argv[0] << " starts");
+	scoped_test_enabler test_setup(argv[0]);
+
 	int err;
 	pthread_t thread1 = 0, thread2 = 0;
 	{
@@ -66,6 +66,5 @@ int main(const int /*argc*/, const char *const *const argv)
 	r_assert(err == 0, "failed to join thread, errno=" << errno);
 
 	r_assert(k == num_iteratrions * 2, "Expected k=" << num_iteratrions * 2 << ", but k=" << k);
-	LOG(INFO, "Test finished successfully");
 	return 0;
 }

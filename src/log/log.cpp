@@ -99,7 +99,7 @@ static void setup_logger(string const & log_path, LevelPtr const & log_level,
 
 	root_logger->addAppender(
 		new FileAppender(
-			new PatternLayout("%r %p %m [%c (%F:%L)]%n"),
+			new PatternLayout("%8r %5p %m [%c (%F:%L)]%n"),
 			log_path,
 			false,
 			true,

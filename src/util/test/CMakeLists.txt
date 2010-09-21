@@ -26,3 +26,4 @@ set(SOURCES
 
 add_executable(spin_lock_test ${SOURCES})
 target_link_libraries(spin_lock_test config log debug2 util ${CORELIBS})
+add_test(spin_lock_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/spin_lock_test)

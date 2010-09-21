@@ -19,6 +19,7 @@
  */
 
 #include <ctype.h>
+#include <sys/param.h>
 
 #include <sstream>
 #include <iostream>
@@ -31,6 +32,9 @@
 
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #include <config/config.h>
 #include <config/cmake_config.h>
@@ -41,6 +45,10 @@
 
 using namespace std;
 using namespace boost;
+using namespace boost::filesystem;
+using namespace log4cxx;
+
+using namespace coherent::log;
 
 namespace coherent {
 namespace config {
@@ -76,7 +84,7 @@ string get_build_information()
 void print_running_information()
 {
 	cout << "Running on:" << endl;
-	int ret = system("uname -a");
+	int ret = ::system("uname -a");
 	if (ret == -1)
 		cout << "(unable to obtain)" << endl;
 }
@@ -337,8 +345,8 @@ global_config::global_config(string const & file_name) throw(config_exception) :
 {
 
 }
-//
-//================= buffer_cache_sect ==========================================
+
+//================= buffer_cache_sect implementation ===========================
 
 global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) : 
 	config_section_base("buffer_cache", conf),
@@ -350,6 +358,72 @@ global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) :
 
 global_config::~global_config()
 {
+}
+
+//================= scoped_test_enabler implementation =========================
+
+scoped_test_enabler::scoped_test_enabler(char const * progname, LevelPtr def_log_level)
+{
+#define cerr_assert(cond, msg) do { if (!(cond)) { cerr << msg << endl; ::abort(); } ; } while (0)
+	string const required_path = "/bin/test/";
+	string const work_dir = "run";
+	//XXX unix specific
+	char canon[MAXPATHLEN];
+	char * res = realpath(progname, canon);
+	cerr_assert(res, "realpath failed with code " << errno << "dir:" << progname);
+	string const orig = canon;
+	size_t pos = orig.rfind(required_path);
+	cerr_assert(pos != string::npos, "The test binary is not in " << required_path
+			<< " directory. dir:" << orig);
+	{
+		size_t pos2 = orig.find('/', pos + required_path.size() + 1);
+		cerr_assert(pos2 == string::npos, "The required path is not in " <<
+				required_path << " directory directly (some subdir, path: " <<
+				orig << ") found on pos=" << pos2);
+	}
+	string const proj_dir = orig.substr(0, pos);
+	string const tests_dir = proj_dir + "/" + work_dir;
+	
+	pos = orig.rfind('/');
+	d_assert(pos != string::npos, "what?");
+	d_assert(orig.size() >= pos, "what?");
+
+	string const test_name = orig.substr(pos + 1);
+
+	string const target_dir_name = tests_dir + "/" + test_name;
+
+	if (exists(target_dir_name)) {
+		cerr_assert(is_directory(target_dir_name), "I wanted to create a working "
+				" directory for test but it already exists and is not a directory: "
+				<< target_dir_name);
+		remove_all(target_dir_name);
+	}
+	create_directories(target_dir_name);
+	int err = chdir(target_dir_name.c_str());
+	cerr_assert(!err, "chdir to " << target_dir_name << " failed with code " << errno);
+	
+	this->working_dir = target_dir_name;
+
+	setup_logger_test(target_dir_name + "/logs", def_log_level);
+	LOG(INFO, "Test " << test_name << " starts");
+
+	this->config = shared_ptr<global_config>(new global_config(proj_dir + "/doc/default.conf"));
+	
+}
+
+scoped_test_enabler::~scoped_test_enabler()
+{
+	LOG(INFO, "Test finished successfully.");
+}
+
+string scoped_test_enabler::get_working_dir()
+{
+	return this->working_dir;
+}
+
+shared_ptr<global_config> scoped_test_enabler::get_config()
+{
+	return this->config;
 }
 
 } // namespace config

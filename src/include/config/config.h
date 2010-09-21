@@ -29,6 +29,9 @@
 #include <set>
 
 #include <boost/utility.hpp>
+#include <boost/smart_ptr.hpp>
+
+#include <log/log.h>
 
 namespace coherent {
 namespace config {
@@ -92,6 +95,17 @@ public:
 	~global_config(); //the dtor needs to be explicit, because gcc tries to
 	                  //inline it otherwise and the ini_config dtor is not
 					  //visible
+};
+
+struct scoped_test_enabler
+{
+	scoped_test_enabler(char const * progname, log4cxx::LevelPtr def_log_level = log4cxx::Level::getDebug());
+	~scoped_test_enabler();
+	boost::shared_ptr<global_config> get_config();
+	std::string get_working_dir();
+private:
+	boost::shared_ptr<global_config> config;
+	std::string working_dir;
 };
 
 } // namespace config
