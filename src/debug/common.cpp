@@ -23,6 +23,7 @@
 
 #include <exception>
 #include <iostream>
+#include <cstring>
 
 #include <debug/common.h>
 #include <log/log.h>
