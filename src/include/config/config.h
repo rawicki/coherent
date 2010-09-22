@@ -21,6 +21,8 @@
 #ifndef CONFIG_H_2944
 #define CONFIG_H_2944
 
+#include <stdint.h>
+
 #include <utility>
 #include <memory>
 #include <string>

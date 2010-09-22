@@ -22,6 +22,7 @@
 #define ASSERTIONS_H_5673
 
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
 #include <util/misc.h>

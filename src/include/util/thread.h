@@ -42,8 +42,8 @@ namespace util {
 	#define TAS_IMPL_ASM_amd64
 	#endif
 #else
-#error Your compiler is not 'gcc-4.1 or newer' and your architecture is not\
-	i386 neither amd64,	so I don't know how to provide the 'test and set'\
+#error Your compiler is not gcc-4.1 or newer and your architecture is not\
+	i386 neither amd64,	so I dont know how to provide the test and set\
 	operation.
 #endif
 
@@ -187,6 +187,7 @@ inline bool scoped_lock_base<T>::try_lock()
 {
 	d_assert(!this->locked, "Trying to acquire an already locked lock");
 	this->locked = this->mutex.try_lock();
+	return this->locked;
 }
 
 template <class T>
