@@ -19,6 +19,7 @@
 
 set(SOURCES
 	stacktrace.cpp
+	common.cpp
 	)
 add_library(debug2 ${SOURCES})
 

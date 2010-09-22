@@ -25,7 +25,7 @@
 
 #include <log/log.h>
 #include <config/config.h>
-#include <debug/asserts.h>
+#include <debug/common.h>
 
 using namespace std;
 using namespace boost::program_options;
@@ -139,6 +139,7 @@ int main(int const argc, char * argv[])
 	}
 
 	coherent::log::setup_logger_prod(u_args.log_path);
+	coherent::debug::set_terminate_handler();
 
 	LOG(INFO, welcome_string());
 

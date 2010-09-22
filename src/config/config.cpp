@@ -38,7 +38,7 @@
 
 #include <config/config.h>
 #include <config/cmake_config.h>
-#include <debug/asserts.h>
+#include <debug/common.h>
 #include <log/log.h>
 
 #include <version.h>
@@ -49,6 +49,7 @@ using namespace boost::filesystem;
 using namespace log4cxx;
 
 using namespace coherent::log;
+using namespace coherent::debug;
 
 namespace coherent {
 namespace config {
@@ -406,6 +407,8 @@ scoped_test_enabler::scoped_test_enabler(char const * progname, LevelPtr def_log
 
 	setup_logger_test(target_dir_name + "/logs", def_log_level);
 	LOG(INFO, "Test " << test_name << " starts");
+
+	set_terminate_handler();
 
 	this->config = shared_ptr<global_config>(new global_config(proj_dir + "/doc/default.conf"));
 	
