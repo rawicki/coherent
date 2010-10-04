@@ -101,7 +101,8 @@ public:
 
 struct scoped_test_enabler
 {
-	scoped_test_enabler(char const * progname, log4cxx::LevelPtr def_log_level = log4cxx::Level::getDebug());
+	scoped_test_enabler(int argc, char const * const * const argv,
+			log4cxx::LevelPtr def_log_level = log4cxx::Level::getDebug());
 	~scoped_test_enabler();
 	boost::shared_ptr<global_config> get_config();
 	std::string get_working_dir();

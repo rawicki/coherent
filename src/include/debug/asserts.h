@@ -36,7 +36,10 @@
 		coherent::log::flush_logger(); \
 		LOG(FATAL, "aborting..."); \
 		std::cerr << m << std::endl; \
+		std::cerr.flush(); \
+		std::cout.flush(); \
 		::fflush(stdout); \
+		::fflush(stderr); \
 		::abort(); \
 	} } while (0)
 

@@ -30,4 +30,7 @@
 #cmakedefine HAVE_BACKTRACE 1
 #cmakedefine HAVE_SYNC_BOOL_COMPARE_AND_SWAP_INT 1
 
+#define FOR_TESTS_BIN_DIR "${TOP_BIN_DIR}"
+#define FOR_TESTS_SRC_DIR "${TOP_SRC_DIR}"
+
 #endif /* CMAKE_CONFIG_H_2946 */

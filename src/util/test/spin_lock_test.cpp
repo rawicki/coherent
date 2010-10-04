@@ -47,9 +47,9 @@ void *incrementer(void *)
 	return NULL;
 }
 
-int main(const int /*argc*/, const char *const *const argv)
+int main(const int argc, const char *const *const argv)
 {
-	scoped_test_enabler test_setup(argv[0]);
+	scoped_test_enabler test_setup(argc, argv);
 
 	int err;
 	pthread_t thread1 = 0, thread2 = 0;

@@ -19,6 +19,7 @@
  */
 
 #include <ctype.h>
+#include <fcntl.h>
 #include <sys/param.h>
 
 #include <sstream>
@@ -53,6 +54,7 @@ using namespace coherent::debug;
 
 namespace coherent {
 namespace config {
+
 
 string get_version_string()
 {
@@ -363,55 +365,74 @@ global_config::~global_config()
 
 //================= scoped_test_enabler implementation =========================
 
-scoped_test_enabler::scoped_test_enabler(char const * progname, LevelPtr def_log_level)
+scoped_test_enabler::scoped_test_enabler(int argc,
+		char const * const * const argv, LevelPtr def_log_level)
 {
 #define cerr_assert(cond, msg) do { if (!(cond)) { cerr << msg << endl; ::abort(); } ; } while (0)
-	string const required_path = "/bin/test/";
+	string const required_path = "/bin/test/"; //just for safety
 	string const work_dir = "run";
-	//XXX unix specific
-	char canon[MAXPATHLEN];
-	char * res = realpath(progname, canon);
-	cerr_assert(res, "realpath failed with code " << errno << "dir:" << progname);
-	string const orig = canon;
-	size_t pos = orig.rfind(required_path);
-	cerr_assert(pos != string::npos, "The test binary is not in " << required_path
-			<< " directory. dir:" << orig);
-	{
-		size_t pos2 = orig.find('/', pos + required_path.size() + 1);
-		cerr_assert(pos2 == string::npos, "The required path is not in " <<
-				required_path << " directory directly (some subdir, path: " <<
-				orig << ") found on pos=" << pos2);
-	}
-	string const proj_dir = orig.substr(0, pos);
-	string const tests_dir = proj_dir + "/" + work_dir;
+	string const tests_dir = FOR_TESTS_BIN_DIR  "/" + work_dir;
 	
-	pos = orig.rfind('/');
-	d_assert(pos != string::npos, "what?");
-	d_assert(orig.size() >= pos, "what?");
-
-	string const test_name = orig.substr(pos + 1);
-
+	string const orig_prog = argv[0];
+	cerr_assert(orig_prog.find(required_path) != string::npos,
+			"This is bad, path=" << tests_dir);
+	size_t pos = orig_prog.rfind('/');
+	if (pos == string::npos)
+		pos = 0;
+	string const test_name = orig_prog.substr(pos);
 	string const target_dir_name = tests_dir + "/" + test_name;
-
-	if (exists(target_dir_name)) {
-		cerr_assert(is_directory(target_dir_name), "I wanted to create a working "
-				" directory for test but it already exists and is not a directory: "
-				<< target_dir_name);
-		remove_all(target_dir_name);
-	}
-	create_directories(target_dir_name);
-	int err = chdir(target_dir_name.c_str());
-	cerr_assert(!err, "chdir to " << target_dir_name << " failed with code " << errno);
-	
 	this->working_dir = target_dir_name;
+	char full_path[MAXPATHLEN];
+	cerr_assert(realpath(argv[0], full_path), "real_path failed with errno=" << errno);
 
+	if (argc != 2 || strcmp(argv[1], "ready")) {
+		//XXX unix specific
+		if (exists(target_dir_name)) {
+			cerr_assert(is_directory(target_dir_name), "I wanted to create a working "
+					" directory for test but it already exists and is not a directory: "
+					<< target_dir_name);
+			remove_all(target_dir_name);
+		}
+		create_directories(target_dir_name);
+		int err = chdir(target_dir_name.c_str());
+		cerr_assert(!err, "chdir to " << target_dir_name << " failed with code " << errno);
+		
+		int out_fd = open("stdout", O_WRONLY | O_CREAT | O_EXCL, 0644);
+		cerr_assert(err != -1, "creating stdout file failed with errno=" << errno);
+		int err_fd = open("stderr", O_WRONLY | O_CREAT | O_EXCL, 0644);
+		cerr_assert(err != -1, "creating stderr file failed with errno=" << errno);
+		err = dup2(out_fd, 1);
+		cerr_assert(err != -1, "dup2 of stdout file failed with errno=" << errno);
+		err = dup2(err_fd, 2);
+		cerr_assert(err != -1, "dup2 of stderr file failed with errno=" << errno);
+		err = close(out_fd);
+		cerr_assert(err != -1, "close of stdout file failed with errno=" << errno);
+		err = close(err_fd);
+		cerr_assert(err != -1, "close of stderr file failed with errno=" << errno);
+
+		vector<string> args;
+		if (argc > 1) {
+			for (int i = 1; i < argc; ++i)
+				args.push_back(argv[i]);
+		}
+		args.push_back(full_path);
+		args.push_back("ready");
+		char const * new_argv[args.size()+1];
+		for (size_t i = 0; i < args.size(); ++i)
+			new_argv[i] = args[i].c_str();
+		new_argv[args.size()] = 0;
+		char const * const to_run = (argc > 1) ? argv[1] : full_path;
+		execvp(to_run, const_cast<char * const *>(new_argv));
+		cerr_assert(false, "execvp failed with errno=" << errno);
+	}
 	setup_logger_test(target_dir_name + "/logs", def_log_level);
 	LOG(INFO, "Test " << test_name << " starts");
 
 	set_terminate_handler();
 
-	this->config = shared_ptr<global_config>(new global_config(proj_dir + "/doc/default.conf"));
-	
+	this->config = shared_ptr<global_config>(
+			new global_config(FOR_TESTS_SRC_DIR "/doc/default.conf"));
+
 }
 
 scoped_test_enabler::~scoped_test_enabler()
@@ -431,4 +452,3 @@ shared_ptr<global_config> scoped_test_enabler::get_config()
 
 } // namespace config
 } // namespace coherent
-
