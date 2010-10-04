@@ -32,4 +32,10 @@
 #define unlikely(x) (x)
 #endif
 
+#ifdef VALGRIND
+#define VALGRIND_SLOWDOWN 1000
+#else
+#define VALGRIND_SLOWDOWN 1
+#endif
+
 #endif /* MISC_H_2345 */

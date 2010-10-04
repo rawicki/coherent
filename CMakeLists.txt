@@ -42,6 +42,8 @@ endif (USER_COVERAGE)
 
 if (VALGRIND_TEST)
 	find_program(VALGRIND_BIN "valgrind")
+	message(STATUS "Found valgrind: ${VALGRIND_BIN}")
+	set(COMMON_FLAGS "${COMMON_FLAGS} -DVALGRIND")
 	if (NOT VALGRIND_BIN)
 		message(FATAL_ERROR "Valgrind not found")
 	endif(NOT VALGRIND_BIN)
