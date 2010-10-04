@@ -1,0 +1,42 @@
+{
+	log4cxx
+	Memcheck:Cond
+	...
+	fun:*log4cxx*
+}
+{
+	log4cxx2
+	Memcheck:Value8
+	...
+	fun:*log4cxx*
+}
+{
+	log4cxx3
+	Memcheck:Addr8
+	...
+	fun:*log4cxx*
+}
+{
+	dls
+	Memcheck:Cond
+	...
+	fun:*_dl_*
+}
+{
+	regex
+	Memcheck:Cond
+	...
+	fun:*boost*regex*
+}
+{
+	regex2
+	Memcheck:Value8
+	...
+	fun:*boost*regex*
+}
+{
+	regex2
+	Memcheck:Addr8
+	...
+	fun:*boost*regex*
+}
