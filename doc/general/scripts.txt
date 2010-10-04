@@ -1,0 +1,46 @@
+(C) Copyright 2010 Marek Dopiera
+
+This file is part of CoherentDB.
+
+CoherentDB is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoherentDB is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with CoherentDB. If not, see
+http://www.gnu.org/licenses/.
+
+1. PURPOSE
+
+This document describes scripts present in the project
+
+2. SCRIPTS
+
+gen_coverage.sh
+This scripts generates coverage information using lcov. lcov has to be
+installed. It works only if you compile with -DUSER_COVERAGE=1. If you recompile
+your sources incrementaly, it might happen that it not work - clean the project,
+build again, remove the gathered coverage and it should work.
+
+remove_coverage.sh
+Remove the gathered coverage.
+
+gen_cscope.sh
+This script creates file cscope.files in source root. If you run cscope there,
+you will get cscope.out index file, which can be then passed to your editor like
+vim to provide cross-reference.
+
+gen_version.sh
+This script is used internally by the build system. You should not use it
+manually. It gathers some information about the repository and system.
+
+remove_ignored.sh
+This script removes all the files which are ignored by cmake i.e. compiled
+binaries, cscope files, cmake caches, coverage result, unit tests results and so
+on. It is useful if you fight with cmake.
