@@ -34,7 +34,7 @@ using namespace coherent::log;
 volatile int k = 0;
 spin_mutex mutex;
 
-unsigned const num_iteratrions = 100000000 / VALGRIND_SLOWDOWN / VALGRIND_SLOWDOWN;
+unsigned const num_iteratrions = 10000000 / VALGRIND_SLOWDOWN / VALGRIND_SLOWDOWN;
 
 void *incrementer(void *)
 {
