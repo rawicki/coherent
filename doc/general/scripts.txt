@@ -26,7 +26,8 @@ gen_coverage.sh
 This scripts generates coverage information using lcov. lcov has to be
 installed. It works only if you compile with -DUSER_COVERAGE=1. If you recompile
 your sources incrementaly, it might happen that it not work - clean the project,
-build again, remove the gathered coverage and it should work.
+build again, remove the gathered coverage and it should work. Run the scripts
+without any parameters to see the usage.
 
 remove_coverage.sh
 Remove the gathered coverage.

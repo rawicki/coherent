@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+#!/usr/pkg/bin/bash
 
 # (C) Copyright 2010 Marek Dopiera
 # 
@@ -20,16 +21,34 @@
 
 set -e
 
-PROJ_DIR=`dirname $0`/..
-cd "${PROJ_DIR}"
+function usage
+{
+	echo "usage: $0 source_dir binary_dir"
+	echo "If you have run \"cmake .\" in source directory, then source_dir"
+	echo "and binary_dir are the same"
+	exit 1
+}
 
+OLD_PWD="`pwd`"
+if [ $# -ne 2 ] ; then
+	usage
+fi
+SOURCE_DIR=$1
+BINARY_DIR=$2
+
+COVERAGE_DIR="${OLD_PWD}/coverage"
+COVERAGE_OUT="${COVERAGE_DIR}/coverage.out"
+COVERAGE_OUT_STRIPPED="${COVERAGE_DIR}/coverage_stripped.out"
+
+rm -rf "${COVERAGE_DIR}"
+mkdir "${COVERAGE_DIR}"
+
+cd ${BINARY_DIR}
 if [ `find . -name \*gcda | wc -l` -eq 0 ] ; then
 	echo "It seems that you have no coverage data - compile after running \"cmake . -DUSER_COVERAGE=1\" first"
 	exit 1;
 fi
-
-rm -rf coverage
-mkdir coverage
-geninfo -o coverage/coverage.out -b . .
-lcov -r coverage/coverage.out /usr/\* > coverage/cov_stripped.out
-genhtml --frames -t "CoherentDB code coverage" -o coverage coverage/cov_stripped.out
+geninfo -o "${COVERAGE_OUT}" -b . .
+cd ${SOURCE_DIR}
+lcov -r ${COVERAGE_OUT} /usr/\* > ${COVERAGE_OUT_STRIPPED}
+genhtml --frames -t "CoherentDB code coverage" -o ${COVERAGE_DIR} ${COVERAGE_OUT_STRIPPED}
