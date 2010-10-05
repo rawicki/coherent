@@ -45,3 +45,7 @@ remove_ignored.sh
 This script removes all the files which are ignored by cmake i.e. compiled
 binaries, cscope files, cmake caches, coverage result, unit tests results and so
 on. It is useful if you fight with cmake.
+
+nightly/*
+Scripts located in this directory are used for nightly testing. See source for
+documentation.
