@@ -51,4 +51,4 @@ fi
 geninfo -o "${COVERAGE_OUT}" -b . .
 cd ${SOURCE_DIR}
 lcov -r ${COVERAGE_OUT} /usr/\* > ${COVERAGE_OUT_STRIPPED}
-genhtml --frames -t "CoherentDB code coverage" -o ${COVERAGE_DIR} ${COVERAGE_OUT_STRIPPED}
+genhtml -t "CoherentDB code coverage" -o ${COVERAGE_DIR} ${COVERAGE_OUT_STRIPPED}
