@@ -137,7 +137,7 @@ rm -rf "${SOURCE_DIR}"
 rm -rf "${BUILD_ROOT}"
 
 if [ ! -e "${ARCHIVE}" ] ; then
-	mkdir "${ARCHIVE}"
+	mkdir -m755 "${ARCHIVE}"
 fi
 
 CUR_NAME=`date +%C%y-%m-%d_%H-%M-%S`
@@ -145,7 +145,7 @@ TARGET_DIR="${ARCHIVE}/${CUR_NAME}"
 if [ -e "${TARGET_DIR}" ] ; then
 	exitErr "Target directory \"${TARGET_DIR}\" already exists"
 fi
-mkdir ${TARGET_DIR}
+mkdir -m755 ${TARGET_DIR}
 ln -s ${TARGET_DIR} ${BUILD_ROOT}
 
 
@@ -206,13 +206,13 @@ echo
 	TEST_LOG="${LOG_DIR}/${TEST_LOG_REL}"
 	POST_LOG="${LOG_DIR}/${POST_LOG_REL}"
 	
-	if mkdir "${CONF_DIR}" ; then
+	if mkdir -m755 "${CONF_DIR}" ; then
 		set +e
 		(
 			set -e
 			cd "${CONF_DIR}"
 			ln -s ${SOURCE_DIR} source
-			mkdir "${LOG_DIR}"
+			mkdir -m755 "${LOG_DIR}"
 			"${CMAKE}" ${CMAKE_ARGS} "${SOURCE_DIR}" > "${CMAKE_LOG}" 2>&1
 			"${MAKE}" ${MAKE_FLAGS} > "${MAKE_LOG}" 2>&1
 			"${MAKE}" test > "${TEST_LOG}" 2>&1
@@ -249,6 +249,9 @@ echo
 	fi
 	echo
 done;  } < "${CONFIGS}"
+
+find ${TARGET_DIR} -type f -exec chmod og+r \{\} \;
+find ${TARGET_DIR} -type d -exec chmod og+rx \{\} \;
 
 echo "=============================================================================="
 echo -n "Tests finished "

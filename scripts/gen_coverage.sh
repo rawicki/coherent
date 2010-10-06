@@ -41,7 +41,7 @@ COVERAGE_OUT="${COVERAGE_DIR}/coverage.out"
 COVERAGE_OUT_STRIPPED="${COVERAGE_DIR}/coverage_stripped.out"
 
 rm -rf "${COVERAGE_DIR}"
-mkdir "${COVERAGE_DIR}"
+mkdir -m755 "${COVERAGE_DIR}"
 
 cd ${BINARY_DIR}
 if [ `find . -name \*gcda | wc -l` -eq 0 ] ; then
