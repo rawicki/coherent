@@ -246,6 +246,7 @@ echo
 		fi
 	else
 		echo "Failed to create build directory for config \"${CONF_NAME}\""
+		FAILED="YES"
 	fi
 	echo
 done;  } < "${CONFIGS}"
