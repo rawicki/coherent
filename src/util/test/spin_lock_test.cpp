@@ -31,6 +31,10 @@ using namespace coherent::util;
 using namespace coherent::config;
 using namespace coherent::log;
 
+namespace coherent {
+namespace util {
+namespace unittests {
+
 volatile int k = 0;
 spin_mutex mutex;
 
@@ -38,7 +42,7 @@ unsigned const num_iteratrions = 10000000 / VALGRIND_SLOWDOWN / VALGRIND_SLOWDOW
 
 void *incrementer(void *)
 {
-	LOG(DEBUG, "Thread started");
+	LOG(TRACE, "Thread started");
 	for (unsigned i = 0; i < num_iteratrions; ++i) {
 		spin_mutex::scoped_lock l(mutex);
 		volatile int j = k;
@@ -48,9 +52,11 @@ void *incrementer(void *)
 	return NULL;
 }
 
-int main(const int argc, const char *const *const argv)
+int start_test(const int argc, const char *const *const argv)
 {
 	scoped_test_enabler test_setup(argc, argv);
+	
+	log4cxx::Logger::getLogger("coherent.util.unittests")->setLevel(coherent::log::log_TRACE);	
 
 	int err;
 	pthread_t thread1 = 0, thread2 = 0;
@@ -68,4 +74,13 @@ int main(const int argc, const char *const *const argv)
 
 	r_assert(k == num_iteratrions * 2, "Expected k=" << num_iteratrions * 2 << ", but k=" << k);
 	return 0;
+}
+
+} // namespace unittests
+} // namespace util
+} // namespace coherent
+
+int main(const int argc, const char * const * const argv)
+{
+	return coherent::util::unittests::start_test(argc, argv);
 }
