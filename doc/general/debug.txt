@@ -1,0 +1,49 @@
+(C) Copyright 2010 Marek Dopiera
+
+This file is part of CoherentDB.
+
+CoherentDB is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoherentDB is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with CoherentDB. If not, see
+http://www.gnu.org/licenses/.
+
+1. PURPOSE
+
+This document describes how to use the debugging facilities of CoherentDB
+
+2. ASSERTIONS
+
+assert() from cstdlib is very poor for 3 reasons:
+-if compiled with NDEBUG defined, variables which are used only in the
+ assertions become unused and the compiler complains
+-it does not allow you to provide a message to the user
+-you cannot have select a subset of assertions which you have even in Release
+ config
+
+That is why d_assert and r_assert have been introduced. These assertions require
+2 parameters: the condition and a message. The message can be specified just
+like in LOG(), e.g.
+r_assert(used_buffers + unused_buffers == all_buffers, "inconsistency:
+		used_buffers=" << used_buffers << ", unused_buffers=" << unused_buffers
+		<< ", all_buffers=" << all_buffers);
+
+d_assert()s are not compiled in Release config. r_assert()s are present always.
+If an assertion fails, logs are flushed, stacktrace is printed and program is
+aborted.
+
+3. SIGNALS
+
+In order to know what's going on, if a program receives a signal it doesn't
+expect, e.g. SIGSEGV, a stacktrace is printed and logs are flushed before the
+actual crash. In order to have that you should run set_terminate_handler() in
+your programs. There is no need to do that in tests. scoped_test_enabler does
+it. The same happens if there is an uncaught exception.

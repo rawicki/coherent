@@ -1,0 +1,76 @@
+(C) Copyright 2010 Marek Dopiera
+
+This file is part of CoherentDB.
+
+CoherentDB is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoherentDB is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with CoherentDB. If not, see
+http://www.gnu.org/licenses/.
+
+1. PURPOSE
+
+This document describes how to write unit tests.
+
+2. BUILD SYSTEM
+
+Adding new tests is easy. Refer to directory_structure.txt to see where to
+locate their source. To add them to the build system, just see a CMakeLists.txt
+file from a different test, e.g. spin_lock_test. It's pretty much
+self-explanatory.
+
+3. INITIALIZATION
+
+Most of the tests need logs to work properly. Some probably need a config. It's
+nice to have some handlers set to flush logs on errors, assertions, etc. This
+has already been done. To use it you should only create a scoped_test_enabler
+object. This should be the first thing you do in the test. It will:
+-initialize the logs
+-set terminate handlers
+-read a default config file
+
+The object should live until the end of test, so if you create it in main(), it
+will be fine. It requires that you pass it argc and argv arguments - these are
+the ones from main() function.
+
+4. LOGS LOCATION
+
+scoped_test_enabler ensures that there is a 'run' directory in the directory in
+which you've built coherent. It then ensures that inside 'run' there is a
+directory with the same name as the unit test. It wipes it and puts logs in there.
+Standard output, input and valgrind logs are also put there. The directory is
+compiled in the binaries, so it doesn't matter from what directory you run them.
+
+5. TEST ARGUMENTS
+
+Tests should not accept any arguments. These are used to reliably ensure the
+above properties and allow running the test through a script or valgrind.
+
+6. CONFIGURATION
+
+scoped_test_enabler reads default.conf from doc/ directory. The path is also
+hardcoded. If you wish that your test have a very specific config, feel free to
+override the one read by scoped_test_enabler. You can get the config by the
+get_config() method.
+
+7. WORKING DIRECTORY
+
+The tests are always run in the same place where logs are collected. It can be
+obtained from the scoped_test_enabler by the get_working_dir() method.
+
+8. VALGRIND
+
+If you pass -DVALGRIND_TEST=1 to cmake, the tests will be run in valgrind.
+Leaks, double frees and other inappropriate memory uses are checked then. With
+valgrind you may wish to lower the amount of woek which a test has, because
+there is a huge slowdown. You should use the define VALGRIND_SLOWDOWN for that.
+It is 1 when valgrind is not used and 10 if it is. valgrind.log is placed in the
+same directory as the logs.

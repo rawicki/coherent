@@ -20,6 +20,79 @@ http://www.gnu.org/licenses/.
 
 This document describes how to use the log system in CoherentDB
 
-2. MANUAL
+2. RATIONALE
 
-TODO
+Logging is always useful, however if done using printf's/cout it soon becomes so
+messy, that it is hard to maintain. That is why we use a serious logging system
+- log4cxx. With all the wrapping code we have it fulfils  th following
+requirements:
+-it has log levels (for errors, information, debugging, etc.)
+-it does not require any logger objects, so it is easy to use
+-it allows changing log levels on a per namespace/class basis
+-it is fast enough
+
+3. USAGE
+
+Usage is straightforward:
+
+LOG(<LEVEL>, message)
+
+where <LEVEL> is one of:
+TRACE
+DEBUG
+INFO
+WARN
+ERROR
+FATAL
+
+The names are pretty much self-explanatory. This is a macro, you can use in a
+stream fashion, e.g.:
+LOG(WARN, "Reads are very slow, last duration=" << duration << ", average=" <<
+		avg_duration);
+
+4. CONFIGURATION
+
+The log system has to be enabled before it can be used. In case of tests, (refer
+to testing.txt), creating the scoped_test_enabler is enough. A log is
+initialized and configured then. In case of programs, they should call
+coherent::log::setup_logger_prod().
+
+The log system allows you to configure which logs are printed. It is done on a
+per namespace/class basis. There is a natural order of importance on the levels.
+
+Example:
+If you wish all classes and functions from namespace coherent::server to be
+printed if their level is at least DEBUG, you would write:
+log4cxx::Logger::getLogger("coherent.server")->setLevel(coherent::log::log_DEBUG);
+
+If you then decide that you wish on class from that namespace to be an exception
+to that rule and print even TRACE messages, you would write
+
+log4cxx::Logger::getLogger("coherent.server.my_class")->setLevel(coherent::log::log_TRACE);
+
+By default (set by setup_logger_prod()/scoped_test_enabler) the following log
+levels are set for all namespaces:
+-in tests: DEBUG
+-in programs:
+  -in Debug config: DEBUG
+  -in Release config: INFO
+
+Additionally, to avoid evaluation of DEBUG and TRACE macros in Release config
+(might be costly) in programs, they are never printed. They work in Debug config
+though.
+
+5. PERFORMANCE
+
+Logging is not very expensive, but it definitely has a cost of:
+
+-translating PRETTY_FUNCTION into the format namespace.namespace.class
+-locating the logger by that string
+-evaluating the log message using stringstream (many allocations and copies)
+-log4cxx internal handling
+
+If a message is not printed, only the 2 last points are gone.
+
+If a log message has either DEBUG or TRACE level, the cost in Release is much
+lower, because it is only a comparison of 2 integers referenced by pointers.
+Nevertheless, it's not free.
+
