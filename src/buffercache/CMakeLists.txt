@@ -17,12 +17,9 @@
 # http://www.gnu.org/licenses/.
 
 
-include_directories("include")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include") #used for generated includes
-add_subdirectory(include)
-add_subdirectory(config)
-add_subdirectory(server)
-add_subdirectory(log)
-add_subdirectory(debug)
-add_subdirectory(util)
-add_subdirectory(buffercache)
+set(SOURCES
+	multi_buffer.cpp
+	)
+add_library(buffercache ${SOURCES})
+
+add_subdirectory(test)
