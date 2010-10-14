@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <cstring>
 
 #include <debug/asserts.h>
 #include <log/log.h>
