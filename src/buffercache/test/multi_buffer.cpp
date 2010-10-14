@@ -44,9 +44,14 @@ struct test_pattern
 			buf[i] = random();
 	}
 
+	test_pattern(test_pattern const & o) : buf(new char[buf_size])
+	{
+		memcpy(this->buf, o.buf, buf_size);
+	}
+
 	~test_pattern()
 	{
-		delete buf;
+		delete[] buf;
 	}
 
 	char * buf;
@@ -69,6 +74,8 @@ void single_test(uint32_t left_off)
 	uint32_t cur_off = left_off;
 	multi_buffer::buffer_list bufs;
 	uint32_t total_size = 0;
+
+	test_pattern pattern_save(pattern);
 
 	while (true) {
 		uint32_t const size = random() % 300 + 1;
@@ -95,6 +102,7 @@ void single_test(uint32_t left_off)
 		" cur_off=" << cur_off
 	);
 	multi_buffer mbuf(bufs, total_size, left_off);
+	multi_buffer mbuf2(mbuf);
 
 	//read whole mbuf
 	{
@@ -106,7 +114,7 @@ void single_test(uint32_t left_off)
 	for (uint32_t i = 0; i < 200; ++i)
 	{
 		uint32_t const start = random() % total_size + 1;
-		uint32_t const size = random() % (total_size - start) + 1;
+		uint32_t const size = (i == 100) ? 0 : (random() % (total_size - start));
 			
 		char buf[size];
 		if (i % 2) {
@@ -120,6 +128,12 @@ void single_test(uint32_t left_off)
 			check_buffers(pattern.buf + left_off + start, buf, size);
 		}
 
+	}
+	{
+		//verify c-o-w
+		char tmp[total_size];
+		mbuf2.read(tmp, total_size, 0);
+		check_buffers(pattern_save.buf + left_off, tmp, total_size);
 	}
 }
 int start_test(const int argc, const char *const *const argv)

@@ -57,17 +57,33 @@ public:
 	typedef boost::shared_ptr<buffer> buffer_ptr;
 	typedef	std::vector<buffer_ptr> buffer_list;
 
-	multi_buffer(buffer_list & buffers, uint32_t size, uint32_t left_off); //invalidates buffers
+	//invalidates buffers
+	multi_buffer(buffer_list & buffers, uint32_t size, uint32_t left_off);
 	multi_buffer(multi_buffer const & o);
-	inline void read(char * buf, uint32_t size, uint32_t off);
-	inline void write(char const * buf, uint32_t size,  uint32_t off);
+	inline void read(
+		char * buf,
+		uint32_t size,
+		uint32_t off
+	);
+	inline void write(
+		char const * buf,
+		uint32_t size,
+		uint32_t off,
+		//what alignment shall frames allocated by COW have
+		uint32_t align = buffer::NO_ALIGNMENT
+	);
 	inline uint32_t get_size();
 
 private:
 	multi_buffer & operator=(multi_buffer const &); //not implemented on purpose
 
 	template<bool READ>
-	void do_rw(char * buf, uint32_t size, uint32_t off);
+	void do_rw(
+		char * buf,
+		uint32_t size,
+		uint32_t off,
+		uint32_t align = buffer::NO_ALIGNMENT
+	);
 
 	buffer_list buffers;
 	uint32_t size;
@@ -86,14 +102,23 @@ char * buffer::get_data()
 	return this->data;
 }
 
-void multi_buffer::read(char * buf, uint32_t size, uint32_t off)
+void multi_buffer::read(
+	char * buf,
+	uint32_t size,
+	uint32_t off
+)
 {
 	this->do_rw<true>(buf, size, off);
 }
 
-void multi_buffer::write(char const * buf, uint32_t size,  uint32_t off)
+void multi_buffer::write(
+	char const * buf,
+	uint32_t size,
+	uint32_t off,
+	uint32_t align
+)
 {
-	this->do_rw<false>(const_cast<char *>(buf), size, off);
+	this->do_rw<false>(const_cast<char *>(buf), size, off, align);
 }
 
 uint32_t multi_buffer::get_size()

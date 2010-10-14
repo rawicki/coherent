@@ -105,7 +105,12 @@ multi_buffer::multi_buffer(multi_buffer const & o) :
 }
 
 template<bool READ>
-void multi_buffer::do_rw(char * buf, uint32_t req_size, uint32_t req_off)
+void multi_buffer::do_rw(
+	char * buf,
+	uint32_t req_size,
+	uint32_t req_off,
+	uint32_t align
+)
 {
 	d_assert(this->size >= req_size + req_off, "invalid use, req_size=" <<
 		req_size << ", req_off=" << req_off << ", size=" << this->size
@@ -115,7 +120,7 @@ void multi_buffer::do_rw(char * buf, uint32_t req_size, uint32_t req_off)
 		<< req_off
 	);
 
-	if (!size)
+	if (!req_size)
 		return; //perfectly legal situation
 	d_assert(!this->buffers.empty(), "buffers list empty, req_size=" <<
 		req_size << ", req_off=" << req_off
@@ -153,13 +158,24 @@ void multi_buffer::do_rw(char * buf, uint32_t req_size, uint32_t req_off)
 					(*it)->get_data() + off_in_buf + buf_start,
 					size
 				);
-			else
+			else {
+				if (!it->unique())
+				{
+					//ensure C-O-W
+					buffer_ptr new_buf(new buffer((*it)->get_size(), align));
+					memcpy(
+						new_buf->get_data(),
+						(*it)->get_data(),
+						(*it)->get_size()
+					);
+					*it = new_buf;
+				}
 				memcpy(
 					(*it)->get_data() + off_in_buf + buf_start,
 					buf + out_off,
 					size
 				);
-			
+			}
 			size_left -= size;
 		}
 		off += buf_size;
@@ -167,9 +183,19 @@ void multi_buffer::do_rw(char * buf, uint32_t req_size, uint32_t req_off)
 }
 
 template
-void multi_buffer::do_rw<true>(char * buf, uint32_t size, uint32_t off);
+void multi_buffer::do_rw<true>(
+	char * buf,
+	uint32_t size,
+	uint32_t off,
+	uint32_t align
+);
 template
-void multi_buffer::do_rw<false>(char * buf, uint32_t size, uint32_t off);
+void multi_buffer::do_rw<false>(
+	char * buf,
+	uint32_t size,
+	uint32_t off,
+	uint32_t align
+);
 
 } // namespace buffercache
 } // namespace coherent
