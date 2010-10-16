@@ -32,6 +32,17 @@ namespace buffercache {
 using namespace std;
 using namespace coherent::debug;
 
+#ifdef VALGRIND
+//it sometimes has some issues with memcpy - probably memcpy aligns what it
+//copies and valgrind doesn't like it
+
+void memcpy(char *dst, char const * src, size_t n)
+{
+	for (size_t i = 0; i < n; ++i)
+		*(dst++) = *(src++);
+}
+#endif
+
 //=========== buffer implementation ============================================
 
 inline char * alloc_aligned(uint32_t size, uint32_t alignment)
@@ -177,6 +188,9 @@ void multi_buffer::do_rw(
 					size
 				);
 			}
+			d_assert(size_left >= size, "mismatch, size_left=" << size_left <<
+				", size=" << size
+			);
 			size_left -= size;
 		}
 		off += buf_size;
