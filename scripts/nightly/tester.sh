@@ -224,7 +224,7 @@ echo
 			echo "OK, removing directory for this configuration..."
 			rm -rf "${CONF_DIR}"
 		else
-			if [ -e "{TEST_LOG}" ] ; then 
+			if [ -e "${TEST_LOG}" ] ; then 
 				echo "Unit tests or postprocessing failed"
 				echo ""
 				echo "Unit tests log (first 100 lines):"
