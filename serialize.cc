@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "Codecs/BigEndianCodec.h"
+#include "Codecs/LittleEndianCodec.h"
 #include "Encoders/BufferEncoder.h"
 #include "Encoders/FileEncoder.h"
 #include "Misc/VectorOutput.h"
@@ -301,20 +302,37 @@ struct SimpleTest
     void test()
     {
         T x = Misc::Rand<T>();
+        T y_big, y_lit;
 
+        makeTest<BigEndianCodec, T>(x, y_big, true);
+        makeTest<LittleEndianCodec, T>(x, y_lit, true);
+
+        if (x!=y_big || x!=y_lit) {
+            std::cout << "mismatch for (" << typeid(T).name() << "), "
+                << x << "|" << y_big << "|" << y_lit << std::endl;
+        }
+    }
+
+private:
+    template <template <class> class Codec, typename T>
+    void makeTest(T x, T& y, bool print=false)
+    {
         std::vector<char> buff;
-        BufferEncoder<BigEndianCodec> enc(buff);
+        BufferEncoder<Codec> enc(buff);
 
         enc(x);
 
         std::vector<char>::const_iterator begin = buff.begin();
-        BufferDecoder<BigEndianCodec> dec(begin, buff.end());
+        BufferDecoder<Codec> dec(begin, buff.end());
 
-        T y;
         dec(y);
-
-        if (x!=y) {
-            std::cout << "mismatch for (" << typeid(T).name() << "), " << x << "|" << y << std::endl;
+        if (print)
+        {
+            for (std::vector<char>::const_iterator it=buff.begin(); it!=buff.end(); ++it)
+            {
+                std::cout << '\\' << (uint32_t)(uint8_t)(*it);
+            }
+            std::cout << std::endl;
         }
     }
 };
@@ -462,10 +480,10 @@ int Test3(int argc, char **argv)
 int main(int argc, char **argv)
     try
 {
-    //return Test0();
+    return Test0();
     //return Test1();
     //return Test2();
-    return Test3(argc, argv);
+    //return Test3(argc, argv);
     
     return 0;
 }
