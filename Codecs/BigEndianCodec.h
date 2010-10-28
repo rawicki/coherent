@@ -3,7 +3,6 @@
 
 #include <inttypes.h>
 #include "Codecs/StandardCodecs.h"
-#include "Misc/VirtualClass.h"
 
 
 template <typename T>
@@ -92,22 +91,7 @@ template <typename T> struct BigEndianCodec<std::set<T> > : public UniqueContain
 template <typename K, typename V> struct BigEndianCodec<std::map<K,V> > : public UniqueContainerCodec<std::map<K, V> > {};
 template <typename F, typename S> struct BigEndianCodec<std::pair<F,S> > : public StandardPairCodec<F, S> {};
 
-template <typename T, typename VL>
-struct BigEndianCodec<Virtual<T, VL> >
-{
-    typedef Virtual<T, VL> Type;
+template <typename T, typename VL> struct BigEndianCodec<Virtual<T, VL> > : public StandardVirtuaClassCodec<T, VL> {};
 
-    template <typename Encoder>
-    static void encode(Encoder& enc, const Type& t)
-    {
-        t.encode(enc);
-    }
-
-    template <typename Decoder>
-    static void decode(Decoder& dec, Type& t)
-    {
-        t.decode(dec);
-    }
-};
 
 #endif /* BIG_ENDIAN_CODEC_H */

@@ -7,6 +7,7 @@
 #include <list>
 #include <set>
 #include <inttypes.h>
+#include "Misc/VirtualClass.h"
 
 
 template <typename T>
@@ -78,5 +79,24 @@ struct StandardPairCodec
         dec(p.second);
     }
 };
+
+template <typename T, typename VL>
+struct StandardVirtuaClassCodec
+{
+    typedef Virtual<T, VL> Type;
+
+    template <typename Encoder>
+    static void encode(Encoder& enc, const Type& t)
+    {
+        t.encode(enc);
+    }
+
+    template <typename Decoder>
+    static void decode(Decoder& dec, Type& t)
+    {
+        t.decode(dec);
+    }
+};
+
 
 #endif /* STANDARD_CODECS_H */
