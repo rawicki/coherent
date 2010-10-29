@@ -19,6 +19,7 @@
 
 set(SOURCES
 	multi_buffer.cpp
+	buffer_cache.cpp
 	)
 add_library(buffercache ${SOURCES})
 
