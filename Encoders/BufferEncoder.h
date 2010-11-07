@@ -4,12 +4,15 @@
 #include <vector>
 #include <iterator>
 #include <assert.h>
+#include <string.h>
 
 
 template <template <typename T> class Codec>
 struct BufferEncoder
 {
-    BufferEncoder(std::vector<char>& buffer) : it_(std::back_inserter(buffer))
+    BufferEncoder(std::vector<char>& buffer)
+        : buffer_(buffer)
+        //: it_(std::back_inserter(buffer))
     {
     }
     template <typename T>
@@ -20,10 +23,19 @@ struct BufferEncoder
     }
     void write_char(char c)
     {
-        *it_++ = c;
+        //*it_++ = c;
+        buffer_.push_back(c);
+    }
+    //optimizer
+    void memcpy(const char * src, size_t n)
+    {
+        size_t size_ = buffer_.size();
+        buffer_.resize(size_+n);
+        ::memcpy( (void*)(&(buffer_[size_])), (void*)src, n);
     }
 private:
-    std::back_insert_iterator<std::vector<char> > it_;
+    //std::back_insert_iterator<std::vector<char> > it_;
+    std::vector<char>& buffer_;
 };
 
 template <template <typename T> class Codec>
@@ -42,6 +54,13 @@ struct BufferDecoder
     {
         assert(begin_!=end_);
         return *(begin_++);
+    }
+    //optimizer
+    void memcpy(char * dest, size_t n)
+    {
+        assert(end_-begin_ >= n);
+        ::memcpy( (void*)dest, (void*)(&(*begin_)), n);
+        begin_ += n;
     }
 private:
     std::vector<char>::const_iterator& begin_;

@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include "Codecs/BigEndianCodec.h"
 #include "Codecs/LittleEndianCodec.h"
+#include "Codecs/Optimizers.h"
 #include "Encoders/BufferEncoder.h"
 #include "Encoders/FileEncoder.h"
 #include "Misc/VectorOutput.h"
@@ -477,13 +478,66 @@ int Test3(int argc, char **argv)
 }
 
 
+
+template <typename T>
+struct OptimizedCodec : public makeCodecWithDefaultOptimizer<LittleEndianCodec>::value<T>
+{
+};
+
+template <typename T>
+struct OptimizedCodec2 : public makeCodecWithDefaultOptimizer<BigEndianCodec>::value<T>
+{
+};
+
+struct MyStruct3
+{
+    int32_t id;
+    std::vector<int64_t> vi;
+    std::vector<std::string> vs;
+};
+
+
+int Test4()
+{
+    {
+        std::vector<char> buff;
+        BufferEncoder< OptimizedCodec > enc(buff);
+
+        MyStruct3 ms3;
+        int32_t x = 123456789;
+        enc(x);
+
+        std::vector<char>::const_iterator begin = buff.begin();
+        BufferDecoder< OptimizedCodec > dec(begin, buff.end());
+        int32_t y;
+        dec(y);
+
+        begin = buff.begin();
+        BufferDecoder<LittleEndianCodec> le_dec(begin, buff.end());
+        int32_t le_x;
+        le_dec(le_x);
+
+        begin = buff.begin();
+        BufferDecoder<BigEndianCodec> be_dec(begin, buff.end());
+        int32_t be_x;
+        be_dec(be_x);
+
+        std::cout << x << " " << y << " le(" << le_x << "), be(" << be_x << ")" << std::endl;
+        return 0;
+    }
+
+    return 0;
+}
+
+
 int main(int argc, char **argv)
     try
 {
-    return Test0();
+    //return Test0();
     //return Test1();
     //return Test2();
     //return Test3(argc, argv);
+    return Test4();
     
     return 0;
 }
