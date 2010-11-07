@@ -109,7 +109,7 @@ struct DefaultOptimizerHelper<Codecs, std::vector<T> > : public
     boost::mpl::if_<
         boost::is_integral<T>,
         SequenceOptimizer<std::vector<T> >,
-        Codecs<T>
+        Codecs<std::vector<T> >
     >::type
 {
 };
