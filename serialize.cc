@@ -4,13 +4,17 @@
 #include <memory>
 #include <vector>
 #include <assert.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <typeinfo>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <fcntl.h>
+#include <boost/random.hpp>
 #include "Codecs/BigEndianCodec.h"
 #include "Codecs/LittleEndianCodec.h"
 #include "Codecs/Optimizers.h"
@@ -588,6 +592,115 @@ int Test4()
     return 0;
 }
 
+struct TimeStats
+{
+    TimeStats()
+    {
+        getTimes(real_, user_, sys_);
+    }
+    ~TimeStats()
+    {
+        uint64_t r, u, s;
+        getTimes(r, u, s);
+        fprintf(stderr, "%.3f/%.3f/%.3f\n", (double)(r-real_)/1000.0, (double)(u-user_)/1000.0, (double)(s-sys_)/1000.0);
+    }
+private:
+    void getTimes(uint64_t& real, uint64_t& user, uint64_t& sys)
+    {
+        struct timeval tv;
+         if (gettimeofday(&tv, NULL)<0) {
+            perror("gettimeofday");
+        }
+        struct rusage ru;
+        if (getrusage(RUSAGE_SELF, &ru)<0) {
+            perror("getrusage");
+        }
+        real = (uint64_t)tv.tv_sec*(uint64_t)1000 + (uint64_t)tv.tv_usec/(uint64_t)1000;
+        user = (uint64_t)ru.ru_utime.tv_sec*(uint64_t)1000 + (uint64_t)ru.ru_utime.tv_usec/(uint64_t)1000;
+        sys = (uint64_t)ru.ru_stime.tv_sec*(uint64_t)1000 + (uint64_t)ru.ru_stime.tv_usec/(uint64_t)1000;
+    }
+private:
+    uint64_t real_;
+    uint64_t user_;
+    uint64_t sys_;
+};
+
+int Test5(int argc, char **argv)
+{
+    if (argc!=3) {
+        std::cerr << "Usage: " << argv[0] << ' ' << "write|read le|ole" << std::endl;
+        return 1;
+    }
+
+    std::string filename("testowy.dat");
+
+    std::string cmd = argv[1];
+    std::string codec = argv[2];
+
+
+    if (cmd=="write") {
+        //write ~400MB
+        std::vector<std::string> vs;
+        {
+            TimeStats ts;
+            vs.reserve(1024);
+            boost::minstd_rand0 random(13);
+            for (size_t i=0; i<1024*40; i++) {
+                std::string ns;
+                ns.resize(random()%(1024*20+1));
+                for (std::string::iterator it=ns.begin(); it!=ns.end(); it++) {
+                    *it = 'a' + random() % ('z'-'a'+1);
+                }
+                vs.push_back(ns);
+            }
+        }
+        int fd = open(filename.c_str(), O_CREAT|O_WRONLY, 0644);
+        if (fd<0) {
+            throw "open error";
+        }
+
+        if (codec=="le") {
+            TimeStats ts;
+            FileEncoder<LittleEndianCodec> fenc(fd);
+            fenc(vs);
+        }
+        if (codec=="ole") {
+            TimeStats ts;
+            FileEncoder<OptimizedCodec> fenc(fd);
+            fenc(vs);
+        }
+        if (close(fd)<0) {
+            throw "close error";
+        }
+        return 0;
+    }
+    if (cmd=="read") {
+        std::vector<std::string> vs;
+
+        int fd = open(filename.c_str(), O_RDONLY);
+        if (fd<0) {
+            throw "open error";
+        }
+        if (codec=="le") {
+            TimeStats ts;
+            FileDecoder<LittleEndianCodec> fdec(fd);
+            fdec(vs);
+        }
+        if (codec=="ole") {
+            TimeStats ts;
+            FileDecoder<OptimizedCodec> fdec(fd);
+            fdec(vs);
+        }
+        if (close(fd)<0) {
+            throw "close error";
+        }
+        return 0;
+    }
+
+    throw "unknown param";
+    //return 0;
+}
+
 
 int main(int argc, char **argv)
     try
@@ -596,7 +709,9 @@ int main(int argc, char **argv)
     //return Test1();
     //return Test2();
     //return Test3(argc, argv);
-    return Test4();
+    //return Test4();
+
+    return Test5(argc, argv);
     
     return 0;
 }
