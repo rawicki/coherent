@@ -85,6 +85,7 @@ template <> struct BigEndianCodec<int16_t> : public BigEndianIntCodec<int16_t> {
 template <> struct BigEndianCodec<int32_t> : public BigEndianIntCodec<int32_t> {};
 template <> struct BigEndianCodec<int64_t> : public BigEndianIntCodec<int64_t> {};
 
+template <> struct BigEndianCodec<std::string> : public StandardStringCodec {};
 template <typename T> struct BigEndianCodec<std::vector<T> > : public StandardSequenceCodec<std::vector<T> > {};
 template <typename T> struct BigEndianCodec<std::list<T> > : public StandardSequenceCodec<std::list<T> > {};
 template <typename T> struct BigEndianCodec<std::set<T> > : public UniqueContainerCodec<std::set<T> > {};

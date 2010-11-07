@@ -35,6 +35,10 @@ struct StandardSequenceCodec
     }
 };
 
+struct StandardStringCodec : public StandardSequenceCodec<std::string>
+{
+};
+
 template <typename Container>
 struct UniqueContainerCodec
 {

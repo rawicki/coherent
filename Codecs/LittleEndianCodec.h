@@ -86,6 +86,7 @@ template <> struct LittleEndianCodec<int16_t> : public LittleEndianIntCodec<int1
 template <> struct LittleEndianCodec<int32_t> : public LittleEndianIntCodec<int32_t> {};
 template <> struct LittleEndianCodec<int64_t> : public LittleEndianIntCodec<int64_t> {};
 
+template <> struct LittleEndianCodec<std::string> : public StandardStringCodec {};
 template <typename T> struct LittleEndianCodec<std::vector<T> > : public StandardSequenceCodec<std::vector<T> > {};
 template <typename T> struct LittleEndianCodec<std::list<T> > : public StandardSequenceCodec<std::list<T> > {};
 template <typename T> struct LittleEndianCodec<std::set<T> > : public UniqueContainerCodec<std::set<T> > {};
