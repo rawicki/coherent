@@ -41,6 +41,26 @@ struct FileEncoder
     {
         flush();
     }
+    //optimizer
+    void memcpy(const char * src, size_t n)
+    {
+        for (;;) {
+            if (buffer_.size() >= bufferSize_) {
+                flush();
+            }
+            size_t toWrite = std::min<size_t>(n, bufferSize_-buffer_.size());
+            size_t size_ = buffer_.size();
+            buffer_.resize(size_+toWrite);
+
+            ::memcpy( (void*)(&(buffer_[size_])), (void*)src, toWrite);
+
+            src += toWrite;
+            n -= toWrite;
+
+            if (n==0)
+                break;
+        }
+    }
 private:
     int fd_;
     size_t bufferSize_;
@@ -79,6 +99,23 @@ struct FileDecoder
         pos_ = 0;
     }
 
+    //optimizer
+    void memcpy(char * dest, size_t n)
+    {
+        for (;;) {
+            if (pos_>=buffer_.size()) {
+                advance();
+            }
+            size_t toRead = std::min<size_t>(n, buffer_.size()-pos_);
+            ::memcpy( (void*)dest, (void*)(&(buffer_[pos_])), toRead);
+
+            pos_ += toRead;
+            n -= toRead;
+            if (n==0)
+                break;
+            dest += toRead;
+        }
+    }
 private:
     int fd_;
     size_t bufferSize_;
