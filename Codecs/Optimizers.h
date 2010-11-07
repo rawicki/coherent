@@ -126,7 +126,13 @@ struct DefaultOptimizerHelper<Codecs, std::vector<T> > : public
 template <template <class> class Codecs, typename T>
 struct DefaultOptimizer : public
     boost::mpl::if_<
-        boost::is_integral<T>,
+        boost::mpl::and_<
+            boost::is_integral<T>,
+            boost::mpl::greater_equal<
+                boost::mpl::int_<sizeof(T)>,
+                boost::mpl::int_<8>
+            >
+        >,
             GeneralOptimizer<T>,
             typename boost::mpl::if_<
                 boost::is_same<T, std::string>,
@@ -142,7 +148,7 @@ template <template <class> class Codecs>
 struct makeCodecWithDefaultOptimizer
 {
     //this is a set of optimizers for:
-    // * integer types,
+    // * integer types with sizeof not less than 8,
     // * std::vector<integer type>
     // * std::string
 
