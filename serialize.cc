@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <fcntl.h>
+#include <boost/lexical_cast.hpp>
 #include <boost/random.hpp>
 #include "Codecs/BigEndianCodec.h"
 #include "Codecs/LittleEndianCodec.h"
@@ -627,8 +628,8 @@ private:
 
 int Test5(int argc, char **argv)
 {
-    if (argc!=3) {
-        std::cerr << "Usage: " << argv[0] << ' ' << "write|read le|ole" << std::endl;
+    if (argc<3) {
+        std::cerr << "Usage: " << argv[0] << ' ' << "write|read le|ole [ids]" << std::endl;
         return 1;
     }
 
@@ -637,15 +638,18 @@ int Test5(int argc, char **argv)
     std::string cmd = argv[1];
     std::string codec = argv[2];
 
+    //std::vector<std::string> vs;
+    std::vector<uint64_t> vs;
 
     if (cmd=="write") {
         //write ~400MB
-        std::vector<std::string> vs;
-        {
+        /*{
             TimeStats ts;
-            vs.reserve(1024);
+            char * env_count = getenv("COUNT");
+            size_t count = env_count ? boost::lexical_cast<size_t>(env_count) : (1024*40);
+            vs.reserve(count);
             boost::minstd_rand0 random(13);
-            for (size_t i=0; i<1024*40; i++) {
+            for (size_t i=0; i<count; i++) {
                 std::string ns;
                 ns.resize(random()%(1024*20+1));
                 for (std::string::iterator it=ns.begin(); it!=ns.end(); it++) {
@@ -653,8 +657,19 @@ int Test5(int argc, char **argv)
                 }
                 vs.push_back(ns);
             }
+        }*/
+        {
+            TimeStats ts;
+            char * env_count = getenv("COUNT");
+            size_t count = env_count ? boost::lexical_cast<size_t>(env_count) : (1024*10*1024*5);
+            vs.reserve(count);
+            boost::minstd_rand0 random(13);
+            for (size_t i=0; i<count; i++) {
+                uint64_t c = (uint64_t)random() + ((uint64_t)random())<<32;
+                vs.push_back(c);
+            }
         }
-        int fd = open(filename.c_str(), O_CREAT|O_WRONLY, 0644);
+        int fd = open(filename.c_str(), O_CREAT|O_WRONLY|O_TRUNC, 0644);
         if (fd<0) {
             throw "open error";
         }
@@ -672,10 +687,8 @@ int Test5(int argc, char **argv)
         if (close(fd)<0) {
             throw "close error";
         }
-        return 0;
     }
-    if (cmd=="read") {
-        std::vector<std::string> vs;
+    else if (cmd=="read") {
 
         int fd = open(filename.c_str(), O_RDONLY);
         if (fd<0) {
@@ -694,11 +707,33 @@ int Test5(int argc, char **argv)
         if (close(fd)<0) {
             throw "close error";
         }
-        return 0;
+    }
+    else {
+        throw "unknown param";
     }
 
-    throw "unknown param";
-    //return 0;
+    for (int a=3; a<argc; a++) {
+        size_t id = boost::lexical_cast<size_t>(argv[a]);
+
+        assert(id<vs.size());
+
+        std::cout << id << ":\t";
+        /*std::cout << "(" << vs[id].size() << ") ";
+        if (vs[id].size()<40) {
+            std::cout << vs[id];
+        }
+        else {
+            for (size_t c=0; c<40; c++) {
+                std::cout << vs[id][c];
+            }
+            std::cout << "...";
+        }*/
+        std::cout << vs[id];
+
+        std::cout << std::endl;
+    }
+
+    return 0;
 }
 
 
