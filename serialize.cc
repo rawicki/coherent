@@ -626,48 +626,87 @@ private:
     uint64_t sys_;
 };
 
-int Test5(int argc, char **argv)
-{
-    if (argc<3) {
-        std::cerr << "Usage: " << argv[0] << ' ' << "write|read le|ole [ids]" << std::endl;
-        return 1;
-    }
 
+struct uint_detail
+{
+private:
+    template <typename T>
+    static T get_rand(boost::minstd_rand0& random, T)
+    {
+        return random();
+    }
+    static uint8_t get_rand(boost::minstd_rand0& random, uint8_t)
+    {
+        return 'a' + random() % ('z'-'a'+1);
+    }
+    static uint64_t get_rand(boost::minstd_rand0& random, uint64_t)
+    {
+        return (uint64_t)random() + ((uint64_t)random())<<32;
+    }
+public:
+    template <typename T>
+    static void random_vector(std::vector<T>& vs)
+    {
+        char * env_count = getenv("COUNT");
+        size_t count = env_count ? boost::lexical_cast<size_t>(env_count) : (200*1024*1024/sizeof(T));
+        vs.reserve(count);
+        boost::minstd_rand0 random(13);
+        for (size_t i=0; i<count; i++) {
+            vs.push_back(get_rand(random, T()));
+        }
+    }
+    template <typename T>
+    static void print(T x)
+    {
+        std::cout << x;
+    }
+};
+
+struct string_detail
+{
+    static void random_vector(std::vector<std::string>& vs)
+    {
+        char * env_count = getenv("COUNT");
+        size_t count = env_count ? boost::lexical_cast<size_t>(env_count) : (1024*20);
+        vs.reserve(count);
+        boost::minstd_rand0 random(13);
+        for (size_t i=0; i<count; i++) {
+            std::string ns;
+            ns.resize(random()%(1024*20+1));
+            for (std::string::iterator it=ns.begin(); it!=ns.end(); it++) {
+                *it = 'a' + random() % ('z'-'a'+1);
+            }
+            vs.push_back(ns);
+        }
+    }
+    static void print(const std::string& s)
+    {
+        std::cout << "(" << s.size() << ") ";
+        if (s.size()<40) {
+            std::cout << s;
+        }
+        else {
+            for (size_t c=0; c<40; c++) {
+                std::cout << s[c];
+            }
+            std::cout << "...";
+        }
+    }
+};
+
+template <typename T, typename TDetail>
+int Test5_Helper(int qc, char **qv, const std::string& cmd, const std::string& codec)
+{
     std::string filename("testowy.dat");
 
-    std::string cmd = argv[1];
-    std::string codec = argv[2];
-
     //std::vector<std::string> vs;
-    std::vector<uint64_t> vs;
+    std::vector<T> vs;
 
     if (cmd=="write") {
         //write ~400MB
-        /*{
-            TimeStats ts;
-            char * env_count = getenv("COUNT");
-            size_t count = env_count ? boost::lexical_cast<size_t>(env_count) : (1024*40);
-            vs.reserve(count);
-            boost::minstd_rand0 random(13);
-            for (size_t i=0; i<count; i++) {
-                std::string ns;
-                ns.resize(random()%(1024*20+1));
-                for (std::string::iterator it=ns.begin(); it!=ns.end(); it++) {
-                    *it = 'a' + random() % ('z'-'a'+1);
-                }
-                vs.push_back(ns);
-            }
-        }*/
         {
             TimeStats ts;
-            char * env_count = getenv("COUNT");
-            size_t count = env_count ? boost::lexical_cast<size_t>(env_count) : (1024*10*1024*5);
-            vs.reserve(count);
-            boost::minstd_rand0 random(13);
-            for (size_t i=0; i<count; i++) {
-                uint64_t c = (uint64_t)random() + ((uint64_t)random())<<32;
-                vs.push_back(c);
-            }
+            TDetail::random_vector(vs);
         }
         int fd = open(filename.c_str(), O_CREAT|O_WRONLY|O_TRUNC, 0644);
         if (fd<0) {
@@ -712,23 +751,13 @@ int Test5(int argc, char **argv)
         throw "unknown param";
     }
 
-    for (int a=3; a<argc; a++) {
-        size_t id = boost::lexical_cast<size_t>(argv[a]);
+    for (int q=0; q<qc; q++) {
+        size_t id = boost::lexical_cast<size_t>(qv[q]);
 
         assert(id<vs.size());
 
         std::cout << id << ":\t";
-        /*std::cout << "(" << vs[id].size() << ") ";
-        if (vs[id].size()<40) {
-            std::cout << vs[id];
-        }
-        else {
-            for (size_t c=0; c<40; c++) {
-                std::cout << vs[id][c];
-            }
-            std::cout << "...";
-        }*/
-        std::cout << vs[id];
+        TDetail::print(vs[id]);
 
         std::cout << std::endl;
     }
@@ -736,6 +765,43 @@ int Test5(int argc, char **argv)
     return 0;
 }
 
+int Test5(int argc, char **argv)
+{
+    if (argc<4) {
+        std::cerr << "Usage: " << argv[0] << ' ' << "write|read le|ole type [ids]" << std::endl;
+        std::cerr << "  type is one of uint8_t|uint16_t|uint32_t|uint64_t|string" << std::endl;
+        return 1;
+    }
+
+    std::string filename("testowy.dat");
+
+    std::string cmd = argv[1];
+    std::string codec = argv[2];
+    std::string type = argv[3];
+
+    int qc = argc-4;
+    char **qv = argv+4;
+
+    if (type=="uint8_t") {
+        Test5_Helper<uint8_t, uint_detail>(qc, qv, cmd, codec);
+    }
+    else if (type=="uint16_t") {
+        Test5_Helper<uint16_t, uint_detail>(qc, qv, cmd, codec);
+    }
+    else if (type=="uint32_t") {
+        Test5_Helper<uint32_t, uint_detail>(qc, qv, cmd, codec);
+    }
+    else if (type=="uint64_t") {
+        Test5_Helper<uint64_t, uint_detail>(qc, qv, cmd, codec);
+    }
+    else if (type=="string") {
+        Test5_Helper<std::string, string_detail>(qc, qv, cmd, codec);
+    }
+    else {
+        throw "unknown param: type";
+    }
+    return 0;
+}
 
 int main(int argc, char **argv)
     try
