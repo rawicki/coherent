@@ -494,16 +494,32 @@ struct MyStruct3
     int32_t id;
     std::vector<int64_t> vi;
     std::vector<std::string> vs;
+
+    template <typename F>
+    void  forEach(F & f)
+    {
+        f(id); f(vi); f(vs);
+    }
+    template <typename F>
+    void  forEach(F & f) const
+    {
+        f(id); f(vi); f(vs);
+    }
+
+    friend std::ostream& operator<< (std::ostream& os, const MyStruct3& ms3)
+    {
+        return os << "[" << ms3.id << ", " << ms3.vi << ", " << ms3.vs << "]";
+    }
 };
 
 
 int Test4()
 {
+    if (false)
     {
         std::vector<char> buff;
         BufferEncoder< OptimizedCodec > enc(buff);
 
-        MyStruct3 ms3;
         int32_t x = 123456789;
         enc(x);
 
@@ -524,6 +540,49 @@ int Test4()
 
         std::cout << x << " " << y << " le(" << le_x << "), be(" << be_x << ")" << std::endl;
         return 0;
+    }
+
+    std::string filename("testowy.dat");
+    {
+        int fd = open(filename.c_str(), O_CREAT|O_WRONLY, 0644);
+        if (fd<0) {
+            throw "open error";
+        }
+        MyStruct3 ms3;
+        ms3.vi.push_back(145);
+        ms3.vi.push_back(-7);
+        ms3.vi.push_back(12345678904200LL);
+        ms3.vs.push_back("hello");
+        ms3.vs.push_back("world");
+        ms3.vs.push_back("!!!");
+        {
+            FileEncoder< OptimizedCodec > fenc(fd);
+
+            fenc(ms3);
+        }
+        std::cout << "encoded: " << ms3 << std::endl;
+
+        if (close(fd)<0) {
+            throw "close error";
+        }
+    }
+    {
+        int fd = open(filename.c_str(), O_RDONLY);
+        if (fd<0) {
+            throw "open error";
+        }
+
+        MyStruct3 ms3_dec;
+        {
+            FileDecoder< OptimizedCodec > fdec(fd);
+
+            fdec(ms3_dec);
+        }
+        std::cout << "decoded: " << ms3_dec << std::endl;
+
+        if (close(fd)<0) {
+            throw "close error";
+        }
     }
 
     return 0;
