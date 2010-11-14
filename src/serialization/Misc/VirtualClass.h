@@ -52,6 +52,16 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5> struc
 };
 
 
+struct TreeLeaf
+{
+};
+
+template <typename This, typename LeftNode, typename RightNode>
+struct TreeNode
+{
+    typedef This Type;
+};
+
 
 template <typename F, typename TypeList>
 struct Fold;
@@ -77,6 +87,97 @@ struct Fold<F, ListHead>
 };
 
 
+template <typename F, typename CurrentType, typename LeftNode, typename RightNode>
+struct Fold<F, TreeNode<CurrentType, LeftNode, RightNode> >
+{
+    void operator() (F& f) const
+    {
+        int ret = f.template processNode<CurrentType>();
+        if (ret==0) return;
+        if (ret<0)
+            Fold<F, LeftNode>() (f);
+        Fold<F, RightNode>() (f); //ret>0
+    }
+};
+
+template <typename F>
+struct Fold<F, TreeLeaf>
+{
+    void operator() (F&) const
+    {
+        throw "Tree Leaf!";
+    }
+};
+
+
+namespace checker_detail
+{
+
+template <typename Node>
+struct TreeChecker;
+
+template <>
+struct TreeChecker<TreeLeaf>
+{
+    static const bool ok = true;
+};
+
+template <typename Current>
+struct TreeChecker<TreeNode<Current, TreeLeaf, TreeLeaf> >
+{
+    static const int curr_ = Current::TAG;
+    static const int min_ = curr_;
+    static const int max_ = curr_;
+    static const bool ok = true;
+};
+
+template <typename Current, typename LType, typename LLeftNode, typename LRightNode>
+struct TreeChecker<TreeNode<Current, TreeNode<LType, LLeftNode, LRightNode>, TreeLeaf> >
+{
+    typedef TreeChecker<TreeNode<LType, LLeftNode, LRightNode> > lchecker;
+    static const int curr_ = Current::TAG;
+    static const int min_ = (curr_<lchecker::min_) ? curr_ : (lchecker::min_);
+    static const int max_ = (curr_>lchecker::max_) ? curr_ : (lchecker::max_);
+    static const bool ok = lchecker::ok && (lchecker::max_<curr_);
+};
+
+template <typename Current, typename RType, typename RLeftNode, typename RRightNode>
+struct TreeChecker<TreeNode<Current, TreeLeaf, TreeNode<RType, RLeftNode, RRightNode> > >
+{
+    typedef TreeChecker<TreeNode<RType, RLeftNode, RRightNode> > rchecker;
+    static const int curr_ = Current::TAG;
+    static const int min_ = (curr_<rchecker::min_) ? curr_ : (rchecker::min_);
+    static const int max_ = (curr_>rchecker::max_) ? curr_ : (rchecker::max_);
+    static const bool ok = (rchecker::ok) && (rchecker::min_ > curr_);
+};
+
+template <
+    typename Current,
+    typename LType, typename LLeftNode, typename LRightNode,
+    typename RType, typename RLeftNode, typename RRightNode
+>
+struct TreeChecker<TreeNode<Current, TreeNode<LType, LLeftNode, LRightNode>, TreeNode<RType, RLeftNode, RRightNode> > >
+{
+    typedef TreeChecker<TreeNode<LType, LLeftNode, LRightNode> > lchecker;
+    typedef TreeChecker<TreeNode<RType, RLeftNode, RRightNode> > rchecker;
+    static const int curr_ = Current::TAG;
+    static const int child_min_ = (lchecker::min_<rchecker::min_) ? (lchecker::min_) : (rchecker::min_);
+    static const int child_max_ = (lchecker::max_>rchecker::max_) ? (lchecker::max_) : (rchecker::max_);
+    static const int min_ = (curr_<child_min_) ? curr_ : child_min_;
+    static const int max_ = (curr_>child_max_) ? curr_ : child_max_;
+    static const bool ok = (lchecker::ok) && (rchecker::ok) && (curr_>lchecker::max_) && (curr_<rchecker::min_);
+};
+
+} //namespace checker_detail
+
+
+template <typename Tree>
+inline void checkTree()
+{
+    assert(checker_detail::TreeChecker<Tree>::ok);
+}
+
+
 template <typename BaseType, typename TypeList>
 struct Virtual
 {
@@ -97,6 +198,17 @@ private:
             }
             return false;
         }
+        template <typename Type>
+        int processNode() {
+            if (Type::TAG == tag_) {
+                enc_(Type::TAG);
+                enc_(static_cast<const Type&>(*ptr_));
+                return 0;
+            }
+            if (tag_ < Type::TAG)
+                return -1;
+            return 1;
+        }
         Encoder& enc_;
         boost::shared_ptr<BaseType> ptr_;
         TagType tag_;
@@ -115,6 +227,17 @@ private:
                 return true;
             }
             return false;
+        }
+        template <typename Type>
+        int processNode() {
+            if (Type::TAG == tag_) {
+                ptr_.reset(new Type());
+                dec_(static_cast<Type&>(*ptr_));
+                return 0;
+            }
+            if (tag_ < Type::TAG)
+                return -1;
+            return 1;
         }
         Decoder& dec_;
         boost::shared_ptr<BaseType>& ptr_;
