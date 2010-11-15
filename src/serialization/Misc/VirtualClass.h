@@ -23,44 +23,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include <inttypes.h>
+#include "Misc/TypeList.h"
+#include "Misc/TypeTree.h"
 
-
-struct ListHead
-{
-};
-
-template <typename This, typename Next>
-struct ListElem
-{
-    typedef This Type;
-};
-
-template <typename T1> struct makeList1 {
-    typedef ListElem<T1, ListHead> value;
-};
-template <typename T1, typename T2> struct makeList2 {
-    typedef ListElem<T1, typename makeList1<T2>::value> value;
-};
-template <typename T1, typename T2, typename T3> struct makeList3 {
-    typedef ListElem<T1, typename makeList2<T2, T3>::value> value;
-};
-template <typename T1, typename T2, typename T3, typename T4> struct makeList4 {
-    typedef ListElem<T1, typename makeList3<T2, T3, T4>::value> value;
-};
-template <typename T1, typename T2, typename T3, typename T4, typename T5> struct makeList5 {
-    typedef ListElem<T1, typename makeList4<T2, T3, T4, T5>::value> value;
-};
-
-
-struct TreeLeaf
-{
-};
-
-template <typename This, typename LeftNode, typename RightNode>
-struct TreeNode
-{
-    typedef This Type;
-};
 
 
 template <typename F, typename TypeList>
