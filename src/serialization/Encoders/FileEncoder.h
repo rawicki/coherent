@@ -24,6 +24,7 @@
 #include <vector>
 #include <iterator>
 #include <assert.h>
+#include <string.h>
 #include <unistd.h>
 
 
