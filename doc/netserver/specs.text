@@ -1,0 +1,105 @@
+h1. System Architecture Description
+
+h2. System structures
+
+h3. Acceptor
+Responsible for accepting new connections and registering new _Connection_ objects in the _Connection Pool_.
+
+h3. Connection pool
+Provides useful API for the _Receiver threads_ to watch the connections for the incoming data.
+
+h3. Workers manager
+Watches the _Tasks to do_ queue for new upcoming jobs. If there is an unallocated job in the queue and a free _Worker thread_, the manager allocates the job into the thread.
+
+
+Incoming message algorithm:
+
+Acceptor:
+    loop:
+        if accept(socket):
+            connectionObject = new Connection(socket)
+            ConnectionPool.register(connectionObject)
+
+WorkersManager:
+    loop:
+        if workerThreads.freeExists? and tasksToDo.notEmpty?:
+            thread := workerThreads.any
+            task := tasksToDo.first
+            thread.run(task)
+
+MessengerThread:
+    loop:
+        if outgoingMessages.notEmpty:
+            message := outgoingMessages.first
+            message.send!
+
+ReceiverThread:
+    loop:
+        connectionObjects := ConnectionPool.takeMyConnections(self)
+        connectionObjects.readyToRead.each[iter=connection]:
+            connection.bufferMessage  // receives the message and buffers the data inside the connection object
+            if connections.somebodyWaits? and connections.enoughData?:
+                signalData!  // pops required amount of data from the connection object buffer and pushes data and "somebodyWaiting" observer into the tasksToDo
+
+!!! EVEN_MORE_INFORMAL_DESCRIPTION_BELOW !!!
+
+Connection Pool is place where Receiver threads synchronize (a monitor?).
+Maybe we would like to move connections between the receiver threads
+(and when needed bring to life new threads or kill some).
+In that way we'll be able to balance connections onto the receiver threads.
+
+Protocol handler can `defer` some computation. (next commit I'll show
+how a defer would work - maybe we'll change `defer` to `fork`, because as
+it is run at the end of the method always - it should behave like `fork`,
+example (pseudocode):
+
+1  ProtocolHandler:
+2
+3      method main:
+4          firstMessageLength := 40 bytes
+5          self.read(firstMessageLength, &afterFirstRead)
+6
+7      method afterFirstRead(messageOfLength40):
+8          self.firstHalf := messageOfLength40[0..19]
+9          self.secondHalf := messageOfLength40[20..39]
+10         self.defer(&firstHalfLongComputation)
+11         self.defer(&secondHalfShortComputation)
+12
+13     property joinPoint = JoinPoint(&afterJoin, 2)  // number of joining threads
+14
+15     method firstHalfLongComputation:
+16         self.firstResult := doSomethingLong(self.firstHalf)
+17         self.join(&joinPoint)
+18
+19     method secondHalfShortComputation:
+20         self.secondResult := doSomethingShort(self.secondHalf)
+21         self.join(&joinPoint)
+22
+23     method afterJoin:
+24         self.pushIntoOutgoingMessages(self.firstResult)
+25         self.pushIntoOutgoingMessages(self.secondResult)
+
+How does it work?
+
+1) The `main` method is being run when the connection is comming in.
+2) After it's run the main method hangs on a `read` (which actually
+   registers an observer waiting for 40 bytes of data on the connection
+   bound to the protocol handler).
+3) When the aproproiate amount of data comes (>40) the receiver thread
+   performs the following:
+   * pop the 40 bytes of data from the connection object's inner buffer
+   * pushes the action registered in the observer (`afterFirstRead`
+     in the example - line 5) with the read 40 bytes of data bound
+     into the tasks to do queue
+4) When the worker's manager reaches the task it launches the code
+   with 40bytesData parameter (the afterFirstRead)
+5) AfterFirstRead defers two computations which ends in `joining` in the joinPoint
+6) The second of the {firstHalfLongComputation, secondHalfShortComputation}s
+   sees (in the join method) that the joinPoint has been filled up (the two threads
+   did finish). So it defers &afterJoin action - defined in line 13)
+7) When the Worker's manager reaches the afterJoin action it launches the thread
+   with the action which actually only pushes the computed data {self.firstResult from
+   the `firstHalfLongComputation` and self.secondResult from the `secondHalfShortComutation`}
+   in specific order.
+
+And that's the end of computation.
