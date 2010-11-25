@@ -25,6 +25,7 @@
 #include <inttypes.h>
 
 #include "Encoders/VirtualEncoder.h"
+#include "Encoders/VirtualDecoder.h"
 #include "Encoders/FileEncoder.h"
 #include "Encoders/BufferEncoder.h"
 
@@ -32,13 +33,19 @@
 
 
 typedef makeList3<std::string, uint32_t, int64_t>::value       List1;
-typedef CreateEncoderSet<List1>                         EncoderSet;
+typedef CreateEncoderSet<List1>         EncoderSet;
 typedef EncoderSet::EncoderAbs          EncoderAbs;
 typedef EncoderSet::EncoderType         EncoderType;
 
 typedef EncoderSet::EncoderImpl< BufferEncoder<LittleEndianCodec> >   BufferEncoderImpl;
 typedef EncoderSet::EncoderImpl< FileEncoder<LittleEndianCodec> >     FileEncoderImpl;
 
+typedef CreateDecoderSet<List1>         DecoderSet;
+typedef DecoderSet::DecoderAbs          DecoderAbs;
+typedef DecoderSet::DecoderType         DecoderType;
+
+typedef DecoderSet::DecoderImpl< BufferDecoder<LittleEndianCodec> >   BufferDecoderImpl;
+typedef DecoderSet::DecoderImpl< FileDecoder<LittleEndianCodec> >     FileDecoderImpl;
 
 
 void foo(EncoderType& enc)
@@ -54,6 +61,19 @@ void foo(EncoderType& enc)
     //enc(v);
 }
 
+void bar(DecoderType& dec)
+{
+    std::string s;
+    uint32_t x;
+    int64_t z;
+
+    dec(x);
+    dec(s);
+    dec(z);
+
+    std::cout << "bar: [" << s << "], " << x << ", " << z << std::endl;
+}
+
 int main(int argc, char **argv)
 {
     std::cout << "Hello world!" << std::endl;
@@ -64,6 +84,7 @@ int main(int argc, char **argv)
     }
 
 
+    //encoding
     EncoderType enc;
     std::string cmd(argv[1]);
 
@@ -81,6 +102,23 @@ int main(int argc, char **argv)
 
     foo(enc);
     std::cout << buff1.size() << " " << buff2.size() << " " << buff3.size() << std::endl;
+
+    //decoding
+    DecoderType dec;
+
+    std::vector<char>::const_iterator bi1 = buff1.begin();
+    std::vector<char>::const_iterator bi2 = buff2.begin();
+    std::vector<char>::const_iterator bi3 = buff3.begin();
+
+    BufferDecoder<LittleEndianCodec> bd1(bi1, buff1.end());
+    BufferDecoder<LittleEndianCodec> bd2(bi2, buff2.end());
+    BufferDecoder<LittleEndianCodec> bd3(bi3, buff3.end());
+
+    if (buff1.size()) dec = DecoderType(new BufferDecoderImpl(bd1));
+    if (buff2.size()) dec = DecoderType(new BufferDecoderImpl(bd2));
+    if (buff3.size()) dec = DecoderType(new BufferDecoderImpl(bd3));
+
+    bar(dec);
 
     return 0;
 }
