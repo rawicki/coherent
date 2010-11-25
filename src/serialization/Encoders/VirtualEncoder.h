@@ -34,6 +34,9 @@
 
 
 
+namespace virtual_encoder_detail
+{
+
 //helpers for creating abstract encoders
 template <typename T>
 struct VirtualEncoderFunction
@@ -133,6 +136,7 @@ public:
 //finder
 template <typename EncoderAbs, typename TypeList, typename T>
 struct FindEncoderSuper;
+//incomplete type error message if T can't be encoded with given EncoderType
 
     template <typename EncoderAbs, typename CurrentType, typename ListTail, bool found, typename T>
     struct FindEncoderSuperHelper;
@@ -154,18 +158,21 @@ struct FindEncoderSuper<EncoderAbs, ListElem<CurrentType, ListTail>, T>
     typedef typename FindEncoderSuperHelper<EncoderAbs, CurrentType, ListTail, boost::is_same<CurrentType, T>::value, T>::Type   Type;
 };
 
+} //namespace
+
+
 
 //create encoder set
 template <typename TypeList>
 struct CreateEncoderSet
 {
-    typedef CreateEncoderAbs<TypeList> EncoderAbs;
+    typedef virtual_encoder_detail::CreateEncoderAbs<TypeList> EncoderAbs;
 
     struct EncoderType
-        : public CreateEncoderType<EncoderAbs, TypeList>
+        : public virtual_encoder_detail::CreateEncoderType<EncoderAbs, TypeList>
     {
     private:
-        typedef CreateEncoderType<EncoderAbs, TypeList>     Super;
+        typedef virtual_encoder_detail::CreateEncoderType<EncoderAbs, TypeList>     Super;
     public:
         EncoderType() {}    //empty impl_
         EncoderType(EncoderAbs * impl) : Super(impl) {}
@@ -174,16 +181,16 @@ struct CreateEncoderSet
         template <typename T>
         EncoderType& operator() (const T& x)
         {
-            FindEncoderSuper<EncoderAbs, TypeList, T>::Type::encode(x);
+            virtual_encoder_detail::FindEncoderSuper<EncoderAbs, TypeList, T>::Type::encode(x);
             return *this;
         }
     };
 
     template <typename Encoder>
     struct EncoderImpl
-        : public CreateEncoderImpl<EncoderAbs, Encoder, TypeList>
+        : public virtual_encoder_detail::CreateEncoderImpl<EncoderAbs, Encoder, TypeList>
     {
-        typedef CreateEncoderImpl<EncoderAbs, Encoder, TypeList>    Super;
+        typedef virtual_encoder_detail::CreateEncoderImpl<EncoderAbs, Encoder, TypeList>    Super;
         EncoderImpl(Encoder& enc) : Super(enc)
         {
         }
