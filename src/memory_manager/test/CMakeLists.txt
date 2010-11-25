@@ -16,13 +16,14 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
 
-include_directories("include")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include") #used for generated includes
-add_subdirectory(include)
-add_subdirectory(config)
-add_subdirectory(server)
-add_subdirectory(log)
-add_subdirectory(debug)
-add_subdirectory(util)
-add_subdirectory(memory_manager)
+set(SOURCES
+	memory_manager_test.cpp
+	)
+
+add_executable(memory_manager_test ${SOURCES})
+target_link_libraries(memory_manager_test memory_manager config log debug2 ${CORELIBS})
+add_test(memory_manager_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/memory_manager_test ${TEST_SUFFIX})

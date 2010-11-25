@@ -344,7 +344,8 @@ void config_section_base::check_no_others()
 
 global_config::global_config(string const & file_name) throw(config_exception) :
 	conf(new ini_config(file_name)),
-	buffer_cache(*this->conf)
+	buffer_cache(*this->conf),
+        memory_manager(*this->conf)
 {
 
 }
@@ -357,6 +358,15 @@ global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) :
 	syncer_sleep_time(this->get_value<uint16_t>("syncer_sleep_time", 30))
 {
 	this->check_no_others();
+}
+
+//================= memory_manager_sect implementation =======================
+
+global_config::memory_manager_sect::memory_manager_sect(ini_config const& conf):
+config_section_base("memory_manager", conf),
+initialLimitBytes(this->get_value<uint64_t>("initialLimitBytes")),
+defaultSessionLimitBytes(this->get_value<uint32_t>("defaultSessionLimitBytes")) {
+    this->check_no_others();
 }
 
 global_config::~global_config()
@@ -375,7 +385,7 @@ scoped_test_enabler::scoped_test_enabler(int argc,
 	
 	string const orig_prog = argv[0];
 	cerr_assert(orig_prog.find(required_path) != string::npos,
-			"This is bad, path=" << tests_dir);
+			"This is bad, path=" << argv[0]);
 	size_t pos = orig_prog.rfind('/');
 	if (pos == string::npos)
 		pos = 0;

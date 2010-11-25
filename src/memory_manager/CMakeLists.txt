@@ -1,4 +1,4 @@
-# (C) Copyright 2010 Marek Dopiera
+# (C) Copyright 2010 Xilexio
 # 
 # This file is part of CoherentDB.
 # 
@@ -16,13 +16,11 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
+set(SOURCES
+	manager.cpp
+	thread.cpp
+	session.cpp
+	)
+add_library(memory_manager ${SOURCES})
 
-include_directories("include")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include") #used for generated includes
-add_subdirectory(include)
-add_subdirectory(config)
-add_subdirectory(server)
-add_subdirectory(log)
-add_subdirectory(debug)
-add_subdirectory(util)
-add_subdirectory(memory_manager)
+add_subdirectory(test)

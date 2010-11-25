@@ -93,7 +93,15 @@ public:
 		uint16_t syncer_sleep_time;
 	};
 
+        struct memory_manager_sect : public config_section_base, private boost::noncopyable {
+            memory_manager_sect(ini_config const& conf);
+
+            uint64_t initialLimitBytes;
+            uint32_t defaultSessionLimitBytes;
+        };
+
 	buffer_cache_sect buffer_cache;
+        memory_manager_sect memory_manager;
 	~global_config(); //the dtor needs to be explicit, because gcc tries to
 	                  //inline it otherwise and the ini_config dtor is not
 					  //visible
