@@ -33,10 +33,21 @@ struct BigEndianCodec
     {
         t.forEach(enc);
     }
+    template <typename Encoder>
+    static void encode(Encoder& enc, const T& t, uint32_t v)
+    {
+        t.forEach(enc, v);
+    }
+
     template <typename Decoder>
     static void decode(Decoder& dec, T& t)
     {
         t.forEach(dec);
+    }
+    template <typename Decoder>
+    static void decode(Decoder& dec, T& t, uint32_t v)
+    {
+        t.forEach(dec, v);
     }
 };
 

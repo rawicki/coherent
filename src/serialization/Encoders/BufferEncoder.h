@@ -25,6 +25,7 @@
 #include <iterator>
 #include <assert.h>
 #include <string.h>
+#include <inttypes.h>
 
 
 template <template <typename T> class Codec>
@@ -39,6 +40,12 @@ struct BufferEncoder
     BufferEncoder& operator() (const T& x)
     {
         Codec<T>::encode(*this, x);
+        return *this;
+    }
+    template <typename T>
+    BufferEncoder& operator() (const T& x, uint32_t v)
+    {
+        Codec<T>::encode(*this, x, v);
         return *this;
     }
     void write_char(char c)
@@ -69,6 +76,11 @@ struct BufferDecoder
     {
         Codec<T>::decode(*this, x);
         return *this;
+    }
+    template <typename T>
+    BufferDecoder& operator() (T & x, uint32_t v)
+    {
+        Codec<T>::decode(*this, x, v);
     }
     char get_char()
     {

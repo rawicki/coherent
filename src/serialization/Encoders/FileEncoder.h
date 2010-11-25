@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 
 template <template <typename T> class Codec>
@@ -41,6 +42,13 @@ struct FileEncoder
         Codec<T>::encode(*this, x);
         return *this;
     }
+    template <typename T>
+    FileEncoder& operator() (const T& x, uint32_t v)
+    {
+        Codec<T>::encode(*this, x, v);
+        return *this;
+    }
+
     void write_char(char c)
     {
         if (buffer_.size() >= bufferSize_)
@@ -100,6 +108,12 @@ struct FileDecoder
     FileDecoder& operator() (T & x)
     {
         Codec<T>::decode(*this, x);
+        return *this;
+    }
+    template <typename T>
+    FileDecoder& operator() (T & x, uint32_t v)
+    {
+        Codec<T>::decode(*this, x, v);
         return *this;
     }
     char get_char()

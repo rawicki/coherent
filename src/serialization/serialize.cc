@@ -200,6 +200,18 @@ struct MyStruct
         f(a); f(b); f(c); f(d); f(s1); f(s2); //f(xa);
     }
 
+    /*template <typename F>
+    void forEach(F & f, uint32_t v)
+    {
+        f(a, v);
+        f(b);
+        if (v==1) f(c);
+        f(d);
+        if (v!=1) f(c);
+        if (v>5) f(s1);
+        if (v>11) f(s2,v);
+    }*/
+
     friend std::ostream& operator<< (std::ostream& os, const MyStruct ms)
     {
         os << '[' << ms.a << ", " << ms.b << ", " << ms.c << ", " << ms.d << ", " << "\"";
