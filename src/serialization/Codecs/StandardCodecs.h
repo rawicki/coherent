@@ -63,7 +63,7 @@ template <typename Container>
 struct UniqueContainerCodec
 {
     template <typename Encoder>
-    static void encoder(Encoder& enc, const Container& cont)
+    static void encode(Encoder& enc, const Container& cont)
     {
         enc(static_cast<uint32_t>(cont.size()));
         for (typename Container::const_iterator it=cont.begin(); it!=cont.end(); ++it)
@@ -73,7 +73,7 @@ struct UniqueContainerCodec
     }
 
     template <typename Decoder>
-    static void decoder(Decoder& dec, Container& cont)
+    static void decode(Decoder& dec, Container& cont)
     {
         uint32_t x;
         dec(x);

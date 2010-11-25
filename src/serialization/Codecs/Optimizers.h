@@ -79,7 +79,7 @@ struct StringZOptimizer
         enc.memcpy(reinterpret_cast<const char*>(&(*s.begin())), s.size()+1);
     }
     template <typename Decoder>
-    static void decoder(Decoder& dec, std::string& s);
+    static void decode(Decoder& dec, std::string& s);
     //{
         //najpierw peek - znalezienie '\0', resize, dopiero memcpy...
         //enc.memcpy(static_cast<char*>(), s.size()+1);
