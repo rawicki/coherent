@@ -16,14 +16,12 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
+set(SOURCES
+	echo.cc
+    connection.cc
+    server.cc
+    main.cc
+	)
 
-include_directories("include")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include") #used for generated includes
-add_subdirectory(include)
-add_subdirectory(config)
-add_subdirectory(server)
-add_subdirectory(log)
-add_subdirectory(debug)
-add_subdirectory(util)
-add_subdirectory(buffercache)
-add_subdirectory(netserver)
+add_executable(netserver ${SOURCES})
+target_link_libraries(netserver config log debug2 ${CORELIBS})
