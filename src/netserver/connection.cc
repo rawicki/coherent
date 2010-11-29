@@ -98,7 +98,6 @@ namespace coherent
             do
             {
                 Connection::Observer obs = conn.read_observers.front();
-                printf("!!! %d\n", static_cast<int>(obs.length));
 
                 char * buf = new char[MAX_BYTES];
                 // There's a memory leak here!!!
