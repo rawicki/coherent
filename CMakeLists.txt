@@ -84,6 +84,8 @@ else (Boost_FOUND)
 	message(FATAL_ERROR "Boost library not found")
 endif (Boost_FOUND)
 
+set(CORELIBS ${CORELIBS} ${CMAKE_DL_LIBS})
+
 find_package(Log4Cxx REQUIRED)
 if (Log4cxx_FOUND)
 	include_directories(SYSTEM ${LOG4CXX_INCLUDE_DIR})
@@ -91,8 +93,6 @@ if (Log4cxx_FOUND)
 else(Log4cxx_FOUND)
 	message(FATAL_ERROR "Log4CXX library not found")
 endif(Log4cxx_FOUND)
-
-set(CMAKE_EXE_LINKER_FLAGS "-ldl")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
