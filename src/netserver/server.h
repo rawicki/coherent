@@ -36,20 +36,20 @@ namespace coherent
         const int QUEUE_LENGTH = 5;
         const size_t BUFFER_SIZE = 1024;
 
-        class Connection;
+        class connection;
 
-        class Server
+        class server
         {
             private:
                 int sock;
 
-                ::std::vector< ::boost::shared_ptr<Connection> > connections;
+                ::std::vector< ::boost::shared_ptr<connection> > connections;
 
                 ::boost::thread_group receiver_threads;
                 ::boost::thread_group sender_threads;
             public:
-                Server();
-                ~Server();
+                server();
+                ~server();
                 void accept();
         };
     }

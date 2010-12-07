@@ -30,8 +30,8 @@ namespace coherent
 {
     namespace netserver
     {
-        void main_responder(Connection & conn);
-        void echo_responder(Connection & conn, Data & data);
+        void main_responder(connection & conn);
+        void echo_responder(connection & conn, data_t & data);
     }
 }
 

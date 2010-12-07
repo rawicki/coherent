@@ -34,17 +34,17 @@ namespace coherent
         {
         }
 
-        Data::Data(size_t length, const void * raw_data)
+        data_t::data_t(size_t length, const void * raw_data)
           : length(length),
             raw_data(raw_data)
         {
         }
 
-        Data::~Data()
+        data_t::~data_t()
         {
         }
 
-        Connection::Observer::Observer(size_t length, callback_t callback, time_t timeout, ::boost::function<void()> timeout_callback)
+        connection::observer::observer(size_t length, callback_t callback, time_t timeout, ::boost::function<void()> timeout_callback)
           : length(length),
             callback(callback),
             timeout(timeout),
@@ -52,22 +52,22 @@ namespace coherent
         {
         }
 
-        Connection::Observer::~Observer()
+        connection::observer::~observer()
         {
         }
 
-        Connection::Message::Message(Data data, time_t timeout, ::boost::function<void()> timeout_callback)
+        connection::message::message(data_t data, time_t timeout, ::boost::function<void()> timeout_callback)
           : data(data),
             timeout(timeout),
             timeout_callback(timeout_callback)
         {
         }
 
-        Connection::Message::~Message()
+        connection::message::~message()
         {
         }
 
-        Connection::Connection(int fd)
+        connection::connection(int fd)
           : fd(fd),
             read_observers(),
             outgoing_messages(),
@@ -76,30 +76,30 @@ namespace coherent
         {
         }
 
-        Connection::~Connection()
+        connection::~connection()
         {
             delete[] read_buffer;
             // read_buffer_filled_size = 0;
         }
 
-        void Connection::read(size_t message_length,
+        void connection::read(size_t message_length,
                 callback_t callback,
                 time_delta_t time_delta,
                 ::boost::function<void()> timeout_callback)
         {
             time_t time_deadline = from_now(time_delta);  // `time_delta` seconds from now on
-            read_observers.push(Observer(message_length, callback, time_deadline, timeout_callback));
+            read_observers.push(observer(message_length, callback, time_deadline, timeout_callback));
         }
 
-        void Connection::write(Data data,
+        void connection::write(data_t data,
                 time_delta_t time_delta,
                 ::boost::function<void()> timeout_callback)
         {
             time_t time_deadline = from_now(time_delta);
-            outgoing_messages.push(Message(data, time_deadline, timeout_callback));
+            outgoing_messages.push(message(data, time_deadline, timeout_callback));
         }
 
-        time_t Connection::from_now(time_delta_t time_delta)
+        time_t connection::from_now(time_delta_t time_delta)
         {
             if(time_delta == TIMEOUT_INFTY)
             {
@@ -111,13 +111,13 @@ namespace coherent
             }
         }
 
-        void receiver_thread(Connection & conn)
+        void receiver_thread(connection & conn)
         {
             // TODO: Refactor
             ssize_t rval;
             do
             {
-                Connection::Observer obs = conn.read_observers.front();
+                connection::observer obs = conn.read_observers.front();
 
                 char * buf = new char[MAX_BYTES];
                 // There's a memory leak here!!!
@@ -136,7 +136,7 @@ namespace coherent
                 {
                     ::std::clog << "-->" << (int)rval << "  " << buf << "\n";
 
-                    obs.callback(Data(obs.length, buf));
+                    obs.callback(data_t(obs.length, buf));
                 }
             }
             while(rval > 0);
@@ -146,7 +146,7 @@ namespace coherent
             }
         }
 
-        void writer_thread(Connection & conn)
+        void writer_thread(connection & conn)
         {
         }
     };

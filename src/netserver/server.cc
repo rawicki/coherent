@@ -29,7 +29,7 @@ namespace coherent
 {
     namespace netserver
     {
-        Server::Server()
+        server::server()
         {
             // TODO: Refactor
             // Create socket.
@@ -40,30 +40,30 @@ namespace coherent
                 exit(EXIT_FAILURE);
             }
 
-            sockaddr_in server;
+            sockaddr_in socket_server;
             // Name socket using wildcards.
             // It is an Internet address.
-            server.sin_family = AF_INET;
+            socket_server.sin_family = AF_INET;
             // One computer can have several network addresses.
             // Let all addresses be useable for this socket.
-            server.sin_addr.s_addr = htonl(INADDR_ANY);
+            socket_server.sin_addr.s_addr = htonl(INADDR_ANY);
             // Choose any of valid port numbers.
-            server.sin_port = 0;
+            socket_server.sin_port = 0;
             // Associate the address with the socket.
 
-            if(bind (sock, (struct sockaddr *) &server, sizeof(server)) < 0)
+            if(bind (sock, (struct sockaddr *) &socket_server, sizeof(socket_server)) < 0)
             {
                 ::std::cerr << "binding stream socket";
                 exit(EXIT_FAILURE);
             }
             // Find out assigned port number and print it out.
-            socklen_t length = sizeof(server);
-            if(getsockname(sock, (struct sockaddr *) &server, &length) < 0)
+            socklen_t length = sizeof(socket_server);
+            if(getsockname(sock, (struct sockaddr *) &socket_server, &length) < 0)
             {
                 ::std::cerr << "getting socket name";
                 exit(EXIT_FAILURE);
             }
-            ::std::cerr << "Socket port #" << static_cast<unsigned int>(ntohs(server.sin_port)) << "\n";
+            ::std::cerr << "Socket port #" << static_cast<unsigned int>(ntohs(socket_server.sin_port)) << "\n";
 
             // Start accepting connections.
             if(listen(sock, QUEUE_LENGTH) < 0)
@@ -72,10 +72,10 @@ namespace coherent
                 exit(EXIT_FAILURE);
             }
         }
-        Server::~Server()
+        server::~server()
         {
         }
-        void Server::accept()
+        void server::accept()
         {
             // TODO: Refactor
             while(true)
@@ -87,7 +87,7 @@ namespace coherent
                 }
                 else
                 {
-                    ::boost::shared_ptr<Connection> c(new Connection(msgsock));
+                    ::boost::shared_ptr<connection> c(new connection(msgsock));
                         //TODO: Make it intrusive_ptr!!
                     connections.push_back(c);
                     main_responder(*c);

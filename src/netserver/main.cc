@@ -33,7 +33,7 @@
 
 int main()
 {
-    coherent::netserver::Server s;
+    coherent::netserver::server s;
 
     s.accept();
 

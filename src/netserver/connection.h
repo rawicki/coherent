@@ -28,31 +28,31 @@ namespace coherent
 {
     namespace netserver
     {
-        struct Data
+        struct data_t
         {
             public:
                 const size_t length;
                 // TODO: smart pointer
                 const void * const raw_data;
             public:
-                Data(size_t length, const void * raw_data);
-                ~Data();
+                data_t(size_t length, const void * raw_data);
+                ~data_t();
         };
 
         void i_do_nothing();
 
         const ::boost::function<void()> EMPTY_CALLBACK = &i_do_nothing;
 
-        class Connection
+        class connection
         {
             public:
                 typedef int time_delta_t;
                 typedef unsigned char byte_t;
-                typedef ::boost::function<void(Data)> callback_t;
+                typedef ::boost::function<void(data_t)> callback_t;
             public:
                 static const int TIMEOUT_INFTY = -1;
             private:
-                struct Observer
+                struct observer
                 {
                     public:
                         size_t length;
@@ -60,42 +60,42 @@ namespace coherent
                         time_t timeout;
                         ::boost::function<void()> timeout_callback;
                     public:
-                        Observer(size_t length, callback_t callback, time_t timeout, ::boost::function<void()> timeout_callback);
-                        ~Observer();
+                        observer(size_t length, callback_t callback, time_t timeout, ::boost::function<void()> timeout_callback);
+                        ~observer();
                 };
-                struct Message
+                struct message
                 {
                     public:
-                        Data data;
+                        data_t data;
                         time_t timeout;
                         ::boost::function<void()> timeout_callback;
                     public:
-                        Message(Data data, time_t timeout, ::boost::function<void()> timeout_callback);
-                        ~Message();
+                        message(data_t data, time_t timeout, ::boost::function<void()> timeout_callback);
+                        ~message();
                 };
                 int fd;
-                ::std::queue<Observer> read_observers;
-                ::std::queue<Message> outgoing_messages;
+                ::std::queue<observer> read_observers;
+                ::std::queue<message> outgoing_messages;
                 byte_t * read_buffer;
                 size_t read_buffer_filled_size;
             public:
-                Connection(int fd);
-                ~Connection();
+                connection(int fd);
+                ~connection();
                 void read(size_t message_length,
                         callback_t callback,
                         time_delta_t time_delta=TIMEOUT_INFTY,
                         ::boost::function<void()> timeout_callback=EMPTY_CALLBACK);
-                void write(Data data,
+                void write(data_t data,
                         time_delta_t time_delta=TIMEOUT_INFTY,
                         ::boost::function<void()> timeout_callback=EMPTY_CALLBACK);
                 time_t from_now(time_delta_t time_delta);
 
-            friend void receiver_thread(Connection & conn);
+            friend void receiver_thread(connection & conn);
         };
 
         const size_t MAX_BYTES = 20;
 
-        void receiver_thread(Connection & conn);
+        void receiver_thread(connection & conn);
     };
 };
 
