@@ -22,22 +22,15 @@
 #define CONNECTION_H_1234
 
 #include <queue>
+#include <boost/shared_ptr.hpp>
+#include <buffercache/multi_buffer.h>
 #include <boost/function.hpp>
 
 namespace coherent
 {
     namespace netserver
     {
-        struct data_t
-        {
-            public:
-                const size_t length;
-                // TODO: smart pointer
-                const void * const raw_data;
-            public:
-                data_t(size_t length, const void * raw_data);
-                ~data_t();
-        };
+        typedef ::coherent::buffercache::buffer buffer;
 
         void i_do_nothing();
 
@@ -48,7 +41,7 @@ namespace coherent
             public:
                 typedef int time_delta_t;
                 typedef unsigned char byte_t;
-                typedef ::boost::function<void(data_t)> callback_t;
+                typedef ::boost::function<void(::boost::shared_ptr<buffer>)> callback_t;
             public:
                 static const int TIMEOUT_INFTY = -1;
             private:
@@ -66,10 +59,10 @@ namespace coherent
                 struct message
                 {
                     public:
-                        data_t data;
+                        ::boost::shared_ptr<buffer> data;
                         time_t timeout;
                     public:
-                        message(data_t data, time_t timeout);
+                        message(::boost::shared_ptr<buffer> data, time_t timeout);
                         ~message();
                 };
                 int fd;
@@ -85,7 +78,7 @@ namespace coherent
                 void read(size_t message_length,
                         callback_t callback,
                         time_delta_t time_delta=TIMEOUT_INFTY);
-                void write(data_t data,
+                void write(::boost::shared_ptr<buffer> data,
                         time_delta_t time_delta=TIMEOUT_INFTY);
                 time_t from_now(time_delta_t time_delta);
 

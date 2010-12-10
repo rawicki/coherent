@@ -31,7 +31,7 @@ namespace coherent
             conn->read(MAX_BYTES, ::boost::bind(echo_responder, conn, _1));
         }
 
-        void echo_responder(connection * conn, data_t & data)
+        void echo_responder(connection * conn, ::boost::shared_ptr<buffer> data)
         {
             conn->write(data);
         }

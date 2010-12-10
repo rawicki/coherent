@@ -22,6 +22,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+#include <buffercache/multi_buffer.h>
 #include "connection.h"
 
 #include <errno.h>
@@ -31,16 +33,6 @@ namespace coherent
     namespace netserver
     {
         void i_do_nothing()
-        {
-        }
-
-        data_t::data_t(size_t length, const void * raw_data)
-          : length(length),
-            raw_data(raw_data)
-        {
-        }
-
-        data_t::~data_t()
         {
         }
 
@@ -56,7 +48,7 @@ namespace coherent
         {
         }
 
-        connection::message::message(data_t data, time_t timeout)
+        connection::message::message(::boost::shared_ptr<buffer> data, time_t timeout)
           : data(data),
             timeout(timeout)
         {
@@ -93,7 +85,7 @@ namespace coherent
             read_observers.push(observer(message_length, callback, time_deadline, timeout_callback));
         }
 
-        void connection::write(data_t data,
+        void connection::write(::boost::shared_ptr<buffer> data,
                 time_delta_t time_delta)
         {
             time_t time_deadline = from_now(time_delta);
@@ -120,11 +112,6 @@ namespace coherent
             {
                 connection::observer obs = conn->read_observers.front();
 
-                char * buf = new char[MAX_BYTES];
-                // There's a memory leak here!!!
-
-                memset(buf, 0, sizeof(buf));
-                rval = read(conn->fd, buf, sizeof(buf));
                 if(rval < 0)
                 {
                     ::std::cerr << "Error reading stream message";
@@ -135,9 +122,12 @@ namespace coherent
                 }
                 else
                 {
-                    ::std::clog << "-->" << (int)rval << "  " << buf << "\n";
+                    ::boost::shared_ptr<buffer> buf(new buffer(obs.length));
+                    rval = read(conn->fd, buf->get_data(), buf->get_size());
 
-                    obs.callback(data_t(obs.length, buf));
+                    ::std::clog << "-->" << (int)rval << "  " << buf->get_data() << "\n";
+
+                    obs.callback(buf);
                 }
             }
             while(rval > 0);

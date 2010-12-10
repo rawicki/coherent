@@ -23,6 +23,8 @@
 
 #include <queue>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+#include <buffercache/multi_buffer.h>
 
 #include "connection.h"
 
@@ -30,8 +32,10 @@ namespace coherent
 {
     namespace netserver
     {
+        typedef ::coherent::buffercache::buffer buffer;
+
         void main_responder(connection * conn);
-        void echo_responder(connection * conn, data_t & data);
+        void echo_responder(connection * conn, ::boost::shared_ptr<buffer> data);
     }
 }
 

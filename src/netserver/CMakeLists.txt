@@ -24,4 +24,4 @@ set(SOURCES
 	)
 
 add_executable(netserver ${SOURCES})
-target_link_libraries(netserver config log debug2 ${CORELIBS})
+target_link_libraries(netserver config log debug2 buffercache ${CORELIBS})
