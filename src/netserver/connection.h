@@ -68,9 +68,8 @@ namespace coherent
                     public:
                         data_t data;
                         time_t timeout;
-                        ::boost::function<void()> timeout_callback;
                     public:
-                        message(data_t data, time_t timeout, ::boost::function<void()> timeout_callback);
+                        message(data_t data, time_t timeout);
                         ~message();
                 };
                 int fd;
@@ -78,16 +77,16 @@ namespace coherent
                 ::std::queue<message> outgoing_messages;
                 byte_t * read_buffer;
                 size_t read_buffer_filled_size;
+                ::boost::function<void()> timeout_callback;
             public:
-                connection(int fd);
+                connection(int fd,
+                        ::boost::function<void()> timeout_callback=EMPTY_CALLBACK);
                 ~connection();
                 void read(size_t message_length,
                         callback_t callback,
-                        time_delta_t time_delta=TIMEOUT_INFTY,
-                        ::boost::function<void()> timeout_callback=EMPTY_CALLBACK);
+                        time_delta_t time_delta=TIMEOUT_INFTY);
                 void write(data_t data,
-                        time_delta_t time_delta=TIMEOUT_INFTY,
-                        ::boost::function<void()> timeout_callback=EMPTY_CALLBACK);
+                        time_delta_t time_delta=TIMEOUT_INFTY);
                 time_t from_now(time_delta_t time_delta);
 
             friend void receiver_thread(connection & conn);

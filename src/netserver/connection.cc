@@ -56,10 +56,9 @@ namespace coherent
         {
         }
 
-        connection::message::message(data_t data, time_t timeout, ::boost::function<void()> timeout_callback)
+        connection::message::message(data_t data, time_t timeout)
           : data(data),
-            timeout(timeout),
-            timeout_callback(timeout_callback)
+            timeout(timeout)
         {
         }
 
@@ -67,36 +66,38 @@ namespace coherent
         {
         }
 
-        connection::connection(int fd)
+        connection::connection(int fd, ::boost::function<void()> timeout_callback)
           : fd(fd),
             read_observers(),
             outgoing_messages(),
             read_buffer(NULL),
-            read_buffer_filled_size(0)
+            read_buffer_filled_size(0),
+            timeout_callback(timeout_callback)
         {
         }
 
         connection::~connection()
         {
             delete[] read_buffer;
-            // read_buffer_filled_size = 0;
+            if(close(this->fd) < 0)
+            {
+                ::std::cerr << "Error closing client socket.\n";
+            }
         }
 
         void connection::read(size_t message_length,
                 callback_t callback,
-                time_delta_t time_delta,
-                ::boost::function<void()> timeout_callback)
+                time_delta_t time_delta)
         {
             time_t time_deadline = from_now(time_delta);  // `time_delta` seconds from now on
             read_observers.push(observer(message_length, callback, time_deadline, timeout_callback));
         }
 
         void connection::write(data_t data,
-                time_delta_t time_delta,
-                ::boost::function<void()> timeout_callback)
+                time_delta_t time_delta)
         {
             time_t time_deadline = from_now(time_delta);
-            outgoing_messages.push(message(data, time_deadline, timeout_callback));
+            outgoing_messages.push(message(data, time_deadline));
         }
 
         time_t connection::from_now(time_delta_t time_delta)
