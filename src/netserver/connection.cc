@@ -112,19 +112,19 @@ namespace coherent
             }
         }
 
-        void receiver_thread(connection & conn)
+        void receiver_thread(connection * conn)
         {
             // TODO: Refactor
             ssize_t rval;
             do
             {
-                connection::observer obs = conn.read_observers.front();
+                connection::observer obs = conn->read_observers.front();
 
                 char * buf = new char[MAX_BYTES];
                 // There's a memory leak here!!!
 
                 memset(buf, 0, sizeof(buf));
-                rval = read(conn.fd, buf, sizeof(buf));
+                rval = read(conn->fd, buf, sizeof(buf));
                 if(rval < 0)
                 {
                     ::std::cerr << "Error reading stream message";
@@ -141,13 +141,9 @@ namespace coherent
                 }
             }
             while(rval > 0);
-            if(close(conn.fd) < 0)
-            {
-                ::std::cerr << "closing client socket";
-            }
         }
 
-        void writer_thread(connection & conn)
+        void writer_thread(connection * conn)
         {
         }
     };

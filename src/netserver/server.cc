@@ -87,12 +87,11 @@ namespace coherent
                 }
                 else
                 {
-                    ::boost::shared_ptr<connection> c(new connection(msgsock));
-                        //TODO: Make it intrusive_ptr!!
+                    connection * c = new connection(msgsock);
                     connections.push_back(c);
-                    main_responder(*c);
+                    main_responder(c);
                     receiver_threads.create_thread(
-                            ::boost::bind(&receiver_thread, *c));
+                            ::boost::bind(&receiver_thread, c));
                 }
             }
         }

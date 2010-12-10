@@ -26,7 +26,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/thread.hpp>
 
 namespace coherent
@@ -43,7 +43,7 @@ namespace coherent
             private:
                 int sock;
 
-                ::std::vector< ::boost::shared_ptr<connection> > connections;
+                ::boost::ptr_vector<connection> connections;
 
                 ::boost::thread_group receiver_threads;
                 ::boost::thread_group sender_threads;

@@ -26,14 +26,14 @@ namespace coherent
 {
     namespace netserver
     {
-        void main_responder(connection & conn)
+        void main_responder(connection * conn)
         {
-            conn.read(MAX_BYTES, ::boost::bind(echo_responder, conn, _1));
+            conn->read(MAX_BYTES, ::boost::bind(echo_responder, conn, _1));
         }
 
-        void echo_responder(connection & conn, data_t & data)
+        void echo_responder(connection * conn, data_t & data)
         {
-            conn.write(data);
+            conn->write(data);
         }
     }
 }

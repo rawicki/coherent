@@ -89,12 +89,12 @@ namespace coherent
                         time_delta_t time_delta=TIMEOUT_INFTY);
                 time_t from_now(time_delta_t time_delta);
 
-            friend void receiver_thread(connection & conn);
+            friend void receiver_thread(connection * conn);
         };
 
         const size_t MAX_BYTES = 20;
 
-        void receiver_thread(connection & conn);
+        void receiver_thread(connection * conn);
     };
 };
 
