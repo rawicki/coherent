@@ -17,11 +17,11 @@
 # http://www.gnu.org/licenses/.
 
 set(SOURCES
-	echo.cc
-    connection.cc
-    server.cc
-    main.cc
-	)
+    echo.cpp
+    connection.cpp
+    server.cpp
+    main.cpp
+)
 
 add_executable(netserver ${SOURCES})
-target_link_libraries(netserver config log debug2 buffercache ${CORELIBS})
+target_link_libraries(netserver config buffercache log debug2 ${CORELIBS})
