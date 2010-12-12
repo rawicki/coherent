@@ -35,6 +35,8 @@ struct A
     typedef int32_t TagType;
     virtual TagType getTag() const = 0;
 
+    virtual ~A() {}
+
     virtual std::ostream& print(std::ostream&) const = 0;
 
     friend std::ostream& operator<< (std::ostream& os, const A& a)
@@ -56,13 +58,8 @@ struct A1 : public A
         return os << "A1(" << a1_ << ")";
     }
 
-    A1()
-    {
-    }
-
-    A1(const std::string& s) : a1_(s)
-    {
-    }
+    A1() {}
+    A1(const std::string& s) : a1_(s) {}
 
     template <typename F>
     void forEach(F & f)
@@ -92,13 +89,8 @@ struct A2 : public A
         return os << "A2(" << a2_ << ")";
     }
 
-    A2()
-    {
-    }
-
-    A2(uint64_t x) : a2_(x)
-    {
-    }
+    A2() {}
+    A2(uint64_t x) : a2_(x) {}
 
     template <typename F>
     void forEach(F & f)
@@ -133,7 +125,7 @@ struct ACont
     {
         VirtualA va;
         f(va);
-        a_ = va.get_sptr();
+        a_ = va.get_ptr();
     }
     template <typename F>
     void forEach(F & f) const
@@ -143,7 +135,42 @@ struct ACont
 
     friend std::ostream& operator<< (std::ostream& os, const ACont& ac)
     {
-        return os << *(ac.a_);
+        return (ac.a_.get()) ? (os << *(ac.a_)) : (os << "null");
+    }
+};
+
+struct AContPtr
+{
+    A * a_;
+
+    typedef Virtual<A, ACont::VTree, StdPtrPolicy<A, A*> > VirtualA;
+
+    AContPtr() : a_(NULL)
+    {
+    }
+    ~AContPtr()
+    {
+        if (a_) {
+            delete a_;
+        }
+    }
+
+    template <typename F>
+    void forEach(F & f)
+    {
+        VirtualA va;
+        f(va);
+        a_ = va.get_ptr();
+    }
+    template <typename F>
+    void forEach(F & f) const
+    {
+        f(VirtualA(a_));
+    }
+
+    friend std::ostream& operator<< (std::ostream& os, const AContPtr& ac)
+    {
+        return (ac.a_==NULL) ? (os << "null") : (os << *(ac.a_));
     }
 };
 
@@ -187,13 +214,13 @@ int Main()
         ACont ac2;
         ac2.a_.reset(new A2(777));
 
+        ACont ac3;
+
         BufferEncoder<LittleEndianCodec> enc(buf);
 
-        enc(ac1);
-        enc('x');
-        enc(ac2);
+        enc(ac1)('x')(ac2)(ac3);
 
-        std::cout << ac1 << " x " << ac2 << std::endl;
+        std::cout << ac1 << " x " << ac2 << " " << ac3 << std::endl;
     }
 
     std::cout << PrintBuf(buf) << std::endl;
@@ -204,13 +231,26 @@ int Main()
 
         ACont ac1;
         ACont ac2;
+        ACont ac3;
         char p;
 
-        dec(ac1);
-        dec(p);
-        dec(ac2);
+        dec(ac1)(p)(ac2)(ac3);
 
-        std::cout << ac1 << " " << p << " " << ac2 << std::endl;
+        std::cout << ac1 << " " << p << " " << ac2 << " " << ac3 << std::endl;
+    }
+
+    {
+        std::vector<char>::const_iterator it = buf.begin();
+        BufferDecoder<LittleEndianCodec> dec(it, buf.end());
+
+        AContPtr ac1;
+        AContPtr ac2;
+        AContPtr ac3;
+        char p;
+
+        dec(ac1)(p)(ac2)(ac3);
+
+        std::cout << ac1 << " " << p << " " << ac2 << " " << ac3 << std::endl;
     }
 
     return 0;

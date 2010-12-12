@@ -133,6 +133,7 @@ int main(int argc, char **argv)
         << "{" << std::endl
         << "    typedef uint16_t TagType;" << std::endl
         << "    virtual TagType getTag() const = 0;" << std::endl
+        << "    virtual ~Base() {}" << std::endl
         << "    uint32_t base_;" << std::endl
         << "    template <typename F> void forEach(F & f) { f(base_); }" << std::endl
         << "    template <typename F> void forEach(F & f) const { f(base_); }" << std::endl

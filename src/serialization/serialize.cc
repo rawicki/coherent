@@ -50,6 +50,8 @@ struct XA
     typedef uint8_t TagType;
     virtual TagType getTag() const = 0;
 
+    virtual ~XA() {}
+
     virtual void print(std::ostream& os) const { os << "XA(" << xa << ")"; }
     uint32_t xa;
     template <typename F> void forEach(F & f)
