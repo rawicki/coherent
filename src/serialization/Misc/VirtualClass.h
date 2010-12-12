@@ -58,9 +58,13 @@ struct Fold<F, TreeNode<CurrentType, LeftNode, RightNode> >
     void operator() (F& f) const
     {
         int ret = f.template processNode<CurrentType>();
-        if (ret==0) return;
-        if (ret<0)
+        if (ret==0) {
+            return;
+        }
+        if (ret<0) {
             Fold<F, LeftNode>() (f);
+            return;
+        }
         Fold<F, RightNode>() (f); //ret>0
     }
 };
@@ -156,8 +160,8 @@ private:
         }
         template <typename Type>
         bool process() {
-            if (Type::TAG == tag_) {
-                enc_(Type::TAG);
+            if ((TagType)Type::TAG == tag_) {
+                enc_((TagType)Type::TAG);
                 enc_(static_cast<const Type&>(*ptr_));
                 return true;
             }
@@ -165,13 +169,14 @@ private:
         }
         template <typename Type>
         int processNode() {
-            if (Type::TAG == tag_) {
-                enc_(Type::TAG);
+            if ((TagType)Type::TAG == tag_) {
+                enc_((TagType)Type::TAG);
                 enc_(static_cast<const Type&>(*ptr_));
                 return 0;
             }
-            if (tag_ < Type::TAG)
+            if (tag_ < (TagType)Type::TAG) {
                 return -1;
+            }
             return 1;
         }
         Encoder& enc_;
@@ -186,7 +191,7 @@ private:
         }
         template <typename Type>
         bool process() {
-            if (Type::TAG == tag_) {
+            if ((TagType)Type::TAG == tag_) {
                 ptr_.reset(new Type());
                 dec_(static_cast<Type&>(*ptr_));
                 return true;
@@ -195,12 +200,12 @@ private:
         }
         template <typename Type>
         int processNode() {
-            if (Type::TAG == tag_) {
+            if ((TagType)Type::TAG == tag_) {
                 ptr_.reset(new Type());
                 dec_(static_cast<Type&>(*ptr_));
                 return 0;
             }
-            if (tag_ < Type::TAG)
+            if (tag_ < (TagType)Type::TAG)
                 return -1;
             return 1;
         }
@@ -233,9 +238,24 @@ public:
         Fold<TaggedDecoder<Decoder>, TypeList>()(td);
     }
 
+
+    //constuctors
+    Virtual()
+    {
+    }
+
+    Virtual(boost::shared_ptr<BaseType> ptr) : ptr_(ptr)
+    {
+    }
+
     const BaseType * get_ptr() const
     {
         return ptr_.get();
+    }
+
+    boost::shared_ptr<BaseType> get_sptr() const
+    {
+        return ptr_;
     }
 
     const BaseType& get() const
