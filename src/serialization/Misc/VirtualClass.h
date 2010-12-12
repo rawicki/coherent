@@ -23,6 +23,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <inttypes.h>
+#include "Misc/PointerPolicy.h"
 #include "Misc/TypeList.h"
 #include "Misc/TypeTree.h"
 
@@ -147,22 +148,24 @@ inline void checkTree()
 }
 
 
-template <typename BaseType, typename TypeList>
-struct Virtual
+template <typename BaseType, typename TypeList, typename PointerPolicy = SharedPtrPolicy<BaseType> >
+struct Virtual : public PointerPolicy
 {
-    typedef typename BaseType::TagType TagType;
+    typedef Virtual<BaseType, TypeList, PointerPolicy>  self;
+    typedef typename BaseType::TagType                  TagType;
+    typedef typename PointerPolicy::PointerType         PointerType;
 private:
     template <typename Encoder>
     struct TaggedEncoder
     {
-        TaggedEncoder(Encoder& enc, boost::shared_ptr<BaseType> ptr) : enc_(enc), ptr_(ptr), tag_(ptr->getTag())
+        TaggedEncoder(Encoder& enc, const self& ptr) : enc_(enc), ptr_(ptr), tag_(ptr_.get().getTag())
         {
         }
         template <typename Type>
         bool process() {
             if ((TagType)Type::TAG == tag_) {
                 enc_((TagType)Type::TAG);
-                enc_(static_cast<const Type&>(*ptr_));
+                enc_(static_cast<const Type&>(ptr_.get()));
                 return true;
             }
             return false;
@@ -171,7 +174,7 @@ private:
         int processNode() {
             if ((TagType)Type::TAG == tag_) {
                 enc_((TagType)Type::TAG);
-                enc_(static_cast<const Type&>(*ptr_));
+                enc_(static_cast<const Type&>(ptr_.get()));
                 return 0;
             }
             if (tag_ < (TagType)Type::TAG) {
@@ -180,20 +183,20 @@ private:
             return 1;
         }
         Encoder& enc_;
-        boost::shared_ptr<BaseType> ptr_;
+        const self& ptr_;
         TagType tag_;
     };
     template <typename Decoder>
     struct TaggedDecoder
     {
-        TaggedDecoder(Decoder& dec, boost::shared_ptr<BaseType>& ptr, TagType tag) : dec_(dec), ptr_(ptr), tag_(tag)
+        TaggedDecoder(Decoder& dec, self& ptr, TagType tag) : dec_(dec), ptr_(ptr), tag_(tag)
         {
         }
         template <typename Type>
         bool process() {
             if ((TagType)Type::TAG == tag_) {
-                ptr_.reset(new Type());
-                dec_(static_cast<Type&>(*ptr_));
+                ptr_.set(new Type());
+                dec_(static_cast<Type&>(ptr_.get()));
                 return true;
             }
             return false;
@@ -201,8 +204,8 @@ private:
         template <typename Type>
         int processNode() {
             if ((TagType)Type::TAG == tag_) {
-                ptr_.reset(new Type());
-                dec_(static_cast<Type&>(*ptr_));
+                ptr_.set(new Type());
+                dec_(static_cast<Type&>(ptr_.get()));
                 return 0;
             }
             if (tag_ < (TagType)Type::TAG)
@@ -210,18 +213,18 @@ private:
             return 1;
         }
         Decoder& dec_;
-        boost::shared_ptr<BaseType>& ptr_;
+        self& ptr_;
         TagType tag_;
     };
 public:
     template <typename Encoder>
     void encode(Encoder& enc) const
     {
-        if (!ptr_.get()) {
+        if (PointerPolicy::isNull()) {
             enc(TagType());
             return;
         }
-        TaggedEncoder<Encoder> te(enc, ptr_);
+        TaggedEncoder<Encoder> te(enc, *this);
         Fold<TaggedEncoder<Encoder>, TypeList>()(te);
     }
 
@@ -231,55 +234,26 @@ public:
         TagType tag;
         dec(tag);
         if (tag==TagType()) {
-            ptr_.reset();
+            PointerPolicy::reset();
             return;
         }
-        TaggedDecoder<Decoder> td(dec, ptr_, tag);
+        TaggedDecoder<Decoder> td(dec, *this, tag);
         Fold<TaggedDecoder<Decoder>, TypeList>()(td);
     }
-
 
     //constuctors
     Virtual()
     {
     }
 
-    Virtual(boost::shared_ptr<BaseType> ptr) : ptr_(ptr)
+    Virtual(PointerType ptr) : PointerPolicy(ptr)
     {
     }
 
-    const BaseType * get_ptr() const
+    Virtual(const BaseType& x) : PointerPolicy(x)
     {
-        return ptr_.get();
     }
 
-    boost::shared_ptr<BaseType> get_sptr() const
-    {
-        return ptr_;
-    }
-
-    const BaseType& get() const
-    {
-        return *ptr_;
-    }
-
-    void set(BaseType * ptr)
-    {
-        ptr_.reset(ptr);
-    }
-
-    void set(boost::shared_ptr<BaseType> ptr)
-    {
-        ptr_ = ptr;
-    }
-
-    void set(const BaseType& x)
-    {
-        ptr_.reset(new BaseType(x));
-    }
-
-private:
-    boost::shared_ptr<BaseType> ptr_;
 };
 
 #endif /* VIRTUAL_CLASS_H */

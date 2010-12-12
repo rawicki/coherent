@@ -124,7 +124,7 @@ template <typename T> struct LittleEndianCodec<std::set<T> > : public UniqueCont
 template <typename K, typename V> struct LittleEndianCodec<std::map<K,V> > : public UniqueContainerCodec<std::map<K, V> > {};
 template <typename F, typename S> struct LittleEndianCodec<std::pair<F,S> > : public StandardPairCodec<F, S> {};
 
-template <typename T, typename VL> struct LittleEndianCodec<Virtual<T, VL> > : public StandardVirtuaClassCodec<T, VL> {};
+template <typename T, typename VL, typename Ptr> struct LittleEndianCodec<Virtual<T, VL, Ptr> > : public StandardVirtuaClassCodec<T, VL, Ptr> {};
 
 
 #endif /* LITTLE_ENDIAN_CODEC_H */

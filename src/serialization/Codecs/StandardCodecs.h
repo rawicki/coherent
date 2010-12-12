@@ -104,10 +104,10 @@ struct StandardPairCodec
     }
 };
 
-template <typename T, typename VL>
+template <typename T, typename VL, typename Ptr>
 struct StandardVirtuaClassCodec
 {
-    typedef Virtual<T, VL> Type;
+    typedef Virtual<T, VL, Ptr> Type;
 
     template <typename Encoder>
     static void encode(Encoder& enc, const Type& t)
