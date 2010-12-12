@@ -116,6 +116,7 @@ struct ACont
 
     typedef makeList2<A1,A2>::value VList;
     typedef Virtual<A, VTree> VirtualA;
+    typedef VirtualA::Helper VirtualAH;
 
     BOOST_STATIC_ASSERT( checker_detail::TreeChecker<ACont::VTree>::ok );
     //BOOST_STATIC_ASSERT( checker_detail::TreeChecker<ACont::BadVTree>::ok );
@@ -123,14 +124,12 @@ struct ACont
     template <typename F>
     void forEach(F & f)
     {
-        VirtualA va;
-        f(va);
-        a_ = va.get_ptr();
+        VirtualAH(f, a_);
     }
     template <typename F>
     void forEach(F & f) const
     {
-        f(VirtualA(a_));
+        VirtualAH(f, a_);
     }
 
     friend std::ostream& operator<< (std::ostream& os, const ACont& ac)
@@ -143,7 +142,7 @@ struct AContPtr
 {
     A * a_;
 
-    typedef Virtual<A, ACont::VTree, StdPtrPolicy<A, A*> > VirtualA;
+    typedef Virtual<A, ACont::VTree, StdPtrPolicy<A, A*> >::Helper VirtualAH;
 
     AContPtr() : a_(NULL)
     {
@@ -158,14 +157,12 @@ struct AContPtr
     template <typename F>
     void forEach(F & f)
     {
-        VirtualA va;
-        f(va);
-        a_ = va.get_ptr();
+        VirtualAH(f, a_);
     }
     template <typename F>
     void forEach(F & f) const
     {
-        f(VirtualA(a_));
+        VirtualAH(f, a_);
     }
 
     friend std::ostream& operator<< (std::ostream& os, const AContPtr& ac)

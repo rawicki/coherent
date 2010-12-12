@@ -254,7 +254,25 @@ public:
     {
     }
 
+    struct Helper
+    {
+        template <typename F>
+        Helper(F & f, PointerType& ptr)
+        {
+            self vc;
+            f(vc);
+            ptr = vc.get_ptr();
+        }
+        template <typename F>
+        Helper(F & f, const PointerType& ptr)
+        {
+            f(self(ptr));
+        }
+    };
+
 };
+
+
 
 #endif /* VIRTUAL_CLASS_H */
 
