@@ -123,7 +123,6 @@ template <typename T> struct BigEndianCodec<std::set<T> > : public UniqueContain
 template <typename K, typename V> struct BigEndianCodec<std::map<K,V> > : public UniqueContainerCodec<std::map<K, V> > {};
 template <typename F, typename S> struct BigEndianCodec<std::pair<F,S> > : public StandardPairCodec<F, S> {};
 
-template <typename T, typename VL, typename Ptr> struct BigEndianCodec<Virtual<T, VL, Ptr> > : public StandardVirtuaClassCodec<T, VL, Ptr> {};
 
 
 #endif /* BIG_ENDIAN_CODEC_H */

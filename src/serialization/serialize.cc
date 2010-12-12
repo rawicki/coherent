@@ -42,6 +42,7 @@
 #include "Encoders/BufferEncoder.h"
 #include "Encoders/FileEncoder.h"
 #include "Misc/VectorOutput.h"
+#include "Misc/VirtualClass.h"
 
 
 //virtual structurs

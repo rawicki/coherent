@@ -307,6 +307,17 @@ public:
         }
     };
 
+    template <typename F>
+    void forEach(F & f)
+    {
+        decode<F>(f);
+    }
+    template <typename F>
+    void forEach(F & f) const
+    {
+        encode<F>(f);
+    }
+
 };
 
 
