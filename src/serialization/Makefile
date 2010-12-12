@@ -21,7 +21,7 @@ PATHS		:=	Codecs Encoders Misc
 HEADERS		:=	$(foreach dir, $(PATHS), $(wildcard $(dir)/*.h))
 
 
-all: serialize gen_test venc_test
+all: serialize gen_test venc_test version_test vc_example
 
 
 serialize: serialize.cc $(HEADERS)
@@ -43,7 +43,15 @@ venc_test: venc_test.cc $(HEADERS)
 	g++ -O3 -I. -c -o venc_test.o venc_test.cc
 	g++ -o venc_test venc_test.o
 
+version_test: version_test.cc $(HEADERS)
+	g++ -O3 -I. -c -o version_test.o version_test.cc
+	g++ -o version_test version_test.o
+
+vc_example: vc_example.cc $(HEADERS)
+	g++ -O3 -I. -c -o vc_example.o vc_example.cc
+	g++ -o vc_example vc_example.o
+
 clean:
-	rm -f serialize *.o vc_gen_test gen_test venc_test gen_test.h gen_test.cc $$(find -name "*~")
+	rm -f serialize *.o *test vc_example  gen_test.h gen_test.cc $$(find -name "*~")
 
 
