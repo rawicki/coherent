@@ -24,6 +24,8 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <boost/static_assert.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
 #include "Codecs/LittleEndianCodec.h"
 #include "Encoders/BufferEncoder.h"
@@ -107,6 +109,9 @@ struct A2 : public A
 };
 
 
+
+
+
 struct ACont
 {
     boost::shared_ptr<A> a_;    //check simple A*
@@ -172,6 +177,70 @@ struct AContPtr
 };
 
 
+
+struct AFactory
+{
+    template <typename F>
+    struct Factory
+    {
+        struct CallBacks
+        {
+            typedef boost::function<void(F&)> CB;
+
+            CallBacks()
+            {
+                cbs_.resize(3);
+                cbs_[1] = boost::bind(& F::template processChecked<A1>, _1);
+                cbs_[2] = boost::bind(& F::template processChecked<A2>, _1);
+            }
+            void go(F & f) const
+            {
+                std::cout << "callback: " << (int32_t)f.tag_
+                    << " using: " << this << ", cbs: " << cbs_.size() << std::endl;
+                assert(0<f.tag_ && f.tag_<3);
+                cbs_[f.tag_] (f);
+            }
+            std::vector<CB> cbs_;
+        };
+
+        static const CallBacks callbacks;
+
+        void operator() (F & f) const
+        {
+            callbacks.go(f);
+        }
+    };
+};
+
+template <typename F> const typename AFactory::Factory<F>::CallBacks AFactory::Factory<F>::callbacks;
+//readelf -W -a vc_example | c++filt
+
+
+struct AContFact
+{
+    boost::shared_ptr<A> a_;
+
+    typedef Virtual<A, ObjectFactory<AFactory> > VirtualA;
+    typedef VirtualA::Helper VirtualAH;
+
+    template <typename F>
+    void forEach(F & f)
+    {
+        VirtualAH(f, a_);
+    }
+    template <typename F>
+    void forEach(F & f) const
+    {
+        VirtualAH(f, a_);
+    }
+
+    friend std::ostream& operator<< (std::ostream& os, const AContFact& ac)
+    {
+        return (ac.a_.get()) ? (os << *(ac.a_)) : (os << "null");
+    }
+};
+
+
 struct PrintBuf
 {
     const std::vector<char>& buf_;
@@ -205,6 +274,7 @@ int Main()
     std::vector<char> buf;
 
     {
+        //encode some objects
         ACont ac1;
         ac1.a_.reset(new A1("obiekt klasy A1"));
 
@@ -223,6 +293,7 @@ int Main()
     std::cout << PrintBuf(buf) << std::endl;
 
     {
+        //decoder using ACont - default vc with boost::shared_ptr<A>
         std::vector<char>::const_iterator it = buf.begin();
         BufferDecoder<LittleEndianCodec> dec(it, buf.end());
 
@@ -237,6 +308,7 @@ int Main()
     }
 
     {
+        //decoder using AcontPtr - vc with changed ptr policy = A*
         std::vector<char>::const_iterator it = buf.begin();
         BufferDecoder<LittleEndianCodec> dec(it, buf.end());
 
@@ -248,6 +320,28 @@ int Main()
         dec(ac1)(p)(ac2)(ac3);
 
         std::cout << ac1 << " " << p << " " << ac2 << " " << ac3 << std::endl;
+    }
+
+    {
+        //example using object factory
+        AContFact ac0;
+        ac0.a_.reset(new A1("czwarty obiekt"));
+
+        BufferEncoder<LittleEndianCodec> enc(buf);
+        enc(ac0);
+
+        std::vector<char>::const_iterator it = buf.begin();
+        BufferDecoder<LittleEndianCodec> dec(it, buf.end());
+
+        AContFact ac1;
+        AContFact ac2;
+        AContFact ac3;
+        AContFact ac4;
+        char p;
+
+        dec(ac1)(p)(ac2)(ac3)(ac4);
+
+        std::cout << ac1 << " " << p << " " << ac2 << " " << ac3 << " " << ac4 << std::endl;
     }
 
     return 0;

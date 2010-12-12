@@ -80,6 +80,19 @@ struct Fold<F, TreeLeaf>
 };
 
 
+template <typename Factory>
+struct ObjectFactory;
+
+
+template <typename F, typename Factory>
+struct Fold<F, ObjectFactory<Factory> >
+{
+    void operator() (F & f) const
+    {
+        typename Factory::template Factory<F>() (f);
+    }
+};
+
 namespace checker_detail
 {
 
@@ -182,6 +195,18 @@ private:
             }
             return 1;
         }
+
+        template <typename Type>
+        void processUnchecked() {
+            enc_((TagType)Type::TAG);
+            enc_(static_cast<const Type&>(ptr_.get()));
+        }
+        template <typename Type>
+        void processChecked() {
+            assert( (TagType)Type::TAG == tag_ );
+            processUnchecked<Type>();
+        }
+
         Encoder& enc_;
         const self& ptr_;
         TagType tag_;
@@ -212,6 +237,18 @@ private:
                 return -1;
             return 1;
         }
+
+        template <typename Type>
+        void processUnchecked() {
+            ptr_.set(new Type());
+            dec_(static_cast<Type&>(ptr_.get()));
+        }
+        template <typename Type>
+        void processChecked() {
+            assert( (TagType)Type::TAG == tag_ );
+            processUnchecked<Type>();
+        }
+
         Decoder& dec_;
         self& ptr_;
         TagType tag_;
