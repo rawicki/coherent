@@ -52,4 +52,60 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5> struc
 };
 
 
+
+//apply operator F
+template <template <class> class F, typename List>
+struct ListApply;
+
+template <template <class> class F>
+struct ListApply<F, ListHead>
+{
+    typedef ListHead value;
+};
+
+template <template <class> class F, typename This, typename Next>
+struct ListApply<F, ListElem<This,Next> >
+{
+    typedef ListElem< F<This>, typename ListApply<F, Next>::value > value;
+};
+
+
+//apply operator Fn
+template <typename F, typename List>
+struct ListApplyFn;
+
+template <typename F>
+struct ListApplyFn<F, ListHead>
+{
+    static void apply(F &) {}
+};
+
+template <typename F, typename This, typename Next>
+struct ListApplyFn<F, ListElem<This, Next> >
+{
+    static void apply(F & f)
+    {
+        f.template apply<This>();
+        ListApplyFn<F, Next>::apply(f);
+    }
+};
+
+
+//join lists
+template <typename L1, typename L2>
+struct ListJoin;
+
+template <typename L1_This, typename L1_Next, typename L2>
+struct ListJoin< ListElem<L1_This, L1_Next>, L2>
+{
+    typedef ListElem< L1_This, typename ListJoin<L1_Next, L2>::value > value;
+};
+
+template <typename L2>
+struct ListJoin<ListHead, L2>
+{
+    typedef L2 value;
+};
+
+
 #endif /* MISC_TYPELIST_H */
