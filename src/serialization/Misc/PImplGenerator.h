@@ -233,11 +233,10 @@ template <
     typename ListTail
 >
 struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListElem<CurrentType, ListTail> >
-    : public VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> >
+    : public VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> >::Type
 {
 private:
-    //typedef CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> Super;
-    typedef VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> > Super;
+    typedef typename VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> >::Type Super;
 public:
     DEFINE_CONSTRUCTORS(CreateClassImpl, Super)
 };
@@ -247,6 +246,13 @@ public:
 
 
 
+/* template params:
+ *  - typename TypeList, list of types to encode/decode possibly with functors Version/Both etc.
+ *  - template <T> VirtualFnTmpl: use to create single prototype struct for a given type T (TypeList elem)
+ *  - template <T> Qualifier: define qualifiers for calls in ClassType (should have `type' adding needed const/reference)
+ *  - template <T> TypeExtractor: extract proper type from TypeList element, e.g. extract T from Version<T>, used
+ *      to compare and find proper type on list when call to ClassType,
+ */
 template <
     typename TypeList,
     template <class> class VirtualFnTmpl,
@@ -267,31 +273,32 @@ struct CreatePImplSet
         ClassType(ClassAbs * impl) : Super(impl) {}
         ClassType(boost::shared_ptr<ClassAbs> impl) : Super(impl) {}
 
-        //TODO to nie jest wlasciwa klasa classtype (np decodectype czy encodertype)
-        //wiec trzeba usunac te return *this, nie sa w tym miejscu w zaden sposob potrzebne
         template <typename T>
-        ClassType& operator() (typename Qualifier<T>::type x)
+        void operator() (typename Qualifier<T>::type x)
         {
             pimpl_detail::FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList, T>::Type::foo(x);
-            return *this;
         }
         template <typename T>
-        ClassType& operator() (typename Qualifier<T>::type x, uint32_t v)
+        void operator() (typename Qualifier<T>::type x, uint32_t v)
         {
             pimpl_detail::FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList, T>::Type::foo(x, v);
-            return *this;
         }
     };
 
-    template <
-        typename ImplPolicy,
-        template <class, class> class VirtualFnBody
-        //TODO powy¿sze scaliæ do jednej struktury z polityk±
-    >
+    /* Implementation must have:
+     *      - typename Policy - which serves as Base class,
+     *      - template <class T, class Super> class Tmpl, where:
+     *          * T - current type (before TypeExtractor, just list element),
+     *          * Super - Tmpl generated type must inherit this class,
+     *          * Super already inherits ClassAbs and Policy
+     *          * Tmpl is sth like Class Factory: Tmpl<T, Super>::Type must indicate a class that should
+     *              implement virtual functions from ClassAbs especially concerning type T
+     */
+    template <typename Implementation>
     struct ClassImpl
-        : public pimpl_detail::CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, TypeList>
+        : public pimpl_detail::CreateClassImpl<ClassAbs, typename Implementation::Policy, Implementation::template Tmpl, TypeList>
     {
-        typedef pimpl_detail::CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, TypeList> Super;
+        typedef pimpl_detail::CreateClassImpl<ClassAbs, typename Implementation::Policy, Implementation::template Tmpl, TypeList> Super;
 
         DEFINE_CONSTRUCTORS(ClassImpl, Super)
 

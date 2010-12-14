@@ -100,26 +100,24 @@ namespace detail
     };
 
 
-
     template <template <class> class Qualifier>
-    struct RefPolicy
+    struct DefaultImplementation
     {
-        template <typename Derived>
-        struct Policy
-        {
-            Policy(Derived& foo) : foo_(foo)
-            {
-            }
-            Derived& getFoo()
-            {
-                return foo_;
-            }
-        private:
-            Derived& foo_;
-        };
-
         template <typename T, typename Super>
         struct Tmpl : public Super
+        {
+            DEFINE_CONSTRUCTORS(Tmpl, Super)
+
+            virtual void operator() (typename Qualifier<T>::type x)
+            {
+                Super::getFoo()(x);
+#ifdef DUMP_TYPEINFO
+                std::cout << "Decoded(" << demangle<T>() << ") " << x << std::endl;
+#endif
+            }
+        };
+        template <typename T, typename Super>
+        struct Tmpl< Default<T>, Super > : public Super
         {
             DEFINE_CONSTRUCTORS(Tmpl, Super)
 
@@ -144,10 +142,72 @@ namespace detail
 #endif
             }
         };
-        //TODO dopisaæ pozosta³e specjalizacje Tmpl
+        template <typename T, typename Super>
+        struct Tmpl< Both<T>, Super > : public Super
+        {
+            DEFINE_CONSTRUCTORS(Tmpl, Super)
+
+            virtual void operator() (typename Qualifier<T>::type x)
+            {
+                Super::getFoo()(x);
+#ifdef DUMP_TYPEINFO
+                std::cout << "Decoded(" << demangle<T>() << ") " << x << std::endl;
+#endif
+            }
+            virtual void operator() (typename Qualifier<T>::type x, uint32_t v)
+            {
+                Super::getFoo()(x, v);
+#ifdef DUMP_TYPEINFO
+                std::cout << "Decoded_v(" << demangle<T>() << ")(" << v << ") " << x << std::endl;
+#endif
+            }
+        };
     };
 
-    //TODO dodaæ politykê, gdzie dekoder/enkoder trzymany jest jako pole, a nie tylko jako referencja
+    template <template <class> class Qualifier, typename Derived>
+    struct RefPolicy
+    {
+        struct Policy
+        {
+            Policy(Derived& foo) : foo_(foo)
+            {
+            }
+            Derived& getFoo()
+            {
+                return foo_;
+            }
+        private:
+            Derived& foo_;
+        };
+
+        template <typename T, typename Super>
+        struct Tmpl
+        {
+            typedef typename DefaultImplementation<Qualifier>::template Tmpl<T, Super> Type;
+        };
+    };
+
+    template <template <class> class Qualifier, typename Derived>
+    struct FieldPolicy
+    {
+        struct Policy
+        {
+            DEFINE_CONSTRUCTORS(Policy, foo_)
+
+            Derived& getFoo()
+            {
+                return foo_;
+            }
+        private:
+            Derived foo_;
+        };
+
+        template <typename T, typename Super>
+        struct Tmpl
+        {
+            typedef typename DefaultImplementation<Qualifier>::template Tmpl<T, Super> Type;
+        };
+    };
 }
 
 
@@ -163,11 +223,40 @@ struct CreateEncoderSet
             PImplSet;
 
     typedef typename PImplSet::ClassAbs     EncoderAbs;
-    typedef typename PImplSet::ClassType    EncoderType;
 
-    //template <typename Encoder> struct EncoderImpl {};
-    //TODO encodertype - tak jak w decoderze,
-    //
+    struct EncoderType : public PImplSet::ClassType
+    {
+        typedef typename PImplSet::ClassType Super;
+        EncoderType() {}
+        EncoderType(EncoderAbs * impl) : Super(impl) {}
+        EncoderType(boost::shared_ptr<EncoderAbs> impl) : Super(impl) {}
+
+        template <typename T>
+        EncoderType& operator() (const T & x)
+        {
+            Super::template operator()<T>(x);
+            return *this;
+        }
+        template <typename T>
+        EncoderType& operator() (const T & x, uint32_t v)
+        {
+            Super::template operator()<T>(x, v);
+            return *this;
+        }
+    };
+
+    template <typename EncoderPolicy>
+    struct CreateEncoderImpl
+    {
+        typedef typename PImplSet::template ClassImpl<EncoderPolicy> Type;
+    };
+
+    //tak jak w decoderze zostawione dla kompatybilno¶ci wstecznej
+    template <typename Encoder>
+    struct EncoderImpl
+    {
+        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::EncoderQualifier, Encoder> > Type;
+    };
 };
 
 
@@ -205,20 +294,18 @@ struct CreateDecoderSet
         }
     };
 
-    /*template <typename DecoderPolicy>
-    struct DecoderImpl
+    template <typename DecoderPolicy>
+    struct CreateDecoderImpl
     {
         typedef typename PImplSet::template ClassImpl<DecoderPolicy> Type;
-    };*/
+    };
 
-    //TODO, poni¿sze jest tylko dla kompatybilno¶ci wstecznej; standardowo u¿ywamy powy¿szego
+    //poni¿sze zostaje jedynie dla kompatybilno¶ci wstecznej, jedyn± ró¿nic± jest dodanie `::Type'
+    //w wiêkszo¶ci przypadków zalecane jest u¿ywanie CreateDecoderImpl
     template <typename Decoder>
     struct DecoderImpl
     {
-        typedef typename PImplSet::template ClassImpl<
-                    detail::RefPolicy<detail::DecoderQualifier>::template Policy<Decoder>,
-                    detail::RefPolicy<detail::DecoderQualifier>::template Tmpl
-                > Type;
+        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::DecoderQualifier, Decoder> > Type;
     };
 };
 
