@@ -21,7 +21,7 @@ PATHS		:=	Codecs Encoders Misc
 HEADERS		:=	$(foreach dir, $(PATHS), $(wildcard $(dir)/*.h))
 
 
-all: serialize gen_test venc_test version_test vc_example
+all: serialize gen_test venc_test version_test vc_example list_example
 
 
 serialize: serialize.cc $(HEADERS)

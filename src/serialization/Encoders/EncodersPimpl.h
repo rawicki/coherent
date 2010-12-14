@@ -25,8 +25,7 @@
 #include "Misc/PImplGenerator.h"
 
 #ifdef DUMP_TYPEINFO
-#   include <cxxabi.h>
-#   include <typeinfo>
+#   include "Misc/Demangle.h"
 #endif
 
 
@@ -119,7 +118,6 @@ namespace detail
             Derived& foo_;
         };
 
-        //TODO, wyci±æ typeinfo i zrobiæ z tego jedn± funkcjê
         template <typename T, typename Super>
         struct Tmpl : public Super
         {
@@ -127,21 +125,9 @@ namespace detail
 
             virtual void operator() (typename Qualifier<T>::type x)
             {
-#ifdef DUMP_TYPEINFO
-                int ret = 0;
-                std::string xtype_s;
-                char * xtype = abi::__cxa_demangle(typeid(x).name(), NULL, NULL, &ret);
-                if (ret==0) {
-                    xtype_s = xtype;
-                    free(xtype);
-                }
-                else {
-                    xtype_s = std::string("Failed[") + typeid(x).name() + "]";
-                }
-#endif
                 Super::getFoo()(x);
 #ifdef DUMP_TYPEINFO
-                std::cout << "Decoded(" << xtype_s << ") " << x << std::endl;
+                std::cout << "Decoded(" << demangle<T>() << ") " << x << std::endl;
 #endif
             }
         };
@@ -152,21 +138,9 @@ namespace detail
 
             virtual void operator() (typename Qualifier<T>::type x, uint32_t v)
             {
-#ifdef DUMP_TYPEINFO
-                int ret = 0;
-                std::string xtype_s;
-                char * xtype = abi::__cxa_demangle(typeid(x).name(), NULL, NULL, &ret);
-                if (ret==0) {
-                    xtype_s = xtype;
-                    free(xtype);
-                }
-                else {
-                    xtype_s = std::string("Failed[") + typeid(x).name() + "]";
-                }
-#endif
                 Super::getFoo()(x, v);
 #ifdef DUMP_TYPEINFO
-                std::cout << "Decoded_v(" << xtype_s << ")(" << v << ") " << x << std::endl;
+                std::cout << "Decoded_v(" << demangle<T>() << ")(" << v << ") " << x << std::endl;
 #endif
             }
         };

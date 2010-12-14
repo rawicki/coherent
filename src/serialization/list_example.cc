@@ -22,10 +22,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
-#include <typeinfo>
-#include <cxxabi.h>
 #include <inttypes.h>
 #include "Misc/TypeList.h"
+#include "Misc/Demangle.h"
 
 
 //template functor
@@ -48,23 +47,6 @@ typedef ListJoin<
             >::value
     >::value List1;
 
-
-//
-template <typename T>
-inline std::string demangle()
-{
-    int ret = 0;
-    std::string xtype_s;
-    char * xtype = abi::__cxa_demangle(typeid(T).name(), NULL, NULL, &ret);
-    if (ret==0) {
-        xtype_s = xtype;
-        free(xtype);
-    }
-    else {
-        xtype_s = std::string("Failed[") + typeid(T).name() + "]";
-    }
-    return xtype_s;
-}
 
 //detailed type printer - it can be partially specialized (apply function can't be)
 template <typename T>

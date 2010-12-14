@@ -21,15 +21,12 @@
 #ifndef VIRTUAL_ENCODER_H
 #define VIRTUAL_ENCODER_H
 
-#define DUMP_TYPEINFO 1
-
 #include <boost/type_traits.hpp>
 #include <boost/shared_ptr.hpp>
 #include "Misc/TypeList.h"
 
 #ifdef DUMP_TYPEINFO
-#   include <cxxabi.h>
-#   include <typeinfo>
+#   include "Misc/Demangle.h"
 #endif
 
 
@@ -85,17 +82,7 @@ struct CreateEncoderImpl<EncoderAbs, Encoder, ListElem<CurrentType, ListTail> >
     virtual void operator() (const CurrentType& x)
     {
 #ifdef DUMP_TYPEINFO
-        int ret = 0;
-        std::string xtype_s;
-        char * xtype = abi::__cxa_demangle(typeid(x).name(), NULL, NULL, &ret);
-        if (ret==0) {
-            xtype_s = xtype;
-            free(xtype);
-        }
-        else {
-            xtype_s = std::string("Failed[") + typeid(x).name() + "]";
-        }
-        std::cout << "Encode(" << xtype_s << ") " << x << std::endl;
+        std::cout << "Encode(" << demangle<CurrentType>() << ") " << x << std::endl;
 #endif
         enc_(x);
     }

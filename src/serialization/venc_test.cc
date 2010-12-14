@@ -24,6 +24,8 @@
 #include <string>
 #include <inttypes.h>
 
+#define DUMP_TYPEINFO 1
+
 #include "Encoders/VirtualEncoder.h"
 #include "Encoders/VirtualDecoder.h"
 #include "Encoders/FileEncoder.h"
