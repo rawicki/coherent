@@ -51,7 +51,11 @@ vc_example: vc_example.cc $(HEADERS)
 	g++ -O3 -I. -c -o vc_example.o vc_example.cc
 	g++ -o vc_example vc_example.o
 
+list_example: list_example.cc Misc/TypeList.h
+	g++ -O3 -I. -c -o list_example.o list_example.cc
+	g++ -o list_example list_example.o
+
 clean:
-	rm -f serialize *.o *test vc_example  gen_test.h gen_test.cc $$(find -name "*~")
+	rm -f serialize *.o *test vc_example list_example  gen_test.h gen_test.cc $$(find -name "*~")
 
 
