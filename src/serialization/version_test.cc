@@ -26,6 +26,11 @@
 
 #include "Codecs/LittleEndianCodec.h"
 #include "Encoders/BufferEncoder.h"
+#include "Encoders/FileEncoder.h"
+
+#define DUMP_TYPEINFO 1
+
+#include "Encoders/EncodersPimpl.h"
 
 
 struct A_old
@@ -44,6 +49,11 @@ struct A_old
     }
     std::string ax_;
     uint32_t ay_;
+
+    friend std::ostream& operator<< (std::ostream& os, const A_old& a0)
+    {
+        return os << "A0(" << a0.ax_ << "," << a0.ay_ << ")";
+    }
 };
 
 struct A
@@ -69,10 +79,52 @@ struct A
         f(az_);
     }
 
+    friend std::ostream& operator<< (std::ostream& os, const A& a)
+    {
+        return os << "A(" << a.ax_ << "," << a.ay_ << "," << a.az_ << ")";
+    }
+
     std::string ax_;
     uint32_t ay_;
     uint64_t az_;
 };
+
+
+//venc/vdec + versioning
+typedef makeList5<std::string, uint32_t, int64_t, A_old, detail::Version<A> >::value  List1;
+typedef CreateDecoderSet<List1>         DecoderSet;
+typedef DecoderSet::DecoderAbs          DecoderAbs;
+typedef DecoderSet::DecoderType         DecoderType;
+
+typedef DecoderSet::DecoderImpl< BufferDecoder<LittleEndianCodec> >::Type   BufferDecoderImpl;
+//typedef DecoderSet::DecoderImpl< FileDecoder<LittleEndianCodec> >     FileDecoderImpl;
+
+
+void foo(DecoderType& dec)
+{
+    std::cout << "=== foo decoding" << std::endl;
+
+    std::string s;
+    uint32_t x;
+    int64_t z;
+
+    A_old a0;
+    A a1;
+
+
+    dec(a0);
+    dec(a1, 1);
+
+    dec(x);
+    dec(z);
+    dec(s);
+
+    std::cout << "=== results" << std::endl;
+    std::cout << "a0(" << a0.ax_ << "," << a0.ay_ << /*"," << a0.az_ <<*/ ")" << std::endl;
+    std::cout << "a1(" << a1.ax_ << "," << a1.ay_ << "," << a1.az_ << ")" << std::endl;
+
+    std::cout << "x: " << x << ", z: " << z << ", s: " << s << std::endl;
+}
 
 
 struct PrintBuf
@@ -135,6 +187,17 @@ int main()
 
         std::cout << "a1(" << a1.ax_ << "," << a1.ay_ << "," << a1.az_ << ")" << std::endl;
         std::cout << "a2(" << a2.ax_ << "," << a2.ay_ << "," << a2.az_ << ")" << std::endl;
+    }
+
+    {
+        BufferEncoder<LittleEndianCodec> enc(buf);
+        enc((uint32_t)777)((int64_t)13051)(std::string("hello!"));
+
+        std::vector<char>::const_iterator it = buf.begin();
+        BufferDecoder<LittleEndianCodec> bd(it, buf.end());
+        DecoderType dec = DecoderType(new BufferDecoderImpl(bd));
+
+        foo(dec);
     }
 
     return 0;
