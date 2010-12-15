@@ -81,6 +81,7 @@ struct BufferDecoder
     BufferDecoder& operator() (T & x, uint32_t v)
     {
         Codec<T>::decode(*this, x, v);
+        return *this;
     }
     char get_char()
     {
