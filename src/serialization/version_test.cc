@@ -105,6 +105,7 @@ struct A
 };
 
 
+
 //vdec + versioning
 typedef makeList5<std::string, uint32_t, int64_t, A_old, detail::Version<A> >::value  List1;
 typedef CreateDecoderSet<List1>         DecoderSet;
@@ -131,10 +132,50 @@ typedef EncoderSet::CreateEncoderImpl<
             >::Type FileEncoderImpl;
 
 
+// class B definitions
+struct B
+{
+    B() {}
+    B(uint64_t f1, uint64_t f2) : v_(2), f1_(f1), f2_(f2)
+    {
+    }
+    template <typename F>
+    void forEach(F & f) const   //encode only default
+    {
+        f(f1_);
+        f(f2_);
+    }
+    template <typename F>
+    void forEach(F & f, uint32_t v = 2) //decode with or without version
+    {
+        if (v>0) f(f1_); else f1_ = -1;
+        if (v>1) f(f2_); else f2_ = -1;
+        v_ = v;
+    }
+
+    friend std::ostream& operator<< (std::ostream& os, const B& b)
+    {
+        return os << "B(" << b.v_ << "," << b.f1_ << "," << b.f2_ << ")";
+    }
+
+    uint32_t v_;
+    int64_t f1_;
+    int64_t f2_;
+};
+
+typedef makeList3<std::string, B, int64_t>::value ListB1; //enc
+typedef makeList2<std::string, detail::Both<B> >::value ListB2; //dec
+
+typedef CreateEncoderSet<ListB1>::EncoderType    Encoder_B;
+typedef CreateDecoderSet<ListB2>::DecoderType    Decoder_B;
+
+typedef CreateEncoderSet<ListB1>::CreateEncoderImpl< detail::FieldPolicy<detail::EncoderQualifier, BufferEncoder<LittleEndianCodec> > >::Type BufferEncoder_B;
+typedef CreateDecoderSet<ListB2>::CreateDecoderImpl< detail::FieldPolicy<detail::DecoderQualifier, BufferDecoder<LittleEndianCodec> > >::Type BufferDecoder_B;
+
 
 void foo(DecoderType& dec)
 {
-    std::cout << "=== foo decoding" << std::endl;
+    std::cout << "BEGIN A decoding" << std::endl;
 
     std::string s;
     uint32_t x;
@@ -151,11 +192,13 @@ void foo(DecoderType& dec)
     dec(z);
     dec(s);
 
-    std::cout << "=== results" << std::endl;
+    std::cout << "A decoding results" << std::endl;
     std::cout << "a0(" << a0.ax_ << "," << a0.ay_ << /*"," << a0.az_ <<*/ ")" << std::endl;
     std::cout << "a1(" << a1.ax_ << "," << a1.ay_ << "," << a1.az_ << ")" << std::endl;
 
     std::cout << "x: " << x << ", z: " << z << ", s: " << s << std::endl;
+
+    std::cout << "END A decoding" << std::endl;
 }
 
 
@@ -235,7 +278,7 @@ int main()
     {
         //use virtual encoder with versioning
 
-        std::cout << "BEGIN encoding" << std::endl;
+        std::cout << "BEGIN A encoding" << std::endl;
 
         A_old ao("stary format", 111);
         A a1("po staremu", 112, 101);
@@ -245,7 +288,7 @@ int main()
         EncoderType enc = EncoderType(new BufferEncoderImpl2(buf));
         enc(ao)(a1, 0)(a2, 5);
 
-        std::cout << "END encoding" << std::endl;
+        std::cout << "END A encoding" << std::endl;
     }
     std::cout << PrintBuf(buf) << std::endl;
 
@@ -258,7 +301,35 @@ int main()
 
         foo(dec);
     }
-    //TODO checked decoder with impl, versions and field_policy
+
+    buf.clear();
+    {
+        std::cout << "BEGIN B encoding" << std::endl;
+
+        Encoder_B enc(new BufferEncoder_B(buf));
+        enc(std::string("Hello!"))(B(4,7));  //hello / B-2
+        enc((int64_t)10);   //B-1
+        //nop for B-0
+        enc((int64_t)13)((int64_t)16);
+        enc(std::string("bye"));
+
+        std::cout << "END B encoding" << std::endl;
+    }
+    {
+        std::cout << "BEGIN B decoding" << std::endl;
+
+        std::vector<char>::const_iterator it = buf.begin();
+        std::vector<char>::const_iterator end = buf.end();
+        Decoder_B dec(new BufferDecoder_B(it, end));
+
+        std::string hello, bye;
+        B b1, b2, b3, b4;
+        dec(hello)(b1,5)(b2,1)(b3,0)(b4)(bye);
+
+        std::cout << "Decoded: " << hello << ", " << b1 << ", " << b2 << ", " << b3 << ", " << b4 << ", " << bye << std::endl;
+
+        std::cout << "END B decoding" << std::endl;
+    }
 
     return 0;
 }
