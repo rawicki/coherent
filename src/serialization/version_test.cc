@@ -35,6 +35,9 @@
 
 struct A_old
 {
+    A_old() {}
+    A_old(const std::string& ax, uint32_t ay) : ax_(ax), ay_(ay) {}
+
     template <typename F>
     void forEach(F & f)
     {
@@ -58,6 +61,9 @@ struct A_old
 
 struct A
 {
+    A() {}
+    A(const std::string& ax, uint32_t ay, uint64_t az) : ax_(ax), ay_(ay), az_(az) {}
+
     template <typename F>
     void forEach(F & f, uint32_t v = 1)
     {
@@ -78,6 +84,15 @@ struct A
         f(ay_);
         f(az_);
     }
+    template <typename F>
+    void forEach(F & f, uint32_t v) const
+    {
+        f(ax_);
+        f(ay_);
+        if (v) {
+            f(az_);
+        }
+    }
 
     friend std::ostream& operator<< (std::ostream& os, const A& a)
     {
@@ -90,14 +105,31 @@ struct A
 };
 
 
-//venc/vdec + versioning
+//vdec + versioning
 typedef makeList5<std::string, uint32_t, int64_t, A_old, detail::Version<A> >::value  List1;
 typedef CreateDecoderSet<List1>         DecoderSet;
 typedef DecoderSet::DecoderAbs          DecoderAbs;
 typedef DecoderSet::DecoderType         DecoderType;
 
 typedef DecoderSet::DecoderImpl< BufferDecoder<LittleEndianCodec> >::Type   BufferDecoderImpl;
-//typedef DecoderSet::DecoderImpl< FileDecoder<LittleEndianCodec> >     FileDecoderImpl;
+typedef DecoderSet::DecoderImpl< FileDecoder<LittleEndianCodec> >::Type     FileDecoderImpl;
+
+//venc + versioning
+typedef CreateEncoderSet<List1>         EncoderSet;
+typedef EncoderSet::EncoderAbs          EncoderAbs;
+typedef EncoderSet::EncoderType         EncoderType;
+
+typedef EncoderSet::EncoderImpl< BufferEncoder<LittleEndianCodec> >::Type   BufferEncoderImpl;
+
+
+typedef EncoderSet::CreateEncoderImpl<
+                detail::FieldPolicy<detail::EncoderQualifier, BufferEncoder<LittleEndianCodec> >
+            >::Type BufferEncoderImpl2;
+
+typedef EncoderSet::CreateEncoderImpl<
+                detail::FieldPolicy<detail::EncoderQualifier, FileEncoder<LittleEndianCodec> >
+            >::Type FileEncoderImpl;
+
 
 
 void foo(DecoderType& dec)
@@ -124,6 +156,26 @@ void foo(DecoderType& dec)
     std::cout << "a1(" << a1.ax_ << "," << a1.ay_ << "," << a1.az_ << ")" << std::endl;
 
     std::cout << "x: " << x << ", z: " << z << ", s: " << s << std::endl;
+}
+
+
+void bar(EncoderType& enc)
+{
+    A_old ao;
+    ao.ax_ = "enc1";
+    ao.ay_ = 1;
+
+    A ap;
+    ap.ax_ = "enc_ap";
+    ap.ay_ = 17;
+    ap.az_ = 19;    //should not be encoded
+
+    A az;
+    az.ax_ = "enc_az";
+    az.ay_ = 21;
+    az.az_ = 23;
+
+    enc(ao)(ap, 0)(az, 1);
 }
 
 
@@ -157,41 +209,48 @@ int main()
     std::vector<char> buf;
 
     {
+        //simple encode some objects
         BufferEncoder<LittleEndianCodec> enc(buf);
 
-        A_old ao;
-        ao.ax_ = "testowy napis";
-        ao.ay_ = (13<<8)+7;
+        A_old ao("xyz", (13<<8)+7);
+        A an("obiekt A", 78, (1LL<<40) + (15LL<<32) + 65);
 
-        enc(ao);
-
-        A an;
-        an.ax_ = "obiekt klasy A";
-        an.ay_ = 78;
-        an.az_ = (1LL<<40) + (15LL<<32) + 65;
-
-        enc(an);
+        enc(ao)(an)((uint32_t)777)((int64_t)13051)(std::string("hello!"));
     }
 
     std::cout << PrintBuf(buf) << std::endl;
 
     {
+        //simple decode using versioning
         std::vector<char>::const_iterator it = buf.begin();
         BufferDecoder<LittleEndianCodec> dec(it, buf.end());
 
-        A a1;
-        dec(a1, 0);     //choose old version
-
-        A a2;
-        dec(a2);
+        A a1, a2;
+        dec(a1, 0)(a2); //a1 with old version
 
         std::cout << "a1(" << a1.ax_ << "," << a1.ay_ << "," << a1.az_ << ")" << std::endl;
         std::cout << "a2(" << a2.ax_ << "," << a2.ay_ << "," << a2.az_ << ")" << std::endl;
     }
 
     {
-        BufferEncoder<LittleEndianCodec> enc(buf);
-        enc((uint32_t)777)((int64_t)13051)(std::string("hello!"));
+        //use virtual encoder with versioning
+
+        std::cout << "BEGIN encoding" << std::endl;
+
+        A_old ao("stary format", 111);
+        A a1("po staremu", 112, 101);
+        A a2("po nowemu", 113, 251);
+
+        //std::cout << buf.size() << " " << (void*)(&buf[0]) << std::endl;
+        EncoderType enc = EncoderType(new BufferEncoderImpl2(buf));
+        enc(ao)(a1, 0)(a2, 5);
+
+        std::cout << "END encoding" << std::endl;
+    }
+    std::cout << PrintBuf(buf) << std::endl;
+
+    {
+        //use virtual decoder
 
         std::vector<char>::const_iterator it = buf.begin();
         BufferDecoder<LittleEndianCodec> bd(it, buf.end());
@@ -199,6 +258,7 @@ int main()
 
         foo(dec);
     }
+    //TODO checked decoder with impl, versions and field_policy
 
     return 0;
 }
