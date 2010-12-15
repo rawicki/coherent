@@ -31,15 +31,15 @@
 #define DEFINE_CONSTRUCTORS(ClassName, DerivedName) \
     ClassName() {} \
     template <typename T1> \
-    ClassName(T1 t1) : DerivedName(t1) {} \
+    ClassName(T1& t1) : DerivedName(t1) {} \
     template <typename T1, typename T2> \
-    ClassName(T1 t1, T2 t2) : DerivedName(t1, t2) {} \
+    ClassName(T1& t1, T2& t2) : DerivedName(t1, t2) {} \
     template <typename T1, typename T2, typename T3> \
-    ClassName(T1 t1, T2 t2, T3 t3) : DerivedName(t1, t2, t3) {} \
+    ClassName(T1& t1, T2& t2, T3& t3) : DerivedName(t1, t2, t3) {} \
     template <typename T1, typename T2, typename T3, typename T4> \
-    ClassName(T1 t1, T2 t2, T3 t3, T4 t4) : DerivedName(t1, t2, t3, t4) {} \
+    ClassName(T1& t1, T2& t2, T3& t3, T4& t4) : DerivedName(t1, t2, t3, t4) {} \
     template <typename T1, typename T2, typename T3, typename T4, typename T5> \
-    ClassName(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) : DerivedName(t1, t2, t3, t4, t5) {}
+    ClassName(T1& t1, T2& t2, T3& t3, T4& t4, T5& t5) : DerivedName(t1, t2, t3, t4, t5) {}
 
 
 namespace pimpl_detail
@@ -239,6 +239,9 @@ private:
     typedef typename VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> >::Type Super;
 public:
     DEFINE_CONSTRUCTORS(CreateClassImpl, Super)
+
+        //TODO zdefiniowac tutaj wewnatrz typ, tak zeby zlozenie dotyczylo tylko VirtualFnBody klas, a nie dodatkowo tej proxy,
+        //w ten sposób bêdzie mo¿na bezpiecznie utworzyæ swoj± politykê z dobrze zdefiniowanymi konstruktorami
 };
 
 

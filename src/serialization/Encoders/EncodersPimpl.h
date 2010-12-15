@@ -62,12 +62,14 @@ namespace detail
     {
         virtual void operator() (const T&) = 0;
         virtual void operator() (const T&, uint32_t) = 0;
+        //TODO sprawdzic czy wystarczy dziedziczenie po Version i Default ?
     };
 
     template <typename T>
     struct EncoderQualifier
     {
-        typedef typename boost::add_const<typename boost::add_reference<T>::type>::type type;
+        //typedef typename boost::add_const<typename boost::add_reference<T>::type>::type type;
+        typedef const T & type;
     };
 
     //decoder
@@ -96,13 +98,35 @@ namespace detail
     template <typename T>
     struct DecoderQualifier
     {
-        typedef typename boost::add_reference<T>::type type;
+        //typedef typename boost::add_reference<T>::type type;
+        typedef T & type;
     };
 
 
     template <template <class> class Qualifier>
     struct DefaultImplementation
     {
+#ifdef DUMP_TYPEINFO
+        template <typename T> static void process_info(typename Qualifier<T>::type x)
+        {
+            if (boost::is_same<typename Qualifier<T>::type, const T&>::value)
+                std::cout << "encoding";
+            else std::cout << "decoding";
+            std::cout << "(" << demangle<T>() << ") " << x << std::endl;
+        }
+        template <typename T> static void process_info_v(typename Qualifier<T>::type x, uint32_t v)
+        {
+            if (boost::is_same<typename Qualifier<T>::type, const T&>::value)
+                std::cout << "encoding_v";
+            else std::cout << "decoding_v";
+            std::cout << "(" << demangle<T>() << ")(" << v << ") " << x << std::endl;
+        }
+#   define DUMP_RESULT(T, x)        process_info<T>(x)
+#   define DUMP_RESULT_V(T, x, v)   process_info_v<T>(x, v)
+#else
+#   define DUMP_RESULT(T, x)
+#   define DUMP_RESULT_V(T, x, v)
+#endif
         template <typename T, typename Super>
         struct Tmpl : public Super
         {
@@ -111,9 +135,7 @@ namespace detail
             virtual void operator() (typename Qualifier<T>::type x)
             {
                 Super::getFoo()(x);
-#ifdef DUMP_TYPEINFO
-                std::cout << "Decoded(" << demangle<T>() << ") " << x << std::endl;
-#endif
+                DUMP_RESULT(T, x);
             }
         };
         template <typename T, typename Super>
@@ -124,9 +146,7 @@ namespace detail
             virtual void operator() (typename Qualifier<T>::type x)
             {
                 Super::getFoo()(x);
-#ifdef DUMP_TYPEINFO
-                std::cout << "Decoded(" << demangle<T>() << ") " << x << std::endl;
-#endif
+                DUMP_RESULT(T, x);
             }
         };
         template <typename T, typename Super>
@@ -137,29 +157,24 @@ namespace detail
             virtual void operator() (typename Qualifier<T>::type x, uint32_t v)
             {
                 Super::getFoo()(x, v);
-#ifdef DUMP_TYPEINFO
-                std::cout << "Decoded_v(" << demangle<T>() << ")(" << v << ") " << x << std::endl;
-#endif
+                DUMP_RESULT_V(T, x, v);
             }
         };
         template <typename T, typename Super>
         struct Tmpl< Both<T>, Super > : public Super
         {
+            //TODO sprawdzic czy wystarczy dziedziczenie po powyzszych?
             DEFINE_CONSTRUCTORS(Tmpl, Super)
 
             virtual void operator() (typename Qualifier<T>::type x)
             {
                 Super::getFoo()(x);
-#ifdef DUMP_TYPEINFO
-                std::cout << "Decoded(" << demangle<T>() << ") " << x << std::endl;
-#endif
+                DUMP_RESULT(T, x);
             }
             virtual void operator() (typename Qualifier<T>::type x, uint32_t v)
             {
                 Super::getFoo()(x, v);
-#ifdef DUMP_TYPEINFO
-                std::cout << "Decoded_v(" << demangle<T>() << ")(" << v << ") " << x << std::endl;
-#endif
+                DUMP_RESULT_V(T, x, v);
             }
         };
     };
