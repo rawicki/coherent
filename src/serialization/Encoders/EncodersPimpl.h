@@ -182,7 +182,8 @@ namespace detail
     template <template <class> class Qualifier, typename Derived>
     struct RefPolicy
     {
-        struct Policy
+        template <typename Abs>
+        struct Policy : public Abs
         {
             Policy(Derived& foo) : foo_(foo)
             {
@@ -205,7 +206,8 @@ namespace detail
     template <template <class> class Qualifier, typename Derived>
     struct FieldPolicy
     {
-        struct Policy
+        template <typename Abs>
+        struct Policy : public Abs
         {
             DEFINE_CONSTRUCTORS(Policy, foo_)
 
@@ -263,14 +265,14 @@ struct CreateEncoderSet
     template <typename EncoderPolicy>
     struct CreateEncoderImpl
     {
-        typedef typename PImplSet::template ClassImpl<EncoderPolicy> Type;
+        typedef typename PImplSet::template ClassImpl<EncoderPolicy>::Type Type;
     };
 
     //tak jak w decoderze zostawione dla kompatybilno¶ci wstecznej
     template <typename Encoder>
     struct EncoderImpl
     {
-        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::EncoderQualifier, Encoder> > Type;
+        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::EncoderQualifier, Encoder> >::Type Type;
     };
 };
 
@@ -312,7 +314,7 @@ struct CreateDecoderSet
     template <typename DecoderPolicy>
     struct CreateDecoderImpl
     {
-        typedef typename PImplSet::template ClassImpl<DecoderPolicy> Type;
+        typedef typename PImplSet::template ClassImpl<DecoderPolicy>::Type Type;
     };
 
     //poni¿sze zostaje jedynie dla kompatybilno¶ci wstecznej, jedyn± ró¿nic± jest dodanie `::Type'
@@ -320,7 +322,7 @@ struct CreateDecoderSet
     template <typename Decoder>
     struct DecoderImpl
     {
-        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::DecoderQualifier, Decoder> > Type;
+        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::DecoderQualifier, Decoder> >::Type Type;
     };
 };
 

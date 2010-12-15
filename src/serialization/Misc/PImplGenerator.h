@@ -52,6 +52,7 @@ struct CreateClassAbs;
 template <template <class> class VirtualFnTmpl>
 struct CreateClassAbs<VirtualFnTmpl, ListHead>
 {
+    virtual ~CreateClassAbs() {}
 };
 
 template <template <class> class VirtualFnTmpl, typename CurrentType, typename ListTail>
@@ -204,7 +205,7 @@ struct Identity
 //create impl helper
 template <
     typename ClassAbs,
-    typename ImplPolicy,
+    template <class> class ImplPolicy,
     template <class,class> class VirtualFnBody,
     typename TypeList
 >
@@ -212,36 +213,25 @@ struct CreateClassImpl;
 
 template <
     typename ClassAbs,
-    typename ImplPolicy,
+    template <class> class ImplPolicy,
     template <class,class> class VirtualFnBody
 >
 struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListHead>
-    : public ClassAbs
-    , public ImplPolicy
 {
-public:
-    DEFINE_CONSTRUCTORS(CreateClassImpl, ImplPolicy)
-
-    virtual ~CreateClassImpl() {}
+    typedef ImplPolicy<ClassAbs>        Type;
 };
 
 template <
     typename ClassAbs,
-    typename ImplPolicy,
+    template <class> class ImplPolicy,
     template <class, class> class VirtualFnBody,
     typename CurrentType,
     typename ListTail
 >
 struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListElem<CurrentType, ListTail> >
-    : public VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> >::Type
 {
-private:
-    typedef typename VirtualFnBody<CurrentType, CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail> >::Type Super;
-public:
-    DEFINE_CONSTRUCTORS(CreateClassImpl, Super)
-
-        //TODO zdefiniowac tutaj wewnatrz typ, tak zeby zlozenie dotyczylo tylko VirtualFnBody klas, a nie dodatkowo tej proxy,
-        //w ten sposób bêdzie mo¿na bezpiecznie utworzyæ swoj± politykê z dobrze zdefiniowanymi konstruktorami
+    typedef typename CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail>::Type       Super;
+    typedef typename VirtualFnBody<CurrentType, Super>::Type                                    Type;
 };
 
 
@@ -289,7 +279,7 @@ struct CreatePImplSet
     };
 
     /* Implementation must have:
-     *      - typename Policy - which serves as Base class,
+     *      - template <class Abs> class Policy - which serves as Base class, inherits only ClassAbs
      *      - template <class T, class Super> class Tmpl, where:
      *          * T - current type (before TypeExtractor, just list element),
      *          * Super - Tmpl generated type must inherit this class,
@@ -299,13 +289,14 @@ struct CreatePImplSet
      */
     template <typename Implementation>
     struct ClassImpl
-        : public pimpl_detail::CreateClassImpl<ClassAbs, typename Implementation::Policy, Implementation::template Tmpl, TypeList>
     {
-        typedef pimpl_detail::CreateClassImpl<ClassAbs, typename Implementation::Policy, Implementation::template Tmpl, TypeList> Super;
-
-        DEFINE_CONSTRUCTORS(ClassImpl, Super)
-
-        virtual ~ClassImpl() {}
+        typedef
+            typename pimpl_detail::CreateClassImpl<
+                    ClassAbs,
+                    Implementation::template Policy,
+                    Implementation::template Tmpl,
+                    TypeList
+                >::Type Type;
     };
 
 
