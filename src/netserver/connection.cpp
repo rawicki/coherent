@@ -112,6 +112,9 @@ namespace coherent
             {
                 connection::observer obs = conn->read_observers.front();
 
+                ::boost::shared_ptr<buffer> buf(new buffer(obs.length));
+                rval = read(conn->fd, buf->get_data(), buf->get_size());
+
                 if(rval < 0)
                 {
                     ::std::cerr << "Error reading stream message";
@@ -122,9 +125,6 @@ namespace coherent
                 }
                 else
                 {
-                    ::boost::shared_ptr<buffer> buf(new buffer(obs.length));
-                    rval = read(conn->fd, buf->get_data(), buf->get_size());
-
                     ::std::clog << "-->" << (int)rval << "  " << buf->get_data() << "\n";
 
                     obs.callback(buf);
