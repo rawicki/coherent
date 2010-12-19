@@ -34,20 +34,20 @@
 #include "codecs/little_endian.h"
 
 
-typedef makeList3<std::string, uint32_t, int64_t>::value       List1;
+typedef make_list3<std::string, uint32_t, int64_t>::value       List1;
 typedef CreateEncoderSet<List1>         EncoderSet;
 typedef EncoderSet::EncoderAbs          EncoderAbs;
 typedef EncoderSet::EncoderType         EncoderType;
 
-typedef EncoderSet::EncoderImpl< BufferEncoder<LittleEndianCodec> >   BufferEncoderImpl;
-typedef EncoderSet::EncoderImpl< FileEncoder<LittleEndianCodec> >     FileEncoderImpl;
+typedef EncoderSet::EncoderImpl< buffer_encoder<little_endian_codec> >   buffer_encoderImpl;
+typedef EncoderSet::EncoderImpl< file_encoder<little_endian_codec> >     file_encoderImpl;
 
 typedef CreateDecoderSet<List1>         DecoderSet;
 typedef DecoderSet::DecoderAbs          DecoderAbs;
 typedef DecoderSet::DecoderType         DecoderType;
 
-typedef DecoderSet::DecoderImpl< BufferDecoder<LittleEndianCodec> >   BufferDecoderImpl;
-typedef DecoderSet::DecoderImpl< FileDecoder<LittleEndianCodec> >     FileDecoderImpl;
+typedef DecoderSet::DecoderImpl< buffer_decoder<little_endian_codec> >   buffer_decoderImpl;
+typedef DecoderSet::DecoderImpl< file_decoder<little_endian_codec> >     file_decoderImpl;
 
 
 void foo(EncoderType& enc)
@@ -94,13 +94,13 @@ int main(int argc, char **argv)
     std::vector<char> buff2;
     std::vector<char> buff3;
 
-    BufferEncoder<LittleEndianCodec> be1(buff1);
-    BufferEncoder<LittleEndianCodec> be2(buff2);
-    BufferEncoder<LittleEndianCodec> be3(buff3);
+    buffer_encoder<little_endian_codec> be1(buff1);
+    buffer_encoder<little_endian_codec> be2(buff2);
+    buffer_encoder<little_endian_codec> be3(buff3);
 
-    if (cmd == "1") enc = EncoderType(new BufferEncoderImpl(be1));
-    if (cmd == "2") enc = EncoderType(new BufferEncoderImpl(be2));
-    if (cmd == "3") enc = EncoderType(new BufferEncoderImpl(be3));
+    if (cmd == "1") enc = EncoderType(new buffer_encoderImpl(be1));
+    if (cmd == "2") enc = EncoderType(new buffer_encoderImpl(be2));
+    if (cmd == "3") enc = EncoderType(new buffer_encoderImpl(be3));
 
     foo(enc);
     std::cout << buff1.size() << " " << buff2.size() << " " << buff3.size() << std::endl;
@@ -112,13 +112,13 @@ int main(int argc, char **argv)
     std::vector<char>::const_iterator bi2 = buff2.begin();
     std::vector<char>::const_iterator bi3 = buff3.begin();
 
-    BufferDecoder<LittleEndianCodec> bd1(bi1, buff1.end());
-    BufferDecoder<LittleEndianCodec> bd2(bi2, buff2.end());
-    BufferDecoder<LittleEndianCodec> bd3(bi3, buff3.end());
+    buffer_decoder<little_endian_codec> bd1(bi1, buff1.end());
+    buffer_decoder<little_endian_codec> bd2(bi2, buff2.end());
+    buffer_decoder<little_endian_codec> bd3(bi3, buff3.end());
 
-    if (buff1.size()) dec = DecoderType(new BufferDecoderImpl(bd1));
-    if (buff2.size()) dec = DecoderType(new BufferDecoderImpl(bd2));
-    if (buff3.size()) dec = DecoderType(new BufferDecoderImpl(bd3));
+    if (buff1.size()) dec = DecoderType(new buffer_decoderImpl(bd1));
+    if (buff2.size()) dec = DecoderType(new buffer_decoderImpl(bd2));
+    if (buff3.size()) dec = DecoderType(new buffer_decoderImpl(bd3));
 
     bar(dec);
 

@@ -50,13 +50,13 @@ template <template <class> class VirtualFnTmpl, typename TypeList>
 struct CreateClassAbs;
 
 template <template <class> class VirtualFnTmpl>
-struct CreateClassAbs<VirtualFnTmpl, ListHead>
+struct CreateClassAbs<VirtualFnTmpl, list_head>
 {
     virtual ~CreateClassAbs() {}
 };
 
 template <template <class> class VirtualFnTmpl, typename CurrentType, typename ListTail>
-struct CreateClassAbs<VirtualFnTmpl, ListElem<CurrentType, ListTail> >
+struct CreateClassAbs<VirtualFnTmpl, list_elem<CurrentType, ListTail> >
     : public VirtualFnTmpl<CurrentType>
     , public CreateClassAbs<VirtualFnTmpl, ListTail>
 {
@@ -79,7 +79,7 @@ template <
     template <class> class TypeExtractor,
     template <class> class VirtualFnTmpl
 >
-struct CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListHead>
+struct CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_head>
 {
     CreateClassType() {}
     CreateClassType(ClassAbs * impl) : impl_(impl) {}
@@ -96,7 +96,7 @@ template <
     typename CurrentType,
     typename ListTail
 >
-struct CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListElem<CurrentType, ListTail> >
+struct CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail> >
     : public CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail>
 {
 private:
@@ -153,7 +153,7 @@ struct FindClassSuper;
     >
     struct FindClassSuperHelper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, CurrentType, ListTail, true, T>
     {
-        typedef CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListElem<CurrentType, ListTail> > Type;
+        typedef CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail> > Type;
     };
     template <
         typename ClassAbs,
@@ -178,7 +178,7 @@ template <
     typename ListTail,
     typename T
 >
-struct FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListElem<CurrentType, ListTail>, T>
+struct FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail>, T>
 {
     typedef
         typename FindClassSuperHelper<
@@ -216,7 +216,7 @@ template <
     template <class> class ImplPolicy,
     template <class,class> class VirtualFnBody
 >
-struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListHead>
+struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, list_head>
 {
     typedef ImplPolicy<ClassAbs>        Type;
 };
@@ -228,7 +228,7 @@ template <
     typename CurrentType,
     typename ListTail
 >
-struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListElem<CurrentType, ListTail> >
+struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, list_elem<CurrentType, ListTail> >
 {
     typedef typename CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail>::Type       Super;
     typedef typename VirtualFnBody<CurrentType, Super>::Type                                    Type;

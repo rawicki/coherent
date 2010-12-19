@@ -30,7 +30,7 @@
 
 
 template <typename T>
-struct StandardSequenceCodec
+struct standard_sequence_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const T& s)
@@ -54,12 +54,12 @@ struct StandardSequenceCodec
     }
 };
 
-struct StandardStringCodec : public StandardSequenceCodec<std::string>
+struct standard_string_codec : public standard_sequence_codec<std::string>
 {
 };
 
 template <typename Container>
-struct UniqueContainerCodec
+struct unique_container_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const Container& cont)
@@ -86,7 +86,7 @@ struct UniqueContainerCodec
 };
 
 template <typename F, typename S>
-struct StandardPairCodec
+struct standard_pair_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const std::pair<F,S>& p)

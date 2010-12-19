@@ -39,13 +39,13 @@ struct A_old
     A_old(const std::string& ax, uint32_t ay) : ax_(ax), ay_(ay) {}
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         f(ax_);
         f(ay_);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         f(ax_);
         f(ay_);
@@ -65,7 +65,7 @@ struct A
     A(const std::string& ax, uint32_t ay, uint64_t az) : ax_(ax), ay_(ay), az_(az) {}
 
     template <typename F>
-    void forEach(F & f, uint32_t v = 1)
+    void for_each(F & f, uint32_t v = 1)
     {
         f(ax_);
         f(ay_);
@@ -78,14 +78,14 @@ struct A
         }
     }
     template <typename F>
-    void forEach(F & f) const   //example: no versions for encoding
+    void for_each(F & f) const   //example: no versions for encoding
     {
         f(ax_);
         f(ay_);
         f(az_);
     }
     template <typename F>
-    void forEach(F & f, uint32_t v) const
+    void for_each(F & f, uint32_t v) const
     {
         f(ax_);
         f(ay_);
@@ -107,29 +107,29 @@ struct A
 
 
 //vdec + versioning
-typedef makeList5<std::string, uint32_t, int64_t, A_old, detail::Version<A> >::value  List1;
+typedef make_list5<std::string, uint32_t, int64_t, A_old, detail::Version<A> >::value  List1;
 typedef CreateDecoderSet<List1>         DecoderSet;
 typedef DecoderSet::DecoderAbs          DecoderAbs;
 typedef DecoderSet::DecoderType         DecoderType;
 
-typedef DecoderSet::DecoderImpl< BufferDecoder<LittleEndianCodec> >::Type   BufferDecoderImpl;
-typedef DecoderSet::DecoderImpl< FileDecoder<LittleEndianCodec> >::Type     FileDecoderImpl;
+typedef DecoderSet::DecoderImpl< buffer_decoder<little_endian_codec> >::Type   buffer_decoderImpl;
+typedef DecoderSet::DecoderImpl< file_decoder<little_endian_codec> >::Type     file_decoderImpl;
 
 //venc + versioning
 typedef CreateEncoderSet<List1>         EncoderSet;
 typedef EncoderSet::EncoderAbs          EncoderAbs;
 typedef EncoderSet::EncoderType         EncoderType;
 
-typedef EncoderSet::EncoderImpl< BufferEncoder<LittleEndianCodec> >::Type   BufferEncoderImpl;
+typedef EncoderSet::EncoderImpl< buffer_encoder<little_endian_codec> >::Type   buffer_encoderImpl;
 
 
 typedef EncoderSet::CreateEncoderImpl<
-                detail::FieldPolicy<detail::EncoderQualifier, BufferEncoder<LittleEndianCodec> >
-            >::Type BufferEncoderImpl2;
+                detail::FieldPolicy<detail::EncoderQualifier, buffer_encoder<little_endian_codec> >
+            >::Type buffer_encoderImpl2;
 
 typedef EncoderSet::CreateEncoderImpl<
-                detail::FieldPolicy<detail::EncoderQualifier, FileEncoder<LittleEndianCodec> >
-            >::Type FileEncoderImpl;
+                detail::FieldPolicy<detail::EncoderQualifier, file_encoder<little_endian_codec> >
+            >::Type file_encoderImpl;
 
 
 // class B definitions
@@ -140,13 +140,13 @@ struct B
     {
     }
     template <typename F>
-    void forEach(F & f) const   //encode only default
+    void for_each(F & f) const   //encode only default
     {
         f(f1_);
         f(f2_);
     }
     template <typename F>
-    void forEach(F & f, uint32_t v = 2) //decode with or without version
+    void for_each(F & f, uint32_t v = 2) //decode with or without version
     {
         if (v>0) f(f1_); else f1_ = -1;
         if (v>1) f(f2_); else f2_ = -1;
@@ -163,14 +163,14 @@ struct B
     int64_t f2_;
 };
 
-typedef makeList3<std::string, B, int64_t>::value ListB1; //enc
-typedef makeList2<std::string, detail::Both<B> >::value ListB2; //dec
+typedef make_list3<std::string, B, int64_t>::value ListB1; //enc
+typedef make_list2<std::string, detail::Both<B> >::value ListB2; //dec
 
 typedef CreateEncoderSet<ListB1>::EncoderType    Encoder_B;
 typedef CreateDecoderSet<ListB2>::DecoderType    Decoder_B;
 
-typedef CreateEncoderSet<ListB1>::CreateEncoderImpl< detail::FieldPolicy<detail::EncoderQualifier, BufferEncoder<LittleEndianCodec> > >::Type BufferEncoder_B;
-typedef CreateDecoderSet<ListB2>::CreateDecoderImpl< detail::FieldPolicy<detail::DecoderQualifier, BufferDecoder<LittleEndianCodec> > >::Type BufferDecoder_B;
+typedef CreateEncoderSet<ListB1>::CreateEncoderImpl< detail::FieldPolicy<detail::EncoderQualifier, buffer_encoder<little_endian_codec> > >::Type buffer_encoder_B;
+typedef CreateDecoderSet<ListB2>::CreateDecoderImpl< detail::FieldPolicy<detail::DecoderQualifier, buffer_decoder<little_endian_codec> > >::Type buffer_decoder_B;
 
 
 void foo(DecoderType& dec)
@@ -253,7 +253,7 @@ int main()
 
     {
         //simple encode some objects
-        BufferEncoder<LittleEndianCodec> enc(buf);
+        buffer_encoder<little_endian_codec> enc(buf);
 
         A_old ao("xyz", (13<<8)+7);
         A an("obiekt A", 78, (1LL<<40) + (15LL<<32) + 65);
@@ -266,7 +266,7 @@ int main()
     {
         //simple decode using versioning
         std::vector<char>::const_iterator it = buf.begin();
-        BufferDecoder<LittleEndianCodec> dec(it, buf.end());
+        buffer_decoder<little_endian_codec> dec(it, buf.end());
 
         A a1, a2;
         dec(a1, 0)(a2); //a1 with old version
@@ -285,7 +285,7 @@ int main()
         A a2("po nowemu", 113, 251);
 
         //std::cout << buf.size() << " " << (void*)(&buf[0]) << std::endl;
-        EncoderType enc = EncoderType(new BufferEncoderImpl2(buf));
+        EncoderType enc = EncoderType(new buffer_encoderImpl2(buf));
         enc(ao)(a1, 0)(a2, 5);
 
         std::cout << "END A encoding" << std::endl;
@@ -296,8 +296,8 @@ int main()
         //use virtual decoder
 
         std::vector<char>::const_iterator it = buf.begin();
-        BufferDecoder<LittleEndianCodec> bd(it, buf.end());
-        DecoderType dec = DecoderType(new BufferDecoderImpl(bd));
+        buffer_decoder<little_endian_codec> bd(it, buf.end());
+        DecoderType dec = DecoderType(new buffer_decoderImpl(bd));
 
         foo(dec);
     }
@@ -306,7 +306,7 @@ int main()
     {
         std::cout << "BEGIN B encoding" << std::endl;
 
-        Encoder_B enc(new BufferEncoder_B(buf));
+        Encoder_B enc(new buffer_encoder_B(buf));
         enc(std::string("Hello!"))(B(4,7));  //hello / B-2
         enc((int64_t)10);   //B-1
         //nop for B-0
@@ -320,7 +320,7 @@ int main()
 
         std::vector<char>::const_iterator it = buf.begin();
         std::vector<char>::const_iterator end = buf.end();
-        Decoder_B dec(new BufferDecoder_B(it, end));
+        Decoder_B dec(new buffer_decoder_B(it, end));
 
         std::string hello, bye;
         B b1, b2, b3, b4;

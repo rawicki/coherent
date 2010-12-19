@@ -29,21 +29,21 @@
 
 
 template <template <typename T> class Codec>
-struct BufferEncoder
+struct buffer_encoder
 {
-    BufferEncoder(std::vector<char>& buffer)
+    buffer_encoder(std::vector<char>& buffer)
         : buffer_(buffer)
         //: it_(std::back_inserter(buffer))
     {
     }
     template <typename T>
-    BufferEncoder& operator() (const T& x)
+    buffer_encoder& operator() (const T& x)
     {
         Codec<T>::encode(*this, x);
         return *this;
     }
     template <typename T>
-    BufferEncoder& operator() (const T& x, uint32_t v)
+    buffer_encoder& operator() (const T& x, uint32_t v)
     {
         Codec<T>::encode(*this, x, v);
         return *this;
@@ -66,19 +66,19 @@ private:
 };
 
 template <template <typename T> class Codec>
-struct BufferDecoder
+struct buffer_decoder
 {
-    BufferDecoder(std::vector<char>::const_iterator& begin, std::vector<char>::const_iterator end) : begin_(begin), end_(end)
+    buffer_decoder(std::vector<char>::const_iterator& begin, std::vector<char>::const_iterator end) : begin_(begin), end_(end)
     {
     }
     template <typename T>
-    BufferDecoder& operator() (T & x)
+    buffer_decoder& operator() (T & x)
     {
         Codec<T>::decode(*this, x);
         return *this;
     }
     template <typename T>
-    BufferDecoder& operator() (T & x, uint32_t v)
+    buffer_decoder& operator() (T & x, uint32_t v)
     {
         Codec<T>::decode(*this, x, v);
         return *this;

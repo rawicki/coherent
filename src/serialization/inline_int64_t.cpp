@@ -21,28 +21,29 @@
 #include "codecs/big_endian.h"
 #include "codecs/little_endian.h"
 
-template <typename T> struct Codec : public LittleEndianCodec<T> {};
-typedef int64_t Type;
+template <typename T> struct codec : public little_endian_codec<T> {};
 
-struct Enc
+typedef int64_t type;
+
+struct encoder
 {
     void write_char(char);
 };
 
-struct Dec
+struct decoder
 {
     char get_char();
 };
 
-void funkcja_enc(Type x)
+void funkcja_enc(const type& x)
 {
-    Enc enc;
-    Codec<Type>::encode(enc, x);
+    encoder enc;
+    codec<type>::encode(enc, x);
 }
 
-void funkcja_dec(Type& x)
+void funkcja_dec(type& x)
 {
-    Dec dec;
-    Codec<Type>::decode(dec, x);
+    decoder dec;
+    codec<type>::decode(dec, x);
 }
 

@@ -23,22 +23,21 @@
 
 
 //basics:
-struct TreeLeaf
+struct tree_leaf
 {
 };
 
 template <typename This, typename LeftNode, typename RightNode>
-struct TreeNode
+struct tree_node
 {
-    typedef This Type;
 };
 
 
 //useful creators for simple trees
 template <typename T>
-struct CreateTreeNode
+struct create_tree_node
 {
-    typedef TreeNode<T, TreeLeaf, TreeLeaf> value;
+    typedef tree_node<T, tree_leaf, tree_leaf> value;
 };
 
 

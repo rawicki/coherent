@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 {
     std::vector<char> buffer;
 
-    checkBaseTree();
+    check_base_tree();
 
     VirtualBase vb;
     fun(vb, buffer);

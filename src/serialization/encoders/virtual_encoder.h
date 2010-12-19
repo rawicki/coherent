@@ -45,12 +45,12 @@ template <typename TypeList>
 struct CreateEncoderAbs;
 
 template <>
-struct CreateEncoderAbs<ListHead>
+struct CreateEncoderAbs<list_head>
 {
 };
 
 template <typename CurrentType, typename ListTail>
-struct CreateEncoderAbs<ListElem<CurrentType, ListTail> >
+struct CreateEncoderAbs<list_elem<CurrentType, ListTail> >
     : public VirtualEncoderFunction<CurrentType>,
       public CreateEncoderAbs<ListTail>
 {
@@ -62,7 +62,7 @@ template <typename EncoderAbs, typename Encoder, typename TypeList>
 struct CreateEncoderImpl;
 
 template <typename EncoderAbs, typename Encoder>
-struct CreateEncoderImpl<EncoderAbs, Encoder, ListHead>
+struct CreateEncoderImpl<EncoderAbs, Encoder, list_head>
     : public EncoderAbs
 {
     CreateEncoderImpl(Encoder& enc) : enc_(enc) {}
@@ -72,7 +72,7 @@ protected:
 };
 
 template <typename EncoderAbs, typename Encoder, typename CurrentType, typename ListTail>
-struct CreateEncoderImpl<EncoderAbs, Encoder, ListElem<CurrentType, ListTail> >
+struct CreateEncoderImpl<EncoderAbs, Encoder, list_elem<CurrentType, ListTail> >
     : public CreateEncoderImpl<EncoderAbs, Encoder, ListTail>
 {
     typedef CreateEncoderImpl<EncoderAbs, Encoder, ListTail>    Super;
@@ -94,7 +94,7 @@ template <typename EncoderAbs, typename TypeList>
 struct CreateEncoderType;
 
 template <typename EncoderAbs>
-struct CreateEncoderType<EncoderAbs, ListHead>
+struct CreateEncoderType<EncoderAbs, list_head>
 {
     CreateEncoderType() {}
     CreateEncoderType(EncoderAbs * impl) : impl_(impl) {}
@@ -104,7 +104,7 @@ protected:
 };
 
 template <typename EncoderAbs, typename CurrentType, typename ListTail>
-struct CreateEncoderType<EncoderAbs, ListElem<CurrentType, ListTail> >
+struct CreateEncoderType<EncoderAbs, list_elem<CurrentType, ListTail> >
     : public CreateEncoderType<EncoderAbs, ListTail>
 {
 private:
@@ -131,7 +131,7 @@ struct FindEncoderSuper;
     template <typename EncoderAbs, typename CurrentType, typename ListTail, typename T>
     struct FindEncoderSuperHelper<EncoderAbs, CurrentType, ListTail, true, T>
     {
-        typedef CreateEncoderType<EncoderAbs, ListElem<CurrentType, ListTail> > Type;
+        typedef CreateEncoderType<EncoderAbs, list_elem<CurrentType, ListTail> > Type;
     };
     template <typename EncoderAbs, typename CurrentType, typename ListTail, typename T>
     struct FindEncoderSuperHelper<EncoderAbs, CurrentType, ListTail, false, T>
@@ -140,7 +140,7 @@ struct FindEncoderSuper;
     };
 
 template <typename EncoderAbs, typename CurrentType, typename ListTail, typename T>
-struct FindEncoderSuper<EncoderAbs, ListElem<CurrentType, ListTail>, T>
+struct FindEncoderSuper<EncoderAbs, list_elem<CurrentType, ListTail>, T>
 {
     typedef typename FindEncoderSuperHelper<EncoderAbs, CurrentType, ListTail, boost::is_same<CurrentType, T>::value, T>::Type   Type;
 };

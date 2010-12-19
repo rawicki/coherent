@@ -30,20 +30,20 @@
 
 
 template <template <typename T> class Codec>
-struct FileEncoder
+struct file_encoder
 {
-    FileEncoder(int fd, size_t bufferSize = 4096) : fd_(fd), bufferSize_(bufferSize)
+    file_encoder(int fd, size_t bufferSize = 4096) : fd_(fd), bufferSize_(bufferSize)
     {
     }
 
     template <typename T>
-    FileEncoder& operator() (const T& x)
+    file_encoder& operator() (const T& x)
     {
         Codec<T>::encode(*this, x);
         return *this;
     }
     template <typename T>
-    FileEncoder& operator() (const T& x, uint32_t v)
+    file_encoder& operator() (const T& x, uint32_t v)
     {
         Codec<T>::encode(*this, x, v);
         return *this;
@@ -66,7 +66,7 @@ struct FileEncoder
             buffer_.clear();
         }
     }
-    ~FileEncoder()
+    ~file_encoder()
     {
         flush();
     }
@@ -98,20 +98,20 @@ private:
 
 
 template <template <typename T> class Codec>
-struct FileDecoder
+struct file_decoder
 {
-    FileDecoder(int fd, size_t bufferSize = 4096) : fd_(fd), bufferSize_(bufferSize)
+    file_decoder(int fd, size_t bufferSize = 4096) : fd_(fd), bufferSize_(bufferSize)
     {
     }
 
     template <typename T>
-    FileDecoder& operator() (T & x)
+    file_decoder& operator() (T & x)
     {
         Codec<T>::decode(*this, x);
         return *this;
     }
     template <typename T>
-    FileDecoder& operator() (T & x, uint32_t v)
+    file_decoder& operator() (T & x, uint32_t v)
     {
         Codec<T>::decode(*this, x, v);
         return *this;

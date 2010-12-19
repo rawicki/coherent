@@ -23,86 +23,85 @@
 
 
 //basics:
-struct ListHead
+struct list_head
 {
 };
 
 template <typename This, typename Next>
-struct ListElem
+struct list_elem
 {
-    typedef This Type;
 };
 
 
 //useful list contstructors:
-template <typename T1> struct makeList1 {
-    typedef ListElem<T1, ListHead> value;
+template <typename T1> struct make_list1 {
+    typedef list_elem<T1, list_head> value;
 };
-template <typename T1, typename T2> struct makeList2 {
-    typedef ListElem<T1, typename makeList1<T2>::value> value;
+template <typename T1, typename T2> struct make_list2 {
+    typedef list_elem<T1, typename make_list1<T2>::value> value;
 };
-template <typename T1, typename T2, typename T3> struct makeList3 {
-    typedef ListElem<T1, typename makeList2<T2, T3>::value> value;
+template <typename T1, typename T2, typename T3> struct make_list3 {
+    typedef list_elem<T1, typename make_list2<T2, T3>::value> value;
 };
-template <typename T1, typename T2, typename T3, typename T4> struct makeList4 {
-    typedef ListElem<T1, typename makeList3<T2, T3, T4>::value> value;
+template <typename T1, typename T2, typename T3, typename T4> struct make_list4 {
+    typedef list_elem<T1, typename make_list3<T2, T3, T4>::value> value;
 };
-template <typename T1, typename T2, typename T3, typename T4, typename T5> struct makeList5 {
-    typedef ListElem<T1, typename makeList4<T2, T3, T4, T5>::value> value;
+template <typename T1, typename T2, typename T3, typename T4, typename T5> struct make_list5 {
+    typedef list_elem<T1, typename make_list4<T2, T3, T4, T5>::value> value;
 };
 
 
 
 //apply operator F
 template <template <class> class F, typename List>
-struct ListApply;
+struct list_apply;
 
 template <template <class> class F>
-struct ListApply<F, ListHead>
+struct list_apply<F, list_head>
 {
-    typedef ListHead value;
+    typedef list_head value;
 };
 
 template <template <class> class F, typename This, typename Next>
-struct ListApply<F, ListElem<This,Next> >
+struct list_apply<F, list_elem<This,Next> >
 {
-    typedef ListElem< F<This>, typename ListApply<F, Next>::value > value;
+    typedef list_elem< F<This>, typename list_apply<F, Next>::value > value;
 };
 
 
 //apply operator Fn
 template <typename F, typename List>
-struct ListApplyFn;
+struct list_apply_fn;
 
 template <typename F>
-struct ListApplyFn<F, ListHead>
+struct list_apply_fn<F, list_head>
 {
     static void apply(F &) {}
 };
 
 template <typename F, typename This, typename Next>
-struct ListApplyFn<F, ListElem<This, Next> >
+struct list_apply_fn<F, list_elem<This, Next> >
 {
     static void apply(F & f)
     {
         f.template apply<This>();
-        ListApplyFn<F, Next>::apply(f);
+        list_apply_fn<F, Next>::apply(f);
     }
 };
 
 
 //join lists
 template <typename L1, typename L2>
-struct ListJoin;
+struct list_join;
 
 template <typename L1_This, typename L1_Next, typename L2>
-struct ListJoin< ListElem<L1_This, L1_Next>, L2>
+struct list_join< list_elem<L1_This, L1_Next>, L2>
 {
-    typedef ListElem< L1_This, typename ListJoin<L1_Next, L2>::value > value;
+    typedef list_elem< L1_This, typename list_join<L1_Next, L2>::value > value;
 };
 
 template <typename L2>
-struct ListJoin<ListHead, L2>
+struct list_join<list_head, L2>
 {
     typedef L2 value;
 };

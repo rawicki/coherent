@@ -30,21 +30,21 @@
 
 
 template <typename F, typename TypeList>
-struct Fold;
+struct fold;
 
 template <typename F, typename CurrentType, typename TypeList>
-struct Fold<F, ListElem<CurrentType, TypeList> >
+struct fold<F, list_elem<CurrentType, TypeList> >
 {
     void operator() (F& f) const
     {
         if (f.template process<CurrentType>())
             return;
-        Fold<F, TypeList>() (f);
+        fold<F, TypeList>() (f);
     }
 };
 
 template <typename F>
-struct Fold<F, ListHead>
+struct fold<F, list_head>
 {
     void operator() (F&) const
     {
@@ -54,24 +54,24 @@ struct Fold<F, ListHead>
 
 
 template <typename F, typename CurrentType, typename LeftNode, typename RightNode>
-struct Fold<F, TreeNode<CurrentType, LeftNode, RightNode> >
+struct fold<F, tree_node<CurrentType, LeftNode, RightNode> >
 {
     void operator() (F& f) const
     {
-        int ret = f.template processNode<CurrentType>();
+        int ret = f.template process_node<CurrentType>();
         if (ret==0) {
             return;
         }
         if (ret<0) {
-            Fold<F, LeftNode>() (f);
+            fold<F, LeftNode>() (f);
             return;
         }
-        Fold<F, RightNode>() (f); //ret>0
+        fold<F, RightNode>() (f); //ret>0
     }
 };
 
 template <typename F>
-struct Fold<F, TreeLeaf>
+struct fold<F, tree_leaf>
 {
     void operator() (F&) const
     {
@@ -81,11 +81,11 @@ struct Fold<F, TreeLeaf>
 
 
 template <typename Factory>
-struct ObjectFactory;
+struct object_factory;
 
 
 template <typename F, typename Factory>
-struct Fold<F, ObjectFactory<Factory> >
+struct fold<F, object_factory<Factory> >
 {
     void operator() (F & f) const
     {
@@ -97,16 +97,16 @@ namespace checker_detail
 {
 
 template <typename Node>
-struct TreeChecker;
+struct tree_checker;
 
 template <>
-struct TreeChecker<TreeLeaf>
+struct tree_checker<tree_leaf>
 {
     static const bool ok = true;
 };
 
 template <typename Current>
-struct TreeChecker<TreeNode<Current, TreeLeaf, TreeLeaf> >
+struct tree_checker<tree_node<Current, tree_leaf, tree_leaf> >
 {
     static const int curr_ = Current::TAG;
     static const int min_ = curr_;
@@ -115,9 +115,9 @@ struct TreeChecker<TreeNode<Current, TreeLeaf, TreeLeaf> >
 };
 
 template <typename Current, typename LType, typename LLeftNode, typename LRightNode>
-struct TreeChecker<TreeNode<Current, TreeNode<LType, LLeftNode, LRightNode>, TreeLeaf> >
+struct tree_checker<tree_node<Current, tree_node<LType, LLeftNode, LRightNode>, tree_leaf> >
 {
-    typedef TreeChecker<TreeNode<LType, LLeftNode, LRightNode> > lchecker;
+    typedef tree_checker<tree_node<LType, LLeftNode, LRightNode> > lchecker;
     static const int curr_ = Current::TAG;
     static const int min_ = (curr_<lchecker::min_) ? curr_ : (lchecker::min_);
     static const int max_ = (curr_>lchecker::max_) ? curr_ : (lchecker::max_);
@@ -125,9 +125,9 @@ struct TreeChecker<TreeNode<Current, TreeNode<LType, LLeftNode, LRightNode>, Tre
 };
 
 template <typename Current, typename RType, typename RLeftNode, typename RRightNode>
-struct TreeChecker<TreeNode<Current, TreeLeaf, TreeNode<RType, RLeftNode, RRightNode> > >
+struct tree_checker<tree_node<Current, tree_leaf, tree_node<RType, RLeftNode, RRightNode> > >
 {
-    typedef TreeChecker<TreeNode<RType, RLeftNode, RRightNode> > rchecker;
+    typedef tree_checker<tree_node<RType, RLeftNode, RRightNode> > rchecker;
     static const int curr_ = Current::TAG;
     static const int min_ = (curr_<rchecker::min_) ? curr_ : (rchecker::min_);
     static const int max_ = (curr_>rchecker::max_) ? curr_ : (rchecker::max_);
@@ -139,10 +139,10 @@ template <
     typename LType, typename LLeftNode, typename LRightNode,
     typename RType, typename RLeftNode, typename RRightNode
 >
-struct TreeChecker<TreeNode<Current, TreeNode<LType, LLeftNode, LRightNode>, TreeNode<RType, RLeftNode, RRightNode> > >
+struct tree_checker<tree_node<Current, tree_node<LType, LLeftNode, LRightNode>, tree_node<RType, RLeftNode, RRightNode> > >
 {
-    typedef TreeChecker<TreeNode<LType, LLeftNode, LRightNode> > lchecker;
-    typedef TreeChecker<TreeNode<RType, RLeftNode, RRightNode> > rchecker;
+    typedef tree_checker<tree_node<LType, LLeftNode, LRightNode> > lchecker;
+    typedef tree_checker<tree_node<RType, RLeftNode, RRightNode> > rchecker;
     static const int curr_ = Current::TAG;
     static const int child_min_ = (lchecker::min_<rchecker::min_) ? (lchecker::min_) : (rchecker::min_);
     static const int child_max_ = (lchecker::max_>rchecker::max_) ? (lchecker::max_) : (rchecker::max_);
@@ -155,71 +155,71 @@ struct TreeChecker<TreeNode<Current, TreeNode<LType, LLeftNode, LRightNode>, Tre
 
 
 template <typename Tree>
-inline void checkTree()
+inline void check_tree()
 {
-    assert(checker_detail::TreeChecker<Tree>::ok);
+    assert(checker_detail::tree_checker<Tree>::ok);
 }
 
 
-template <typename BaseType, typename TypeList, typename PointerPolicy = SharedPtrPolicy<BaseType> >
+template <typename BaseType, typename TypeList, typename PointerPolicy = shared_ptr_policy<BaseType> >
 struct Virtual : public PointerPolicy
 {
     typedef Virtual<BaseType, TypeList, PointerPolicy>  self;
-    typedef typename BaseType::TagType                  TagType;
-    typedef typename PointerPolicy::PointerType         PointerType;
+    typedef typename BaseType::tag_type                 tag_type;
+    typedef typename PointerPolicy::pointer_type        pointer_type;
 private:
     template <typename Encoder>
-    struct TaggedEncoder
+    struct tagged_encoder
     {
-        TaggedEncoder(Encoder& enc, const self& ptr) : enc_(enc), ptr_(ptr), tag_(ptr_.get().getTag())
+        tagged_encoder(Encoder& enc, const self& ptr) : enc_(enc), ptr_(ptr), tag_(ptr_.get().get_tag())
         {
         }
         template <typename Type>
         bool process() {
-            if ((TagType)Type::TAG == tag_) {
-                enc_((TagType)Type::TAG);
+            if ((tag_type)Type::TAG == tag_) {
+                enc_((tag_type)Type::TAG);
                 enc_(static_cast<const Type&>(ptr_.get()));
                 return true;
             }
             return false;
         }
         template <typename Type>
-        int processNode() {
-            if ((TagType)Type::TAG == tag_) {
-                enc_((TagType)Type::TAG);
+        int process_node() {
+            if ((tag_type)Type::TAG == tag_) {
+                enc_((tag_type)Type::TAG);
                 enc_(static_cast<const Type&>(ptr_.get()));
                 return 0;
             }
-            if (tag_ < (TagType)Type::TAG) {
+            if (tag_ < (tag_type)Type::TAG) {
                 return -1;
             }
             return 1;
         }
 
         template <typename Type>
-        void processUnchecked() {
-            enc_((TagType)Type::TAG);
+        void process_unchecked() {
+            enc_((tag_type)Type::TAG);
             enc_(static_cast<const Type&>(ptr_.get()));
         }
         template <typename Type>
-        void processChecked() {
-            assert( (TagType)Type::TAG == tag_ );
-            processUnchecked<Type>();
+        void process_checked() {
+            assert( (tag_type)Type::TAG == tag_ );
+            process_unchecked<Type>();
         }
 
         Encoder& enc_;
         const self& ptr_;
-        TagType tag_;
+        tag_type tag_;
     };
     template <typename Decoder>
-    struct TaggedDecoder
+    struct tagged_decoder
     {
-        TaggedDecoder(Decoder& dec, self& ptr, TagType tag) : dec_(dec), ptr_(ptr), tag_(tag)
+        tagged_decoder(Decoder& dec, self& ptr, tag_type tag) : dec_(dec), ptr_(ptr), tag_(tag)
         {
         }
         template <typename Type>
         bool process() {
-            if ((TagType)Type::TAG == tag_) {
+            if ((tag_type)Type::TAG == tag_) {
                 ptr_.set(new Type());
                 dec_(static_cast<Type&>(ptr_.get()));
                 return true;
@@ -227,55 +227,55 @@ private:
             return false;
         }
         template <typename Type>
-        int processNode() {
-            if ((TagType)Type::TAG == tag_) {
+        int process_node() {
+            if ((tag_type)Type::TAG == tag_) {
                 ptr_.set(new Type());
                 dec_(static_cast<Type&>(ptr_.get()));
                 return 0;
             }
-            if (tag_ < (TagType)Type::TAG)
+            if (tag_ < (tag_type)Type::TAG)
                 return -1;
             return 1;
         }
 
         template <typename Type>
-        void processUnchecked() {
+        void process_unchecked() {
             ptr_.set(new Type());
             dec_(static_cast<Type&>(ptr_.get()));
         }
         template <typename Type>
-        void processChecked() {
-            assert( (TagType)Type::TAG == tag_ );
-            processUnchecked<Type>();
+        void process_checked() {
+            assert( (tag_type)Type::TAG == tag_ );
+            process_unchecked<Type>();
         }
 
         Decoder& dec_;
         self& ptr_;
-        TagType tag_;
+        tag_type tag_;
     };
 public:
     template <typename Encoder>
     void encode(Encoder& enc) const
     {
-        if (PointerPolicy::isNull()) {
-            enc(TagType());
+        if (PointerPolicy::is_null()) {
+            enc(tag_type());
             return;
         }
-        TaggedEncoder<Encoder> te(enc, *this);
-        Fold<TaggedEncoder<Encoder>, TypeList>()(te);
+        tagged_encoder<Encoder> te(enc, *this);
+        fold<tagged_encoder<Encoder>, TypeList>()(te);
     }
 
     template <typename Decoder>
     void decode(Decoder& dec)
     {
-        TagType tag;
+        tag_type tag;
         dec(tag);
-        if (tag==TagType()) {
+        if (tag==tag_type()) {
             PointerPolicy::reset();
             return;
         }
-        TaggedDecoder<Decoder> td(dec, *this, tag);
-        Fold<TaggedDecoder<Decoder>, TypeList>()(td);
+        tagged_decoder<Decoder> td(dec, *this, tag);
+        fold<tagged_decoder<Decoder>, TypeList>()(td);
     }
 
     //constuctors
@@ -283,7 +283,7 @@ public:
     {
     }
 
-    Virtual(PointerType ptr) : PointerPolicy(ptr)
+    Virtual(pointer_type ptr) : PointerPolicy(ptr)
     {
     }
 
@@ -291,29 +291,29 @@ public:
     {
     }
 
-    struct Helper
+    struct helper
     {
         template <typename F>
-        Helper(F & f, PointerType& ptr)
+        helper(F & f, pointer_type& ptr)
         {
             self vc;
             f(vc);
             ptr = vc.get_ptr();
         }
         template <typename F>
-        Helper(F & f, const PointerType& ptr)
+        helper(F & f, const pointer_type& ptr)
         {
             f(self(ptr));
         }
     };
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         decode<F>(f);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         encode<F>(f);
     }

@@ -26,34 +26,34 @@
 
 
 template <typename T>
-struct BigEndianCodec
+struct big_endian_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const T& t)
     {
-        t.forEach(enc);
+        t.for_each(enc);
     }
     template <typename Encoder>
     static void encode(Encoder& enc, const T& t, uint32_t v)
     {
-        t.forEach(enc, v);
+        t.for_each(enc, v);
     }
 
     template <typename Decoder>
     static void decode(Decoder& dec, T& t)
     {
-        t.forEach(dec);
+        t.for_each(dec);
     }
     template <typename Decoder>
     static void decode(Decoder& dec, T& t, uint32_t v)
     {
-        t.forEach(dec, v);
+        t.for_each(dec, v);
     }
 };
 
 
 template <>
-struct BigEndianCodec<char>
+struct big_endian_codec<char>
 {
     template <typename Encoder>
     static void encode(Encoder& enc, char t)
@@ -68,7 +68,7 @@ struct BigEndianCodec<char>
 };
 
 template <>
-struct BigEndianCodec<uint8_t>
+struct big_endian_codec<uint8_t>
 {
     template <typename Encoder>
     static void encode(Encoder& enc, uint8_t u)
@@ -83,7 +83,7 @@ struct BigEndianCodec<uint8_t>
 };
 
 template <typename T>
-struct BigEndianIntCodec
+struct big_endian_int_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const T& x)
@@ -107,21 +107,21 @@ struct BigEndianIntCodec
 };
 
 
-template <> struct BigEndianCodec<uint16_t> : public BigEndianIntCodec<uint16_t> {};
-template <> struct BigEndianCodec<uint32_t> : public BigEndianIntCodec<uint32_t> {};
-template <> struct BigEndianCodec<uint64_t> : public BigEndianIntCodec<uint64_t> {};
+template <> struct big_endian_codec<uint16_t> : public big_endian_int_codec<uint16_t> {};
+template <> struct big_endian_codec<uint32_t> : public big_endian_int_codec<uint32_t> {};
+template <> struct big_endian_codec<uint64_t> : public big_endian_int_codec<uint64_t> {};
 
-template <> struct BigEndianCodec<int8_t> : public BigEndianIntCodec<int8_t> {};
-template <> struct BigEndianCodec<int16_t> : public BigEndianIntCodec<int16_t> {};
-template <> struct BigEndianCodec<int32_t> : public BigEndianIntCodec<int32_t> {};
-template <> struct BigEndianCodec<int64_t> : public BigEndianIntCodec<int64_t> {};
+template <> struct big_endian_codec<int8_t> : public big_endian_int_codec<int8_t> {};
+template <> struct big_endian_codec<int16_t> : public big_endian_int_codec<int16_t> {};
+template <> struct big_endian_codec<int32_t> : public big_endian_int_codec<int32_t> {};
+template <> struct big_endian_codec<int64_t> : public big_endian_int_codec<int64_t> {};
 
-template <> struct BigEndianCodec<std::string> : public StandardStringCodec {};
-template <typename T> struct BigEndianCodec<std::vector<T> > : public StandardSequenceCodec<std::vector<T> > {};
-template <typename T> struct BigEndianCodec<std::list<T> > : public StandardSequenceCodec<std::list<T> > {};
-template <typename T> struct BigEndianCodec<std::set<T> > : public UniqueContainerCodec<std::set<T> > {};
-template <typename K, typename V> struct BigEndianCodec<std::map<K,V> > : public UniqueContainerCodec<std::map<K, V> > {};
-template <typename F, typename S> struct BigEndianCodec<std::pair<F,S> > : public StandardPairCodec<F, S> {};
+template <> struct big_endian_codec<std::string> : public standard_string_codec {};
+template <typename T> struct big_endian_codec<std::vector<T> > : public standard_sequence_codec<std::vector<T> > {};
+template <typename T> struct big_endian_codec<std::list<T> > : public standard_sequence_codec<std::list<T> > {};
+template <typename T> struct big_endian_codec<std::set<T> > : public unique_container_codec<std::set<T> > {};
+template <typename K, typename V> struct big_endian_codec<std::map<K,V> > : public unique_container_codec<std::map<K, V> > {};
+template <typename F, typename S> struct big_endian_codec<std::pair<F,S> > : public standard_pair_codec<F, S> {};
 
 
 

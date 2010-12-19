@@ -45,12 +45,12 @@ template <typename TypeList>
 struct CreateDecoderAbs;
 
 template <>
-struct CreateDecoderAbs<ListHead>
+struct CreateDecoderAbs<list_head>
 {
 };
 
 template <typename CurrentType, typename ListTail>
-struct CreateDecoderAbs<ListElem<CurrentType, ListTail> >
+struct CreateDecoderAbs<list_elem<CurrentType, ListTail> >
     : public VirtualDecoderFunction<CurrentType>,
       public CreateDecoderAbs<ListTail>
 {
@@ -62,7 +62,7 @@ template <typename DecoderAbs, typename Decoder, typename TypeList>
 struct CreateDecoderImpl;
 
 template <typename DecoderAbs, typename Decoder>
-struct CreateDecoderImpl<DecoderAbs, Decoder, ListHead>
+struct CreateDecoderImpl<DecoderAbs, Decoder, list_head>
     : public DecoderAbs
 {
     CreateDecoderImpl(Decoder& dec) : dec_(dec) {}
@@ -72,7 +72,7 @@ protected:
 };
 
 template <typename DecoderAbs, typename Decoder, typename CurrentType, typename ListTail>
-struct CreateDecoderImpl<DecoderAbs, Decoder, ListElem<CurrentType, ListTail> >
+struct CreateDecoderImpl<DecoderAbs, Decoder, list_elem<CurrentType, ListTail> >
     : public CreateDecoderImpl<DecoderAbs, Decoder, ListTail>
 {
     typedef CreateDecoderImpl<DecoderAbs, Decoder, ListTail>    Super;
@@ -94,7 +94,7 @@ template <typename DecoderAbs, typename TypeList>
 struct CreateDecoderType;
 
 template <typename DecoderAbs>
-struct CreateDecoderType<DecoderAbs, ListHead>
+struct CreateDecoderType<DecoderAbs, list_head>
 {
     CreateDecoderType() {}
     CreateDecoderType(DecoderAbs * impl) : impl_(impl) {}
@@ -104,7 +104,7 @@ protected:
 };
 
 template <typename DecoderAbs, typename CurrentType, typename ListTail>
-struct CreateDecoderType<DecoderAbs, ListElem<CurrentType, ListTail> >
+struct CreateDecoderType<DecoderAbs, list_elem<CurrentType, ListTail> >
     : public CreateDecoderType<DecoderAbs, ListTail>
 {
 private:
@@ -130,7 +130,7 @@ struct FindDecoderSuper;
     template <typename DecoderAbs, typename CurrentType, typename ListTail, typename T>
     struct FindDecoderSuperHelper<DecoderAbs, CurrentType, ListTail, true, T>
     {
-        typedef CreateDecoderType<DecoderAbs, ListElem<CurrentType, ListTail> > Type;
+        typedef CreateDecoderType<DecoderAbs, list_elem<CurrentType, ListTail> > Type;
     };
     template <typename DecoderAbs, typename CurrentType, typename ListTail, typename T>
     struct FindDecoderSuperHelper<DecoderAbs, CurrentType, ListTail, false, T>
@@ -139,7 +139,7 @@ struct FindDecoderSuper;
     };
 
 template <typename DecoderAbs, typename CurrentType, typename ListTail, typename T>
-struct FindDecoderSuper<DecoderAbs, ListElem<CurrentType, ListTail>, T>
+struct FindDecoderSuper<DecoderAbs, list_elem<CurrentType, ListTail>, T>
 {
     typedef typename FindDecoderSuperHelper<DecoderAbs, CurrentType, ListTail, boost::is_same<CurrentType, T>::value, T>::Type   Type;
 };

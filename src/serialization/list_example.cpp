@@ -33,17 +33,17 @@ template <typename T> struct Unsigned {};
 
 
 //define list, length=6, some types with functors
-typedef ListJoin<
-            ListJoin<
-                ListApply<
+typedef list_join<
+            list_join<
+                list_apply<
                     Unsigned,
-                    makeList3<uint8_t, uint16_t, uint32_t>::value
+                    make_list3<uint8_t, uint16_t, uint32_t>::value
                 >::value,
-                makeList1<std::string>::value
+                make_list1<std::string>::value
             >::value,
-            ListApply<
+            list_apply<
                 Signed,
-                makeList2<int32_t, int64_t>::value
+                make_list2<int32_t, int64_t>::value
             >::value
     >::value List1;
 
@@ -98,7 +98,7 @@ struct Printer
 };
 
 //bind printer with list
-typedef ListApplyFn<Printer, List1> TypePrinter;
+typedef list_apply_fn<Printer, List1> TypePrinter;
 
 
 int main()

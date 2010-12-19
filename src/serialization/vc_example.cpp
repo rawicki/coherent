@@ -34,8 +34,8 @@
 
 struct A
 {
-    typedef int32_t TagType;
-    virtual TagType getTag() const = 0;
+    typedef int32_t tag_type;
+    virtual tag_type get_tag() const = 0;
 
     virtual ~A() {}
 
@@ -50,7 +50,7 @@ struct A
 struct A1 : public A
 {
     enum { TAG = 1 };
-    virtual TagType getTag() const
+    virtual tag_type get_tag() const
     {
         return TAG;
     }
@@ -64,12 +64,12 @@ struct A1 : public A
     A1(const std::string& s) : a1_(s) {}
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         f(a1_);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         f(a1_);
     }
@@ -81,7 +81,7 @@ struct A1 : public A
 struct A2 : public A
 {
     enum { TAG = 2 };
-    virtual TagType getTag() const
+    virtual tag_type get_tag() const
     {
         return TAG;
     }
@@ -95,12 +95,12 @@ struct A2 : public A
     A2(uint64_t x) : a2_(x) {}
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         f(a2_);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         f(a2_);
     }
@@ -116,23 +116,23 @@ struct ACont
 {
     boost::shared_ptr<A> a_;    //check simple A*
 
-    typedef TreeNode<A2, CreateTreeNode<A1>::value, TreeLeaf> VTree;
-    //typedef TreeNode<A1, CreateTreeNode<A2>::value, TreeLeaf> BadVTree;
+    typedef tree_node<A2, create_tree_node<A1>::value, tree_leaf> VTree;
+    //typedef tree_node<A1, create_tree_node<A2>::value, tree_leaf> BadVTree;
 
-    typedef makeList2<A1,A2>::value VList;
+    typedef make_list2<A1,A2>::value VList;
     typedef Virtual<A, VTree> VirtualA;
-    typedef VirtualA::Helper VirtualAH;
+    typedef VirtualA::helper VirtualAH;
 
-    BOOST_STATIC_ASSERT( checker_detail::TreeChecker<ACont::VTree>::ok );
+    BOOST_STATIC_ASSERT( checker_detail::tree_checker<ACont::VTree>::ok );
     //BOOST_STATIC_ASSERT( checker_detail::TreeChecker<ACont::BadVTree>::ok );
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         VirtualAH(f, a_);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         VirtualAH(f, a_);
     }
@@ -147,7 +147,7 @@ struct AContPtr
 {
     A * a_;
 
-    typedef Virtual<A, ACont::VTree, StdPtrPolicy<A, A*> >::Helper VirtualAH;
+    typedef Virtual<A, ACont::VTree, std_ptr_policy<A, A*> >::helper VirtualAH;
 
     AContPtr() : a_(NULL)
     {
@@ -160,12 +160,12 @@ struct AContPtr
     }
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         VirtualAH(f, a_);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         VirtualAH(f, a_);
     }
@@ -190,8 +190,8 @@ struct AFactory
             CallBacks()
             {
                 cbs_.resize(3);
-                cbs_[1] = boost::bind(& F::template processChecked<A1>, _1);
-                cbs_[2] = boost::bind(& F::template processChecked<A2>, _1);
+                cbs_[1] = boost::bind(& F::template process_checked<A1>, _1);
+                cbs_[2] = boost::bind(& F::template process_checked<A2>, _1);
             }
             void go(F & f) const
             {
@@ -220,16 +220,16 @@ struct AContFact
 {
     boost::shared_ptr<A> a_;
 
-    typedef Virtual<A, ObjectFactory<AFactory> > VirtualA;
-    typedef VirtualA::Helper VirtualAH;
+    typedef Virtual<A, object_factory<AFactory> > VirtualA;
+    typedef VirtualA::helper VirtualAH;
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         VirtualAH(f, a_);
     }
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         VirtualAH(f, a_);
     }
@@ -269,7 +269,7 @@ struct PrintBuf
 int Main()
 {
 
-    assert( checker_detail::TreeChecker<ACont::VTree>::ok );
+    assert( checker_detail::tree_checker<ACont::VTree>::ok );
 
     std::vector<char> buf;
 
@@ -283,7 +283,7 @@ int Main()
 
         ACont ac3;
 
-        BufferEncoder<LittleEndianCodec> enc(buf);
+        buffer_encoder<little_endian_codec> enc(buf);
 
         enc(ac1)('x')(ac2)(ac3);
 
@@ -295,7 +295,7 @@ int Main()
     {
         //decoder using ACont - default vc with boost::shared_ptr<A>
         std::vector<char>::const_iterator it = buf.begin();
-        BufferDecoder<LittleEndianCodec> dec(it, buf.end());
+        buffer_decoder<little_endian_codec> dec(it, buf.end());
 
         ACont ac1;
         ACont ac2;
@@ -310,7 +310,7 @@ int Main()
     {
         //decoder using AcontPtr - vc with changed ptr policy = A*
         std::vector<char>::const_iterator it = buf.begin();
-        BufferDecoder<LittleEndianCodec> dec(it, buf.end());
+        buffer_decoder<little_endian_codec> dec(it, buf.end());
 
         AContPtr ac1;
         AContPtr ac2;
@@ -327,11 +327,11 @@ int Main()
         AContFact ac0;
         ac0.a_.reset(new A1("czwarty obiekt"));
 
-        BufferEncoder<LittleEndianCodec> enc(buf);
+        buffer_encoder<little_endian_codec> enc(buf);
         enc(ac0);
 
         std::vector<char>::const_iterator it = buf.begin();
-        BufferDecoder<LittleEndianCodec> dec(it, buf.end());
+        buffer_decoder<little_endian_codec> dec(it, buf.end());
 
         AContFact ac1;
         AContFact ac2;

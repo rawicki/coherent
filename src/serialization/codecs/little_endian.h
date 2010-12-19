@@ -26,34 +26,34 @@
 
 
 template <typename T>
-struct LittleEndianCodec
+struct little_endian_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const T& t)
     {
-        t.forEach(enc);
+        t.for_each(enc);
     }
     template <typename Encoder>
     static void encode(Encoder& enc, const T& t, uint32_t v)
     {
-        t.forEach(enc, v);
+        t.for_each(enc, v);
     }
 
     template <typename Decoder>
     static void decode(Decoder& dec, T& t)
     {
-        t.forEach(dec);
+        t.for_each(dec);
     }
     template <typename Decoder>
     static void decode(Decoder& dec, T& t, uint32_t v)
     {
-        t.forEach(dec, v);
+        t.for_each(dec, v);
     }
 };
 
 
 template <>
-struct LittleEndianCodec<char>
+struct little_endian_codec<char>
 {
     template <typename Encoder>
     static void encode(Encoder& enc, char t)
@@ -68,7 +68,7 @@ struct LittleEndianCodec<char>
 };
 
 template <>
-struct LittleEndianCodec<uint8_t>
+struct little_endian_codec<uint8_t>
 {
     template <typename Encoder>
     static void encode(Encoder& enc, uint8_t u)
@@ -83,7 +83,7 @@ struct LittleEndianCodec<uint8_t>
 };
 
 template <typename T>
-struct LittleEndianIntCodec
+struct little_endian_int_codec
 {
     template <typename Encoder>
     static void encode(Encoder& enc, const T& x)
@@ -108,21 +108,21 @@ struct LittleEndianIntCodec
 };
 
 
-template <> struct LittleEndianCodec<uint16_t> : public LittleEndianIntCodec<uint16_t> {};
-template <> struct LittleEndianCodec<uint32_t> : public LittleEndianIntCodec<uint32_t> {};
-template <> struct LittleEndianCodec<uint64_t> : public LittleEndianIntCodec<uint64_t> {};
+template <> struct little_endian_codec<uint16_t> : public little_endian_int_codec<uint16_t> {};
+template <> struct little_endian_codec<uint32_t> : public little_endian_int_codec<uint32_t> {};
+template <> struct little_endian_codec<uint64_t> : public little_endian_int_codec<uint64_t> {};
 
-template <> struct LittleEndianCodec<int8_t> : public LittleEndianIntCodec<int8_t> {};
-template <> struct LittleEndianCodec<int16_t> : public LittleEndianIntCodec<int16_t> {};
-template <> struct LittleEndianCodec<int32_t> : public LittleEndianIntCodec<int32_t> {};
-template <> struct LittleEndianCodec<int64_t> : public LittleEndianIntCodec<int64_t> {};
+template <> struct little_endian_codec<int8_t> : public little_endian_int_codec<int8_t> {};
+template <> struct little_endian_codec<int16_t> : public little_endian_int_codec<int16_t> {};
+template <> struct little_endian_codec<int32_t> : public little_endian_int_codec<int32_t> {};
+template <> struct little_endian_codec<int64_t> : public little_endian_int_codec<int64_t> {};
 
-template <> struct LittleEndianCodec<std::string> : public StandardStringCodec {};
-template <typename T> struct LittleEndianCodec<std::vector<T> > : public StandardSequenceCodec<std::vector<T> > {};
-template <typename T> struct LittleEndianCodec<std::list<T> > : public StandardSequenceCodec<std::list<T> > {};
-template <typename T> struct LittleEndianCodec<std::set<T> > : public UniqueContainerCodec<std::set<T> > {};
-template <typename K, typename V> struct LittleEndianCodec<std::map<K,V> > : public UniqueContainerCodec<std::map<K, V> > {};
-template <typename F, typename S> struct LittleEndianCodec<std::pair<F,S> > : public StandardPairCodec<F, S> {};
+template <> struct little_endian_codec<std::string> : public standard_string_codec {};
+template <typename T> struct little_endian_codec<std::vector<T> > : public standard_sequence_codec<std::vector<T> > {};
+template <typename T> struct little_endian_codec<std::list<T> > : public standard_sequence_codec<std::list<T> > {};
+template <typename T> struct little_endian_codec<std::set<T> > : public unique_container_codec<std::set<T> > {};
+template <typename K, typename V> struct little_endian_codec<std::map<K,V> > : public unique_container_codec<std::map<K, V> > {};
+template <typename F, typename S> struct little_endian_codec<std::pair<F,S> > : public standard_pair_codec<F, S> {};
 
 
 

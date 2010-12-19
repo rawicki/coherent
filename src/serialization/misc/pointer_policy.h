@@ -26,23 +26,23 @@
 
 
 template <typename T, typename Ptr = T*>
-struct StdPtrPolicy
+struct std_ptr_policy
 {
-    typedef Ptr PointerType;
+    typedef Ptr pointer_type;
 
-    StdPtrPolicy() : ptr_(NULL)
+    std_ptr_policy() : ptr_(NULL)
     {
     }
-    StdPtrPolicy(Ptr ptr) : ptr_(NULL)
+    std_ptr_policy(Ptr ptr) : ptr_(NULL)
     {
         set(ptr);
     }
-    StdPtrPolicy(const T& x) : ptr_(NULL)
+    std_ptr_policy(const T& x) : ptr_(NULL)
     {
         set(x);
     }
 
-    bool isNull() const
+    bool is_null() const
     {
         return ptr_==NULL;
     }
@@ -89,23 +89,23 @@ protected:
 
 
 template <typename T, typename Ptr = std::auto_ptr<T> >
-struct AutoPtrPolicy
+struct auto_ptr_policy
 {
-    typedef Ptr PointerType;
+    typedef Ptr pointer_type;
 
-    AutoPtrPolicy()
+    auto_ptr_policy()
     {
     }
-    AutoPtrPolicy(Ptr ptr)
+    auto_ptr_policy(Ptr ptr)
     {
         set(ptr);
     }
-    AutoPtrPolicy(const T& x)
+    auto_ptr_policy(const T& x)
     {
         set(x);
     }
 
-    bool isNull() const
+    bool is_null() const
     {
         return ptr_.get()==NULL;
     }
@@ -150,23 +150,23 @@ protected:
 
 
 template <typename T, typename Ptr = boost::shared_ptr<T> >
-struct SharedPtrPolicy
+struct shared_ptr_policy
 {
-    typedef Ptr PointerType;
+    typedef Ptr pointer_type;
 
-    SharedPtrPolicy()
+    shared_ptr_policy()
     {
     }
-    SharedPtrPolicy(Ptr ptr)
+    shared_ptr_policy(Ptr ptr)
     {
         set(ptr);
     }
-    SharedPtrPolicy(const T& x)
+    shared_ptr_policy(const T& x)
     {
         set(x);
     }
 
-    bool isNull() const
+    bool is_null() const
     {
         return ptr_.get()==NULL;
     }

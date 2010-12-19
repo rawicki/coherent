@@ -48,18 +48,18 @@
 //virtual structurs
 struct XA
 {
-    typedef uint8_t TagType;
-    virtual TagType getTag() const = 0;
+    typedef uint8_t tag_type;
+    virtual tag_type get_tag() const = 0;
 
     virtual ~XA() {}
 
     virtual void print(std::ostream& os) const { os << "XA(" << xa << ")"; }
     uint32_t xa;
-    template <typename F> void forEach(F & f)
+    template <typename F> void for_each(F & f)
     {
         f(xa);
     }
-    template <typename F> void forEach(F & f) const
+    template <typename F> void for_each(F & f) const
     {
         f(xa);
     }
@@ -72,8 +72,8 @@ struct XA
 };
 
 #define DEFTAG \
-    virtual TagType getTag() const { return TAG; } \
-    static const TagType TAG;
+    virtual tag_type get_tag() const { return TAG; } \
+    static const tag_type TAG;
 
 struct X_1 : public XA
 {
@@ -81,14 +81,14 @@ struct X_1 : public XA
 
     virtual void print(std::ostream& os) const { os << "X_1(" << x_1 << ","; XA::print(os); os << ")"; }
     uint32_t x_1;
-    template <typename F> void forEach(F & f)
+    template <typename F> void for_each(F & f)
     {
-        XA::forEach<F>(f);
+        XA::for_each<F>(f);
         f(x_1);
     }
-    template <typename F> void forEach(F & f) const
+    template <typename F> void for_each(F & f) const
     {
-        XA::forEach<F>(f);
+        XA::for_each<F>(f);
         f(x_1);
     }
 };
@@ -99,14 +99,14 @@ struct X_2 : public XA
 
     virtual void print(std::ostream& os) const { os << "X_2(" << x_2 << ","; XA::print(os); os << ")"; }
     uint32_t x_2;
-    template <typename F> void forEach(F & f)
+    template <typename F> void for_each(F & f)
     {
-        XA::forEach<F>(f);
+        XA::for_each<F>(f);
         f(x_2);
     }
-    template <typename F> void forEach(F & f) const
+    template <typename F> void for_each(F & f) const
     {
-        XA::forEach<F>(f);
+        XA::for_each<F>(f);
         f(x_2);
     }
 };
@@ -117,14 +117,14 @@ struct X_2_1 : public X_2
 
     virtual void print(std::ostream& os) const { os << "X_2_1(" << x_2_1 << ","; X_2::print(os); os << ")"; }
     uint32_t x_2_1;
-    template <typename F> void forEach(F & f)
+    template <typename F> void for_each(F & f)
     {
-        X_2::forEach<F>(f);
+        X_2::for_each<F>(f);
         f(x_2_1);
     }
-    template <typename F> void forEach(F & f) const
+    template <typename F> void for_each(F & f) const
     {
-        X_2::forEach<F>(f);
+        X_2::for_each<F>(f);
         f(x_2_1);
     }
 };
@@ -135,28 +135,28 @@ struct X_2_2 : public X_2
 
     virtual void print(std::ostream& os) const { os << "X_2_2(" << x_2_2 << ","; X_2::print(os); os << ")"; }
     uint32_t x_2_2;
-    template <typename F> void forEach(F & f)
+    template <typename F> void for_each(F & f)
     {
-        X_2::forEach<F>(f);
+        X_2::for_each<F>(f);
         f(x_2_2);
     }
-    template <typename F> void forEach(F & f) const
+    template <typename F> void for_each(F & f) const
     {
-        X_2::forEach<F>(f);
+        X_2::for_each<F>(f);
         f(x_2_2);
     }
 };
 
 //tags for virtual classes
-const XA::TagType X_1::TAG = 1;
-const XA::TagType X_2::TAG = 2;
-const XA::TagType X_2_1::TAG = 3;
-const XA::TagType X_2_2::TAG = 4;
+const XA::tag_type X_1::TAG = 1;
+const XA::tag_type X_2::TAG = 2;
+const XA::tag_type X_2_1::TAG = 3;
+const XA::tag_type X_2_2::TAG = 4;
 //end of virtual structures
 
 
 //typedef Virtual<XA, ListElem<X_1, ListElem<X_2, ListElem<X_2_1, ListElem<X_2_2, ListHead> > > > > Virtual_XA;
-typedef Virtual<XA, makeList4<X_1, X_2, X_2_1, X_2_2>::value > Virtual_XA;
+typedef Virtual<XA, make_list4<X_1, X_2, X_2_1, X_2_2>::value > Virtual_XA;
 
 
 
@@ -192,19 +192,19 @@ struct MyStruct
     //Virtual_XA xa;
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         f(a); f(b); f(c); f(d); f(s1); f(s2); //f(xa);
     }
 
     template <typename F>
-    void forEach(F & f) const
+    void for_each(F & f) const
     {
         f(a); f(b); f(c); f(d); f(s1); f(s2); //f(xa);
     }
 
     /*template <typename F>
-    void forEach(F & f, uint32_t v)
+    void for_each(F & f, uint32_t v)
     {
         f(a, v);
         f(b);
@@ -261,13 +261,13 @@ struct MyStruct2
     std::vector<Virtual_XA> xav;
 
     template <typename F>
-    void forEach(F & f)
+    void for_each(F & f)
     {
         f(id); f(xav);
     }
 
     template <typename F>
-    void forEach(F & f) const 
+    void for_each(F & f) const 
     {
         f(id); f(xav);
     }
@@ -345,8 +345,8 @@ struct SimpleTest
         T x = Misc::Rand<T>();
         T y_big, y_lit;
 
-        makeTest<BigEndianCodec, T>(x, y_big, true);
-        makeTest<LittleEndianCodec, T>(x, y_lit, true);
+        makeTest<big_endian_codec, T>(x, y_big, true);
+        makeTest<little_endian_codec, T>(x, y_lit, true);
 
         if (x!=y_big || x!=y_lit) {
             std::cout << "mismatch for (" << typeid(T).name() << "), "
@@ -359,12 +359,12 @@ private:
     void makeTest(T x, T& y, bool print=false)
     {
         std::vector<char> buff;
-        BufferEncoder<Codec> enc(buff);
+        buffer_encoder<Codec> enc(buff);
 
         enc(x);
 
         std::vector<char>::const_iterator begin = buff.begin();
-        BufferDecoder<Codec> dec(begin, buff.end());
+        buffer_decoder<Codec> dec(begin, buff.end());
 
         dec(y);
         if (print)
@@ -406,7 +406,7 @@ int Test1()
 
     std::vector<char> buff;
 
-    BufferEncoder<BigEndianCodec> enc(buff);
+    buffer_encoder<big_endian_codec> enc(buff);
     enc(ms);
 
     std::cout << "Buffer(" << buff.size() << ") [";
@@ -417,7 +417,7 @@ int Test1()
 
     MyStruct ms_back;
     std::vector<char>::const_iterator begin = buff.begin();
-    BufferDecoder<BigEndianCodec> dec(begin, buff.end());
+    buffer_decoder<big_endian_codec> dec(begin, buff.end());
     dec(ms_back);
 
 
@@ -432,7 +432,7 @@ int Test2()
     MyStruct2 ms2 = MyStruct2::Rand();
 
     std::vector<char> buff;
-    BufferEncoder<BigEndianCodec> enc(buff);
+    buffer_encoder<big_endian_codec> enc(buff);
 
     enc(ms2);
 
@@ -441,7 +441,7 @@ int Test2()
     MyStruct2 ms2_back;
 
     std::vector<char>::const_iterator begin = buff.begin();
-    BufferDecoder<BigEndianCodec> dec(begin, buff.end());
+    buffer_decoder<big_endian_codec> dec(begin, buff.end());
     dec(ms2_back);
 
     std::cout << ms2 << std::endl;
@@ -478,7 +478,7 @@ int Test3(int argc, char **argv)
         }
 
         {
-            FileEncoder<BigEndianCodec> fenc(fd);
+            file_encoder<big_endian_codec> fenc(fd);
 
             fenc(msv);
             fenc(ms2v);
@@ -498,7 +498,7 @@ int Test3(int argc, char **argv)
         int fd = open(filename.c_str(), O_RDONLY);
 
         {
-            FileDecoder<BigEndianCodec> fdec(fd);
+            file_decoder<big_endian_codec> fdec(fd);
 
             fdec(msv);
             fdec(ms2v);
@@ -520,12 +520,12 @@ int Test3(int argc, char **argv)
 
 
 template <typename T>
-struct OptimizedCodec : public makeCodecWithDefaultOptimizer<LittleEndianCodec>::value<T>
+struct optimized_codec : public make_codec_with_default_optimizer<little_endian_codec>::value<T>
 {
 };
 
 template <typename T>
-struct OptimizedCodec2 : public makeCodecWithDefaultOptimizer<BigEndianCodec>::value<T>
+struct optimized_codec2 : public make_codec_with_default_optimizer<big_endian_codec>::value<T>
 {
 };
 
@@ -536,12 +536,12 @@ struct MyStruct3
     std::vector<std::string> vs;
 
     template <typename F>
-    void  forEach(F & f)
+    void  for_each(F & f)
     {
         f(id); f(vi); f(vs);
     }
     template <typename F>
-    void  forEach(F & f) const
+    void  for_each(F & f) const
     {
         f(id); f(vi); f(vs);
     }
@@ -558,23 +558,23 @@ int Test4()
     if (false)
     {
         std::vector<char> buff;
-        BufferEncoder< OptimizedCodec > enc(buff);
+        buffer_encoder< optimized_codec > enc(buff);
 
         int32_t x = 123456789;
         enc(x);
 
         std::vector<char>::const_iterator begin = buff.begin();
-        BufferDecoder< OptimizedCodec > dec(begin, buff.end());
+        buffer_decoder< optimized_codec > dec(begin, buff.end());
         int32_t y;
         dec(y);
 
         begin = buff.begin();
-        BufferDecoder<LittleEndianCodec> le_dec(begin, buff.end());
+        buffer_decoder<little_endian_codec> le_dec(begin, buff.end());
         int32_t le_x;
         le_dec(le_x);
 
         begin = buff.begin();
-        BufferDecoder<BigEndianCodec> be_dec(begin, buff.end());
+        buffer_decoder<big_endian_codec> be_dec(begin, buff.end());
         int32_t be_x;
         be_dec(be_x);
 
@@ -596,7 +596,7 @@ int Test4()
         ms3.vs.push_back("world");
         ms3.vs.push_back("!!!");
         {
-            FileEncoder< OptimizedCodec > fenc(fd);
+            file_encoder< optimized_codec > fenc(fd);
 
             fenc(ms3);
         }
@@ -614,7 +614,7 @@ int Test4()
 
         MyStruct3 ms3_dec;
         {
-            FileDecoder< OptimizedCodec > fdec(fd);
+            file_decoder< optimized_codec > fdec(fd);
 
             fdec(ms3_dec);
         }
@@ -750,12 +750,12 @@ int Test5_Helper(int qc, char **qv, const std::string& cmd, const std::string& c
 
         if (codec=="le") {
             TimeStats ts;
-            FileEncoder<LittleEndianCodec> fenc(fd);
+            file_encoder<little_endian_codec> fenc(fd);
             fenc(vs);
         }
         if (codec=="ole") {
             TimeStats ts;
-            FileEncoder<OptimizedCodec> fenc(fd);
+            file_encoder<optimized_codec> fenc(fd);
             fenc(vs);
         }
         if (close(fd)<0) {
@@ -770,12 +770,12 @@ int Test5_Helper(int qc, char **qv, const std::string& cmd, const std::string& c
         }
         if (codec=="le") {
             TimeStats ts;
-            FileDecoder<LittleEndianCodec> fdec(fd);
+            file_decoder<little_endian_codec> fdec(fd);
             fdec(vs);
         }
         if (codec=="ole") {
             TimeStats ts;
-            FileDecoder<OptimizedCodec> fdec(fd);
+            file_decoder<optimized_codec> fdec(fd);
             fdec(vs);
         }
         if (close(fd)<0) {

@@ -46,14 +46,14 @@ struct Indent
 void makeTreeFor(size_t left, size_t right, std::ostream& os, size_t level)
 {
     //if (left>right) {
-    //    os << "TreeLeaf";
+    //    os << "tree_leaf";
     //    return;
     //}
 
     //size_t curr = left+(right-left)/2;
 
     //os << std::endl << Indent(level) << "/*"<<(level/2-1)<<"*/ ";
-    //os << "TreeNode<Foo_" << curr << ", ";
+    //os << "tree_node<Foo_" << curr << ", ";
     //    makeTreeFor(left, curr-1, os, level+2);
     //os << ',';
     //    makeTreeFor(curr+1, right, os, level+2);
@@ -67,11 +67,11 @@ void makeTreeFor(size_t left, size_t right, std::ostream& os, size_t level)
     makeTreeFor(left, curr-1, os, level+2);
     makeTreeFor(curr+1, right, os, level+2);
 
-    os << Indent(level) << "/*" << (level/2-1) << "*/" << " typedef TreeNode<" << "Foo_" << curr << ", ";
-    if (left<curr) os << "TreeNode_" << left << "_" << (curr-1); else os << "TreeLeaf";
+    os << Indent(level) << "/*" << (level/2-1) << "*/" << " typedef tree_node<" << "Foo_" << curr << ", ";
+    if (left<curr) os << "tree_node_" << left << "_" << (curr-1); else os << "tree_leaf";
     os << ", ";
-    if (curr<right) os << "TreeNode_" << (curr+1) << "_" << right; else os << "TreeLeaf";
-    os << "> TreeNode_" << left << "_" << right<< ";" << std::endl;
+    if (curr<right) os << "tree_node_" << (curr+1) << "_" << right; else os << "tree_leaf";
+    os << "> tree_node_" << left << "_" << right<< ";" << std::endl;
 }
 
 
@@ -91,21 +91,21 @@ int main(int argc, char **argv)
             << std::endl;
         for (size_t cid=1; cid<=n; cid++)
         {
-            std::cout << "const Base::TagType Foo_" << cid << "::TAG = " << cid << ";" << std::endl;
+            std::cout << "const Base::tag_type Foo_" << cid << "::TAG = " << cid << ";" << std::endl;
         }
         std::cout
             << std::endl
             << std::endl;
         std::cout
-            << "void checkBaseTree()" << std::endl
+            << "void check_base_tree()" << std::endl
             << "{" << std::endl
-            << "    checkTree<BaseTree>();" << std::endl
+            << "    check_tree<BaseTree>();" << std::endl
             << "}" << std::endl
             << std::endl;
         std::cout
             << "void fun(VirtualBase x, std::vector<char>& buffer)" << std::endl
             << "{" << std::endl
-            << "    BufferEncoder<LittleEndianCodec> enc(buffer);" << std::endl
+            << "    buffer_encoder<little_endian_codec> enc(buffer);" << std::endl
             << "    enc(x);" << std::endl
             << "}" << std::endl
             << std::endl;
@@ -131,12 +131,12 @@ int main(int argc, char **argv)
     std::cout
         << "struct Base" << std::endl
         << "{" << std::endl
-        << "    typedef uint16_t TagType;" << std::endl
-        << "    virtual TagType getTag() const = 0;" << std::endl
+        << "    typedef uint16_t tag_type;" << std::endl
+        << "    virtual tag_type get_tag() const = 0;" << std::endl
         << "    virtual ~Base() {}" << std::endl
         << "    uint32_t base_;" << std::endl
-        << "    template <typename F> void forEach(F & f) { f(base_); }" << std::endl
-        << "    template <typename F> void forEach(F & f) const { f(base_); }" << std::endl
+        << "    template <typename F> void for_each(F & f) { f(base_); }" << std::endl
+        << "    template <typename F> void for_each(F & f) const { f(base_); }" << std::endl
         << "};" << std::endl
         << std::endl;
 
@@ -158,17 +158,17 @@ int main(int argc, char **argv)
         else
             std::cout << "Base";
         std::cout << " Super;" << std::endl
-            << "    virtual TagType getTag() const { return TAG; }" << std::endl
-            << "    static const TagType TAG;" << std::endl;
+            << "    virtual tag_type get_tag() const { return TAG; }" << std::endl
+            << "    static const tag_type TAG;" << std::endl;
         size_t field = rand() % types.size();
         std::cout
             << "    " << types[field] << " field" << cid << "_;" << std::endl
-            << "    template <typename F> void forEach(F & f) { Super::forEach<F>(f); f(field" << cid << "_); }" << std::endl
-            << "    template <typename F> void forEach(F & f) const { Super::forEach<F>(f); f(field" << cid << "_); }" << std::endl
+            << "    template <typename F> void for_each(F & f) { Super::for_each<F>(f); f(field" << cid << "_); }" << std::endl
+            << "    template <typename F> void for_each(F & f) const { Super::for_each<F>(f); f(field" << cid << "_); }" << std::endl
             << "};" << std::endl
             << std::endl;
         //std::cout <<
-        //    "const Base::TagType Foo_" << cid << "::TAG = " << cid << ";" << std::endl;
+        //    "const Base::tag_type Foo_" << cid << "::TAG = " << cid << ";" << std::endl;
     }
     std::cout << std::endl;
 
@@ -203,15 +203,15 @@ int main(int argc, char **argv)
     makeTreeFor(1, n, std::cout, 2);
 //    std::cout << std::endl;
 //    std::cout << "BaseTree;" << std::endl;
-    std::cout << "typedef TreeNode_1_" << n << " BaseTree;" << std::endl;
+    std::cout << "typedef tree_node_1_" << n << " BaseTree;" << std::endl;
     std::cout << "typedef Virtual<Base, BaseTree> VirtualBase;" << std::endl;
     std::cout << std::endl;
 
     std::cout
         << "void fun(VirtualBase x, std::vector<char>& buffer);" << std::endl
-        << "void checkBaseTree();" << std::endl;
+        << "void check_base_tree();" << std::endl;
 //        << "{" << std::endl
-//        << "    BufferEncoder<LittleEndianCodec> enc(buffer);" << std::endl
+//        << "    buffer_encoder<little_endian_codec> enc(buffer);" << std::endl
 //        << "    enc(x);" << std::endl
 //        << "}" << std::endl
 //        << std::endl;

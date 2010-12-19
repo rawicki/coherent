@@ -31,7 +31,7 @@
 
 
 template <typename T>
-struct GeneralOptimizer
+struct general_optimizer
 {
     typedef T optimized_type;
 
@@ -49,9 +49,9 @@ struct GeneralOptimizer
 
 
 template <typename Sequence>
-struct SequenceOptimizer
+struct sequence_optimizer
 {
-    typedef SequenceOptimizer optimized_type;
+    typedef sequence_optimizer optimized_type;
 
     template <typename Encoder>
     static void encode(Encoder& enc, const Sequence& seq)
@@ -69,7 +69,7 @@ struct SequenceOptimizer
     }
 };
 
-struct StringZOptimizer
+struct string_z_optimizer
 {
     typedef std::string optimized_type;
 
@@ -94,7 +94,7 @@ template <
     typename Optimizer,
     typename T
 >
-struct OptimizationHelper : public Codecs<T>
+struct optimization_helper : public Codecs<T>
 {
 };
 
@@ -102,16 +102,16 @@ template <
     template <class> class Codecs,
     typename Optimizer
 >
-struct OptimizationHelper<Codecs, Optimizer, typename Optimizer::optimized_type> : public Optimizer
+struct optimization_helper<Codecs, Optimizer, typename Optimizer::optimized_type> : public Optimizer
 {
 };
 
 
 template <template <class> class Codecs, typename Optimizer>
-struct makeCodecWithOptimizationFor
+struct make_codec_with_optimization_for
 {
     template <typename T>
-    struct value : public OptimizationHelper<Codecs, Optimizer, T>
+    struct value : public optimization_helper<Codecs, Optimizer, T>
     {
     };
 };
@@ -120,15 +120,15 @@ struct makeCodecWithOptimizationFor
 //default set of optimizers
 
 template <template <class> class Codecs, typename T>
-struct DefaultOptimizerHelper : public Codecs<T>
+struct default_optimizer_helper : public Codecs<T>
 {
 };
 
 template <template <class> class Codecs, typename T>
-struct DefaultOptimizerHelper<Codecs, std::vector<T> > : public
+struct default_optimizer_helper<Codecs, std::vector<T> > : public
     boost::mpl::if_<
         boost::is_integral<T>,
-        SequenceOptimizer<std::vector<T> >,
+        sequence_optimizer<std::vector<T> >,
         Codecs<std::vector<T> >
     >::type
 {
@@ -144,7 +144,7 @@ struct DefaultOptimizerHelper<Codecs, std::vector<T> > : public
 
 
 template <template <class> class Codecs, typename T>
-struct DefaultOptimizer : public
+struct default_optimizer : public
     boost::mpl::if_<
         boost::mpl::and_<
             boost::is_integral<T>,
@@ -153,11 +153,11 @@ struct DefaultOptimizer : public
                 boost::mpl::int_<8>
             >
         >,
-            GeneralOptimizer<T>,
+            general_optimizer<T>,
             typename boost::mpl::if_<
                 boost::is_same<T, std::string>,
-                SequenceOptimizer<std::string>,
-                DefaultOptimizerHelper<Codecs, T>
+                sequence_optimizer<std::string>,
+                default_optimizer_helper<Codecs, T>
             >::type
     >::type
 {
@@ -165,7 +165,7 @@ struct DefaultOptimizer : public
 
 
 template <template <class> class Codecs>
-struct makeCodecWithDefaultOptimizer
+struct make_codec_with_default_optimizer
 {
     //this is a set of optimizers for:
     // * integer types with sizeof not less than 8,
@@ -173,7 +173,7 @@ struct makeCodecWithDefaultOptimizer
     // * std::string
 
     template <typename T>
-    struct value : public DefaultOptimizer<Codecs, T>
+    struct value : public default_optimizer<Codecs, T>
     {
     };
 };
