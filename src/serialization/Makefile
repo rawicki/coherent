@@ -17,7 +17,7 @@
 # http://www.gnu.org/licenses/.
 
 
-PATHS		:=	Codecs Encoders Misc
+PATHS		:=	codecs encoders misc
 HEADERS		:=	$(foreach dir, $(PATHS), $(wildcard $(dir)/*.h))
 
 
@@ -51,7 +51,7 @@ vc_example: vc_example.cpp $(HEADERS)
 	g++ -O3 -I. -c -o vc_example.o vc_example.cpp
 	g++ -o vc_example vc_example.o
 
-list_example: list_example.cpp Misc/TypeList.h
+list_example: list_example.cpp misc/type_list.h
 	g++ -O3 -I. -c -o list_example.o list_example.cpp
 	g++ -o list_example list_example.o
 
