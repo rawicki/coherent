@@ -107,29 +107,29 @@ struct A
 
 
 //vdec + versioning
-typedef make_list5<std::string, uint32_t, int64_t, A_old, detail::Version<A> >::value  List1;
-typedef CreateDecoderSet<List1>         DecoderSet;
-typedef DecoderSet::DecoderAbs          DecoderAbs;
-typedef DecoderSet::DecoderType         DecoderType;
+typedef make_list5<std::string, uint32_t, int64_t, A_old, detail::__version<A> >::value  List1;
+typedef create_decoder_set<List1>       DecoderSet;
+typedef DecoderSet::decoder_abs         DecoderAbs;
+typedef DecoderSet::decoder_type        DecoderType;
 
-typedef DecoderSet::DecoderImpl< buffer_decoder<little_endian_codec> >::Type   buffer_decoderImpl;
-typedef DecoderSet::DecoderImpl< file_decoder<little_endian_codec> >::Type     file_decoderImpl;
+typedef DecoderSet::decoder_impl< buffer_decoder<little_endian_codec> >::type   buffer_decoder_impl;
+typedef DecoderSet::decoder_impl< file_decoder<little_endian_codec> >::type     file_decoder_impl;
 
 //venc + versioning
-typedef CreateEncoderSet<List1>         EncoderSet;
-typedef EncoderSet::EncoderAbs          EncoderAbs;
-typedef EncoderSet::EncoderType         EncoderType;
+typedef create_encoder_set<List1>       EncoderSet;
+typedef EncoderSet::encoder_abs         EncoderAbs;
+typedef EncoderSet::encoder_type        EncoderType;
 
-typedef EncoderSet::EncoderImpl< buffer_encoder<little_endian_codec> >::Type   buffer_encoderImpl;
+typedef EncoderSet::encoder_impl< buffer_encoder<little_endian_codec> >::type   buffer_encoder_impl;
 
 
-typedef EncoderSet::CreateEncoderImpl<
-                detail::FieldPolicy<detail::EncoderQualifier, buffer_encoder<little_endian_codec> >
-            >::Type buffer_encoderImpl2;
+typedef EncoderSet::create_encoder_impl<
+                detail::field_policy<detail::encoder_qualifier, buffer_encoder<little_endian_codec> >
+            >::type buffer_encoder_impl2;
 
-typedef EncoderSet::CreateEncoderImpl<
-                detail::FieldPolicy<detail::EncoderQualifier, file_encoder<little_endian_codec> >
-            >::Type file_encoderImpl;
+typedef EncoderSet::create_encoder_impl<
+                detail::field_policy<detail::encoder_qualifier, file_encoder<little_endian_codec> >
+            >::type file_encoder_impl;
 
 
 // class B definitions
@@ -164,13 +164,13 @@ struct B
 };
 
 typedef make_list3<std::string, B, int64_t>::value ListB1; //enc
-typedef make_list2<std::string, detail::Both<B> >::value ListB2; //dec
+typedef make_list2<std::string, detail::__both<B> >::value ListB2; //dec
 
-typedef CreateEncoderSet<ListB1>::EncoderType    Encoder_B;
-typedef CreateDecoderSet<ListB2>::DecoderType    Decoder_B;
+typedef create_encoder_set<ListB1>::encoder_type Encoder_B;
+typedef create_decoder_set<ListB2>::decoder_type Decoder_B;
 
-typedef CreateEncoderSet<ListB1>::CreateEncoderImpl< detail::FieldPolicy<detail::EncoderQualifier, buffer_encoder<little_endian_codec> > >::Type buffer_encoder_B;
-typedef CreateDecoderSet<ListB2>::CreateDecoderImpl< detail::FieldPolicy<detail::DecoderQualifier, buffer_decoder<little_endian_codec> > >::Type buffer_decoder_B;
+typedef create_encoder_set<ListB1>::create_encoder_impl< detail::field_policy<detail::encoder_qualifier, buffer_encoder<little_endian_codec> > >::type buffer_encoder_B;
+typedef create_decoder_set<ListB2>::create_decoder_impl< detail::field_policy<detail::decoder_qualifier, buffer_decoder<little_endian_codec> > >::type buffer_decoder_B;
 
 
 void foo(DecoderType& dec)
@@ -285,7 +285,7 @@ int main()
         A a2("po nowemu", 113, 251);
 
         //std::cout << buf.size() << " " << (void*)(&buf[0]) << std::endl;
-        EncoderType enc = EncoderType(new buffer_encoderImpl2(buf));
+        EncoderType enc = EncoderType(new buffer_encoder_impl2(buf));
         enc(ao)(a1, 0)(a2, 5);
 
         std::cout << "END A encoding" << std::endl;
@@ -297,7 +297,7 @@ int main()
 
         std::vector<char>::const_iterator it = buf.begin();
         buffer_decoder<little_endian_codec> bd(it, buf.end());
-        DecoderType dec = DecoderType(new buffer_decoderImpl(bd));
+        DecoderType dec = DecoderType(new buffer_decoder_impl(bd));
 
         foo(dec);
     }

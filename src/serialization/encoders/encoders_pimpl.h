@@ -31,42 +31,42 @@
 
 namespace detail
 {
-    template <typename T> struct Default {};
-    template <typename T> struct Version {};
-    template <typename T> struct Both {};
+    template <typename T> struct __default {};
+    template <typename T> struct __version {};
+    template <typename T> struct __both {};
 
-    template <typename T> struct TypeExtractor { typedef T Type; };    //default
-    template <typename T> struct TypeExtractor< Default<T> > { typedef T Type; };
-    template <typename T> struct TypeExtractor< Version<T> > { typedef T Type; };
-    template <typename T> struct TypeExtractor< Both<T> >    { typedef T Type; };
+    template <typename T> struct type_extractor { typedef T type; };    //default
+    template <typename T> struct type_extractor< __default<T> > { typedef T type; };
+    template <typename T> struct type_extractor< __version<T> > { typedef T type; };
+    template <typename T> struct type_extractor< __both<T> >    { typedef T type; };
 
 
     //encoder
     template <typename T>
-    struct VirtualEncoderFunction
+    struct virtual_encoder_function
     {
         virtual void operator() (const T&) = 0;
     };
     template <typename T>
-    struct VirtualEncoderFunction< Default<T> >
+    struct virtual_encoder_function< __default<T> >
     {
         virtual void operator() (const T&) = 0;
     };
     template <typename T>
-    struct VirtualEncoderFunction< Version<T> >
+    struct virtual_encoder_function< __version<T> >
     {
         virtual void operator() (const T&, uint32_t) = 0;
     };
     template <typename T>
-    struct VirtualEncoderFunction< Both<T> >
+    struct virtual_encoder_function< __both<T> >
     {
         virtual void operator() (const T&) = 0;
         virtual void operator() (const T&, uint32_t) = 0;
-        //TODO sprawdzic czy wystarczy dziedziczenie po Version i Default ?
+        //TODO sprawdzic czy wystarczy dziedziczenie po __version i __default ?
     };
 
     template <typename T>
-    struct EncoderQualifier
+    struct encoder_qualifier
     {
         //typedef typename boost::add_const<typename boost::add_reference<T>::type>::type type;
         typedef const T & type;
@@ -74,29 +74,29 @@ namespace detail
 
     //decoder
     template <typename T>
-    struct VirtualDecoderFunction
+    struct virtual_decoder_function
     {
         virtual void operator() (T&) = 0;
     };
     template <typename T>
-    struct VirtualDecoderFunction< Default<T> >
+    struct virtual_decoder_function< __default<T> >
     {
         virtual void operator() (T&) = 0;
     };
     template <typename T>
-    struct VirtualDecoderFunction< Version<T> >
+    struct virtual_decoder_function< __version<T> >
     {
         virtual void operator() (T&, uint32_t) = 0;
     };
     template <typename T>
-    struct VirtualDecoderFunction< Both<T> >
+    struct virtual_decoder_function< __both<T> >
     {
         virtual void operator() (T&) = 0;
         virtual void operator() (T&, uint32_t) = 0;
     };
 
     template <typename T>
-    struct DecoderQualifier
+    struct decoder_qualifier
     {
         //typedef typename boost::add_reference<T>::type type;
         typedef T & type;
@@ -104,7 +104,7 @@ namespace detail
 
 
     template <template <class> class Qualifier>
-    struct DefaultImplementation
+    struct default_implementation
     {
 #ifdef DUMP_TYPEINFO
         template <typename T> static void process_info(typename Qualifier<T>::type x)
@@ -128,9 +128,9 @@ namespace detail
 #   define DUMP_RESULT_V(T, x, v)
 #endif
         template <typename T, typename Super>
-        struct Tmpl : public Super
+        struct tmpl : public Super
         {
-            DEFINE_CONSTRUCTORS(Tmpl, Super)
+            DEFINE_CONSTRUCTORS(tmpl, Super)
 
             virtual void operator() (typename Qualifier<T>::type x)
             {
@@ -139,9 +139,9 @@ namespace detail
             }
         };
         template <typename T, typename Super>
-        struct Tmpl< Default<T>, Super > : public Super
+        struct tmpl< __default<T>, Super > : public Super
         {
-            DEFINE_CONSTRUCTORS(Tmpl, Super)
+            DEFINE_CONSTRUCTORS(tmpl, Super)
 
             virtual void operator() (typename Qualifier<T>::type x)
             {
@@ -150,9 +150,9 @@ namespace detail
             }
         };
         template <typename T, typename Super>
-        struct Tmpl< Version<T>, Super > : public Super
+        struct tmpl< __version<T>, Super > : public Super
         {
-            DEFINE_CONSTRUCTORS(Tmpl, Super)
+            DEFINE_CONSTRUCTORS(tmpl, Super)
 
             virtual void operator() (typename Qualifier<T>::type x, uint32_t v)
             {
@@ -161,10 +161,10 @@ namespace detail
             }
         };
         template <typename T, typename Super>
-        struct Tmpl< Both<T>, Super > : public Super
+        struct tmpl< __both<T>, Super > : public Super
         {
             //TODO sprawdzic czy wystarczy dziedziczenie po powyzszych?
-            DEFINE_CONSTRUCTORS(Tmpl, Super)
+            DEFINE_CONSTRUCTORS(tmpl, Super)
 
             virtual void operator() (typename Qualifier<T>::type x)
             {
@@ -180,12 +180,12 @@ namespace detail
     };
 
     template <template <class> class Qualifier, typename Derived>
-    struct RefPolicy
+    struct ref_policy
     {
         template <typename Abs>
-        struct Policy : public Abs
+        struct policy : public Abs
         {
-            Policy(Derived& foo) : foo_(foo)
+            policy(Derived& foo) : foo_(foo)
             {
             }
             Derived& getFoo()
@@ -197,19 +197,19 @@ namespace detail
         };
 
         template <typename T, typename Super>
-        struct Tmpl
+        struct tmpl
         {
-            typedef typename DefaultImplementation<Qualifier>::template Tmpl<T, Super> Type;
+            typedef typename default_implementation<Qualifier>::template tmpl<T, Super> type;
         };
     };
 
     template <template <class> class Qualifier, typename Derived>
-    struct FieldPolicy
+    struct field_policy
     {
         template <typename Abs>
-        struct Policy : public Abs
+        struct policy : public Abs
         {
-            DEFINE_CONSTRUCTORS(Policy, foo_)
+            DEFINE_CONSTRUCTORS(policy, foo_)
 
             Derived& getFoo()
             {
@@ -220,42 +220,42 @@ namespace detail
         };
 
         template <typename T, typename Super>
-        struct Tmpl
+        struct tmpl
         {
-            typedef typename DefaultImplementation<Qualifier>::template Tmpl<T, Super> Type;
+            typedef typename default_implementation<Qualifier>::template tmpl<T, Super> type;
         };
     };
-}
+} //namespace detail
 
 
 template <typename TypeList>
-struct CreateEncoderSet
+struct create_encoder_set
 {
-    typedef CreatePImplSet<
+    typedef create_pimpl_set<
             TypeList,
-            detail::VirtualEncoderFunction,
-            detail::EncoderQualifier,
-            detail::TypeExtractor
+            detail::virtual_encoder_function,
+            detail::encoder_qualifier,
+            detail::type_extractor
         >
-            PImplSet;
+            pimpl_set;
 
-    typedef typename PImplSet::ClassAbs     EncoderAbs;
+    typedef typename pimpl_set::class_abs     encoder_abs;
 
-    struct EncoderType : public PImplSet::ClassType
+    struct encoder_type : public pimpl_set::class_type
     {
-        typedef typename PImplSet::ClassType Super;
-        EncoderType() {}
-        EncoderType(EncoderAbs * impl) : Super(impl) {}
-        EncoderType(boost::shared_ptr<EncoderAbs> impl) : Super(impl) {}
+        typedef typename pimpl_set::class_type Super;
+        encoder_type() {}
+        encoder_type(encoder_abs * impl) : Super(impl) {}
+        encoder_type(boost::shared_ptr<encoder_abs> impl) : Super(impl) {}
 
         template <typename T>
-        EncoderType& operator() (const T & x)
+        encoder_type& operator() (const T & x)
         {
             Super::template operator()<T>(x);
             return *this;
         }
         template <typename T>
-        EncoderType& operator() (const T & x, uint32_t v)
+        encoder_type& operator() (const T & x, uint32_t v)
         {
             Super::template operator()<T>(x, v);
             return *this;
@@ -263,48 +263,48 @@ struct CreateEncoderSet
     };
 
     template <typename EncoderPolicy>
-    struct CreateEncoderImpl
+    struct create_encoder_impl
     {
-        typedef typename PImplSet::template ClassImpl<EncoderPolicy>::Type Type;
+        typedef typename pimpl_set::template class_impl<EncoderPolicy>::type type;
     };
 
     //tak jak w decoderze zostawione dla kompatybilno¶ci wstecznej
     template <typename Encoder>
-    struct EncoderImpl
+    struct encoder_impl
     {
-        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::EncoderQualifier, Encoder> >::Type Type;
+        typedef typename pimpl_set::template class_impl<detail::ref_policy<detail::encoder_qualifier, Encoder> >::type type;
     };
 };
 
 
 template <typename TypeList>
-struct CreateDecoderSet
+struct create_decoder_set
 {
-    typedef CreatePImplSet<
+    typedef create_pimpl_set<
             TypeList,
-            detail::VirtualDecoderFunction,
-            detail::DecoderQualifier,
-            detail::TypeExtractor
+            detail::virtual_decoder_function,
+            detail::decoder_qualifier,
+            detail::type_extractor
         >
-            PImplSet;
+            pimpl_set;
 
-    typedef typename PImplSet::ClassAbs     DecoderAbs;
+    typedef typename pimpl_set::class_abs     decoder_abs;
 
-    struct DecoderType : public PImplSet::ClassType
+    struct decoder_type : public pimpl_set::class_type
     {
-        typedef typename PImplSet::ClassType Super;
-        DecoderType() {}
-        DecoderType(DecoderAbs * impl) : Super(impl) {}
-        DecoderType(boost::shared_ptr<DecoderAbs> impl) : Super(impl) {}
+        typedef typename pimpl_set::class_type Super;
+        decoder_type() {}
+        decoder_type(decoder_abs * impl) : Super(impl) {}
+        decoder_type(boost::shared_ptr<decoder_abs> impl) : Super(impl) {}
 
         template <typename T>
-        DecoderType& operator() (T & x)
+        decoder_type& operator() (T & x)
         {
             Super::template operator()<T>(x);
             return *this;
         }
         template <typename T>
-        DecoderType& operator() (T & x, uint32_t v)
+        decoder_type& operator() (T & x, uint32_t v)
         {
             Super::template operator()<T>(x, v);
             return *this;
@@ -312,17 +312,17 @@ struct CreateDecoderSet
     };
 
     template <typename DecoderPolicy>
-    struct CreateDecoderImpl
+    struct create_decoder_impl
     {
-        typedef typename PImplSet::template ClassImpl<DecoderPolicy>::Type Type;
+        typedef typename pimpl_set::template class_impl<DecoderPolicy>::type type;
     };
 
-    //poni¿sze zostaje jedynie dla kompatybilno¶ci wstecznej, jedyn± ró¿nic± jest dodanie `::Type'
+    //poni¿sze zostaje jedynie dla kompatybilno¶ci wstecznej, jedyn± ró¿nic± jest dodanie `::type'
     //w wiêkszo¶ci przypadków zalecane jest u¿ywanie CreateDecoderImpl
     template <typename Decoder>
-    struct DecoderImpl
+    struct decoder_impl
     {
-        typedef typename PImplSet::template ClassImpl<detail::RefPolicy<detail::DecoderQualifier, Decoder> >::Type Type;
+        typedef typename pimpl_set::template class_impl<detail::ref_policy<detail::decoder_qualifier, Decoder> >::type type;
     };
 };
 

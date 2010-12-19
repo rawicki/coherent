@@ -47,18 +47,18 @@ namespace pimpl_detail
 
 //create abs helper
 template <template <class> class VirtualFnTmpl, typename TypeList>
-struct CreateClassAbs;
+struct create_class_abs;
 
 template <template <class> class VirtualFnTmpl>
-struct CreateClassAbs<VirtualFnTmpl, list_head>
+struct create_class_abs<VirtualFnTmpl, list_head>
 {
-    virtual ~CreateClassAbs() {}
+    virtual ~create_class_abs() {}
 };
 
 template <template <class> class VirtualFnTmpl, typename CurrentType, typename ListTail>
-struct CreateClassAbs<VirtualFnTmpl, list_elem<CurrentType, ListTail> >
+struct create_class_abs<VirtualFnTmpl, list_elem<CurrentType, ListTail> >
     : public VirtualFnTmpl<CurrentType>
-    , public CreateClassAbs<VirtualFnTmpl, ListTail>
+    , public create_class_abs<VirtualFnTmpl, ListTail>
 {
 };
 
@@ -71,7 +71,7 @@ template <
     template <class> class VirtualFnTmpl,
     typename TypeList
 >
-struct CreateClassType;
+struct create_class_type;
 
 template <
     typename ClassAbs,
@@ -79,11 +79,11 @@ template <
     template <class> class TypeExtractor,
     template <class> class VirtualFnTmpl
 >
-struct CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_head>
+struct create_class_type<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_head>
 {
-    CreateClassType() {}
-    CreateClassType(ClassAbs * impl) : impl_(impl) {}
-    CreateClassType(boost::shared_ptr<ClassAbs> impl) : impl_(impl) {}
+    create_class_type() {}
+    create_class_type(ClassAbs * impl) : impl_(impl) {}
+    create_class_type(boost::shared_ptr<ClassAbs> impl) : impl_(impl) {}
 protected:
     boost::shared_ptr<ClassAbs> impl_;
 };
@@ -96,22 +96,22 @@ template <
     typename CurrentType,
     typename ListTail
 >
-struct CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail> >
-    : public CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail>
+struct create_class_type<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail> >
+    : public create_class_type<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail>
 {
 private:
-    typedef CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail> Super;
-    typedef typename TypeExtractor<CurrentType>::Type Type;
+    typedef create_class_type<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail> Super;
+    typedef typename TypeExtractor<CurrentType>::type type;
 public:
-    CreateClassType() {}
-    CreateClassType(ClassAbs * impl) : Super(impl) {}
-    CreateClassType(boost::shared_ptr<ClassAbs> impl) : Super(impl) {}
+    create_class_type() {}
+    create_class_type(ClassAbs * impl) : Super(impl) {}
+    create_class_type(boost::shared_ptr<ClassAbs> impl) : Super(impl) {}
 public:
-    void foo(typename Qualifier<Type>::type x)
+    void foo(typename Qualifier<type>::type x)
     {
         ((VirtualFnTmpl<CurrentType>&)(*Super::impl_))(x);
     }
-    void foo(typename Qualifier<Type>::type x, uint32_t v)
+    void foo(typename Qualifier<type>::type x, uint32_t v)
     {
         ((VirtualFnTmpl<CurrentType>&)(*Super::impl_))(x, v);
     }
@@ -127,7 +127,7 @@ template <
     typename TypeList,
     typename T
 >
-struct FindClassSuper;
+struct find_class_super;
 //incomplete type error message if T is not an element of TypeList
 
     template <
@@ -140,7 +140,7 @@ struct FindClassSuper;
         bool found,
         typename T
     >
-    struct FindClassSuperHelper;
+    struct find_class_superHelper;
 
     template <
         typename ClassAbs,
@@ -151,9 +151,9 @@ struct FindClassSuper;
         typename ListTail,
         typename T
     >
-    struct FindClassSuperHelper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, CurrentType, ListTail, true, T>
+    struct find_class_superHelper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, CurrentType, ListTail, true, T>
     {
-        typedef CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail> > Type;
+        typedef create_class_type<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail> > type;
     };
     template <
         typename ClassAbs,
@@ -164,9 +164,9 @@ struct FindClassSuper;
         typename ListTail,
         typename T
     >
-    struct FindClassSuperHelper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, CurrentType, ListTail, false, T>
+    struct find_class_superHelper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, CurrentType, ListTail, false, T>
     {
-        typedef typename FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail, T>::Type Type;
+        typedef typename find_class_super<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, ListTail, T>::type type;
     };
 
 template <
@@ -178,19 +178,19 @@ template <
     typename ListTail,
     typename T
 >
-struct FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail>, T>
+struct find_class_super<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_elem<CurrentType, ListTail>, T>
 {
     typedef
-        typename FindClassSuperHelper<
+        typename find_class_superHelper<
                 ClassAbs,
                 Qualifier,
                 TypeExtractor,
                 VirtualFnTmpl,
                 CurrentType,
                 ListTail,
-                boost::is_same<typename TypeExtractor<CurrentType>::Type, T>::value,
+                boost::is_same<typename TypeExtractor<CurrentType>::type, T>::value,
                 T
-            >::Type Type;
+            >::type type;
 };
 
 
@@ -198,7 +198,7 @@ struct FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, list_el
 template <typename T>
 struct Identity
 {
-    typedef T Type;
+    typedef T type;
 };
 
 
@@ -209,16 +209,16 @@ template <
     template <class,class> class VirtualFnBody,
     typename TypeList
 >
-struct CreateClassImpl;
+struct create_class_impl;
 
 template <
     typename ClassAbs,
     template <class> class ImplPolicy,
     template <class,class> class VirtualFnBody
 >
-struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, list_head>
+struct create_class_impl<ClassAbs, ImplPolicy, VirtualFnBody, list_head>
 {
-    typedef ImplPolicy<ClassAbs>        Type;
+    typedef ImplPolicy<ClassAbs>        type;
 };
 
 template <
@@ -228,10 +228,10 @@ template <
     typename CurrentType,
     typename ListTail
 >
-struct CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, list_elem<CurrentType, ListTail> >
+struct create_class_impl<ClassAbs, ImplPolicy, VirtualFnBody, list_elem<CurrentType, ListTail> >
 {
-    typedef typename CreateClassImpl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail>::Type       Super;
-    typedef typename VirtualFnBody<CurrentType, Super>::Type                                    Type;
+    typedef typename create_class_impl<ClassAbs, ImplPolicy, VirtualFnBody, ListTail>::type       Super;
+    typedef typename VirtualFnBody<CurrentType, Super>::type                                    type;
 };
 
 
@@ -252,29 +252,29 @@ template <
     template <class> class Qualifier,
     template <class> class TypeExtractor = pimpl_detail::Identity
 >
-struct CreatePImplSet
+struct create_pimpl_set
 {
-    typedef pimpl_detail::CreateClassAbs<VirtualFnTmpl, TypeList>      ClassAbs;
+    typedef pimpl_detail::create_class_abs<VirtualFnTmpl, TypeList>      class_abs;
 
-    struct ClassType
-        : public pimpl_detail::CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList>
+    struct class_type
+        : public pimpl_detail::create_class_type<class_abs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList>
     {
     private:
-        typedef pimpl_detail::CreateClassType<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList> Super;
+        typedef pimpl_detail::create_class_type<class_abs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList> Super;
     public:
-        ClassType() {}
-        ClassType(ClassAbs * impl) : Super(impl) {}
-        ClassType(boost::shared_ptr<ClassAbs> impl) : Super(impl) {}
+        class_type() {}
+        class_type(class_abs * impl) : Super(impl) {}
+        class_type(boost::shared_ptr<class_abs> impl) : Super(impl) {}
 
         template <typename T>
         void operator() (typename Qualifier<T>::type x)
         {
-            pimpl_detail::FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList, T>::Type::foo(x);
+            pimpl_detail::find_class_super<class_abs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList, T>::type::foo(x);
         }
         template <typename T>
         void operator() (typename Qualifier<T>::type x, uint32_t v)
         {
-            pimpl_detail::FindClassSuper<ClassAbs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList, T>::Type::foo(x, v);
+            pimpl_detail::find_class_super<class_abs, Qualifier, TypeExtractor, VirtualFnTmpl, TypeList, T>::type::foo(x, v);
         }
     };
 
@@ -284,19 +284,19 @@ struct CreatePImplSet
      *          * T - current type (before TypeExtractor, just list element),
      *          * Super - Tmpl generated type must inherit this class,
      *          * Super already inherits ClassAbs and Policy
-     *          * Tmpl is sth like Class Factory: Tmpl<T, Super>::Type must indicate a class that should
+     *          * Tmpl is sth like Class Factory: Tmpl<T, Super>::type must indicate a class that should
      *              implement virtual functions from ClassAbs especially concerning type T
      */
     template <typename Implementation>
-    struct ClassImpl
+    struct class_impl
     {
         typedef
-            typename pimpl_detail::CreateClassImpl<
-                    ClassAbs,
-                    Implementation::template Policy,
-                    Implementation::template Tmpl,
+            typename pimpl_detail::create_class_impl<
+                    class_abs,
+                    Implementation::template policy,
+                    Implementation::template tmpl,
                     TypeList
-                >::Type Type;
+                >::type type;
     };
 
 
