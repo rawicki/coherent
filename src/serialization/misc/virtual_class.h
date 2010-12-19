@@ -23,9 +23,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include <inttypes.h>
-#include "Misc/PointerPolicy.h"
-#include "Misc/TypeList.h"
-#include "Misc/TypeTree.h"
+#include "misc/pointer_policy.h"
+#include "misc/type_list.h"
+#include "misc/type_tree.h"
 
 
 

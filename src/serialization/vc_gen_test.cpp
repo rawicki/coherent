@@ -84,8 +84,8 @@ int main(int argc, char **argv)
     if (argc>2 && !strcmp(argv[2], "static"))
     {
         std::cout
-            << "#include \"Codecs/LittleEndianCodec.h\"" << std::endl
-            << "#include \"Encoders/BufferEncoder.h\"" << std::endl
+            << "#include \"codecs/little_endian.h\"" << std::endl
+            << "#include \"encoders/buffer_encoder.h\"" << std::endl
             << "#include \"gen_test.h\"" << std::endl
             << std::endl
             << std::endl;
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
         << std::endl;
         
     std::cout
-        << "#include \"Misc/VirtualClass.h\"" << std::endl
+        << "#include \"misc/virtual_class.h\"" << std::endl
         << std::endl;
     //base
     std::cout

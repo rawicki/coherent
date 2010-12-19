@@ -36,13 +36,13 @@
 #include <fcntl.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/random.hpp>
-#include "Codecs/BigEndianCodec.h"
-#include "Codecs/LittleEndianCodec.h"
-#include "Codecs/Optimizers.h"
-#include "Encoders/BufferEncoder.h"
-#include "Encoders/FileEncoder.h"
-#include "Misc/VectorOutput.h"
-#include "Misc/VirtualClass.h"
+#include "codecs/big_endian.h"
+#include "codecs/little_endian.h"
+#include "codecs/optimizers.h"
+#include "encoders/buffer_encoder.h"
+#include "encoders/file_encoder.h"
+#include "misc/vector_output.h"
+#include "misc/virtual_class.h"
 
 
 //virtual structurs

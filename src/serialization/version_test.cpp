@@ -24,13 +24,13 @@
 #include <inttypes.h>
 #include <vector>
 
-#include "Codecs/LittleEndianCodec.h"
-#include "Encoders/BufferEncoder.h"
-#include "Encoders/FileEncoder.h"
+#include "codecs/little_endian.h"
+#include "encoders/buffer_encoder.h"
+#include "encoders/file_encoder.h"
 
 #define DUMP_TYPEINFO 1
 
-#include "Encoders/EncodersPimpl.h"
+#include "encoders/encoders_pimpl.h"
 
 
 struct A_old

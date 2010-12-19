@@ -26,12 +26,12 @@
 
 #define DUMP_TYPEINFO 1
 
-#include "Encoders/VirtualEncoder.h"
-#include "Encoders/VirtualDecoder.h"
-#include "Encoders/FileEncoder.h"
-#include "Encoders/BufferEncoder.h"
+#include "encoders/virtual_encoder.h"
+#include "encoders/virtual_decoder.h"
+#include "encoders/file_encoder.h"
+#include "encoders/buffer_encoder.h"
 
-#include "Codecs/LittleEndianCodec.h"
+#include "codecs/little_endian.h"
 
 
 typedef makeList3<std::string, uint32_t, int64_t>::value       List1;

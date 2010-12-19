@@ -18,8 +18,8 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include "Codecs/BigEndianCodec.h"
-#include "Codecs/LittleEndianCodec.h"
+#include "codecs/big_endian.h"
+#include "codecs/little_endian.h"
 
 template <typename T> struct Codec : public LittleEndianCodec<T> {};
 typedef int64_t Type;

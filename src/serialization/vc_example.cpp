@@ -27,9 +27,9 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-#include "Codecs/LittleEndianCodec.h"
-#include "Encoders/BufferEncoder.h"
-#include "Misc/VirtualClass.h"
+#include "codecs/little_endian.h"
+#include "encoders/buffer_encoder.h"
+#include "misc/virtual_class.h"
 
 
 struct A

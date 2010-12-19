@@ -22,10 +22,10 @@
 #define ENCODERS_PIMPL_H
 
 #include <boost/type_traits.hpp>
-#include "Misc/PImplGenerator.h"
+#include "misc/pimpl_generator.h"
 
 #ifdef DUMP_TYPEINFO
-#   include "Misc/Demangle.h"
+#   include "misc/demangle.h"
 #endif
 
 

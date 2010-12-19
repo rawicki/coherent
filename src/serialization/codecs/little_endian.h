@@ -22,7 +22,7 @@
 #define LITTLE_ENDIAN_CODEC_H
 
 #include <inttypes.h>
-#include "Codecs/StandardCodecs.h"
+#include "codecs/standard_codecs.h"
 
 
 template <typename T>

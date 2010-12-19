@@ -23,10 +23,10 @@
 
 #include <boost/type_traits.hpp>
 #include <boost/shared_ptr.hpp>
-#include "Misc/TypeList.h"
+#include "misc/type_list.h"
 
 #ifdef DUMP_TYPEINFO
-#   include "Misc/Demangle.h"
+#   include "misc/demangle.h"
 #endif
 
 

@@ -23,8 +23,8 @@
 #include <iostream>
 #include <sstream>
 #include <inttypes.h>
-#include "Misc/TypeList.h"
-#include "Misc/Demangle.h"
+#include "misc/type_list.h"
+#include "misc/demangle.h"
 
 
 //template functor
