@@ -24,38 +24,38 @@ HEADERS		:=	$(foreach dir, $(PATHS), $(wildcard $(dir)/*.h))
 all: serialize gen_test venc_test version_test vc_example list_example
 
 
-serialize: serialize.cc $(HEADERS)
-	g++ -O3 -I. -o serialize serialize.cc
+serialize: serialize.cpp $(HEADERS)
+	g++ -O3 -I. -o serialize serialize.cpp
 
-inline: inline_int64_t.cc $(HEADERS)
-	g++ -O3 -I. -c -o inline.o inline_int64_t.cc
+inline: inline_int64_t.cpp $(HEADERS)
+	g++ -O3 -I. -c -o inline.o inline_int64_t.cpp
 	objdump -d inline.o
 
-gen_test: vc_gen_test.cc gen_main.cc $(HEADERS)
-	g++ -O3 -o vc_gen_test vc_gen_test.cc
+gen_test: vc_gen_test.cpp gen_main.cpp $(HEADERS)
+	g++ -O3 -o vc_gen_test vc_gen_test.cpp
 	./vc_gen_test 6 > gen_test.h
-	./vc_gen_test 6 static > gen_test.cc
-	g++ -O3 -I. -c -o gen_test.o gen_test.cc
-	g++ -O3 -I. -c -o gen_main.o gen_main.cc
+	./vc_gen_test 6 static > gen_test.cpp
+	g++ -O3 -I. -c -o gen_test.o gen_test.cpp
+	g++ -O3 -I. -c -o gen_main.o gen_main.cpp
 	g++ -o gen_test gen_test.o gen_main.o
 
-venc_test: venc_test.cc $(HEADERS)
-	g++ -O3 -I. -c -o venc_test.o venc_test.cc
+venc_test: venc_test.cpp $(HEADERS)
+	g++ -O3 -I. -c -o venc_test.o venc_test.cpp
 	g++ -o venc_test venc_test.o
 
-version_test: version_test.cc $(HEADERS)
-	g++ -O3 -I. -c -o version_test.o version_test.cc
+version_test: version_test.cpp $(HEADERS)
+	g++ -O3 -I. -c -o version_test.o version_test.cpp
 	g++ -o version_test version_test.o
 
-vc_example: vc_example.cc $(HEADERS)
-	g++ -O3 -I. -c -o vc_example.o vc_example.cc
+vc_example: vc_example.cpp $(HEADERS)
+	g++ -O3 -I. -c -o vc_example.o vc_example.cpp
 	g++ -o vc_example vc_example.o
 
-list_example: list_example.cc Misc/TypeList.h
-	g++ -O3 -I. -c -o list_example.o list_example.cc
+list_example: list_example.cpp Misc/TypeList.h
+	g++ -O3 -I. -c -o list_example.o list_example.cpp
 	g++ -o list_example list_example.o
 
 clean:
-	rm -f serialize *.o *test vc_example list_example  gen_test.h gen_test.cc $$(find -name "*~")
+	rm -f serialize *.o *test vc_example list_example  gen_test.h gen_test.cpp $$(find -name "*~")
 
 
