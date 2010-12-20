@@ -19,23 +19,40 @@
  */
 
 /*
-   This program creates a socket and then begins an infinite loop. Each time
-   through the loop it accepts a connection and prints out messages from it.
-   When the connection breaks, or a termination message comes through, the
-   program accepts a new connection.
-   */
+ * This program creates a socket and then begins an infinite loop. Each time
+ * through the loop it accepts a connection and prints out messages from it.
+ * When the connection breaks, or a termination message comes through, the
+ * program accepts a new connection.
+ */
+
 
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-
+#include <exception>
 #include "server.h"
+#include "echo.h"
 
-int main()
+
+int main(const int argc, const char * const * const argv)
 {
-    coherent::netserver::server s;
-
-    s.accept();
-
-    return 0;
+    int retval = 0;
+    try
+    {
+        if(argc != 2)
+        {
+            ::std::clog << "Usage: netserver <port>\n" << ::std::flush;
+            retval = 1;
+        }
+        else
+        {
+            int port_number = ::std::atoi(argv[1]);
+            ::coherent::netserver::server s(port_number, ::coherent::netserver::echo_acceptor);
+            s.run();
+        }
+    }
+    catch(::std::exception & exn)
+    {
+        ::std::cerr << "Exception: " << exn.what() << "\n" << ::std::flush;
+        retval = 1;
+    }
+    return retval;
 }

@@ -18,83 +18,69 @@
  * http://www.gnu.org/licenses/.
  */
 
+
 #include <iostream>
-#include <boost/bind.hpp>
-
-#include "server.h"
+#include <exception>
+#include <string>
+#include <boost/ptr_container/ptr_deque.hpp>
+#include <boost/function.hpp>
+#include <boost/asio.hpp>
 #include "connection.h"
-#include "echo.h"
+#include "server.h"
 
-namespace coherent
+
+const size_t BUFFER_LENGTH = 100;
+
+
+using ::boost::asio::ip::tcp;
+
+
+void f(tcp::socket * socket)
 {
-    namespace netserver
+    for(;;)
     {
-        server::server()
+        char buf[BUFFER_LENGTH];
+        ::boost::system::error_code error;
+        size_t length = socket->read_some(::boost::asio::buffer(buf), error);
+        if(error == ::boost::asio::error::eof)
         {
-            // TODO: Refactor
-            // Create socket.
-            this->sock = socket(PF_INET, SOCK_STREAM, 0);
-            if(sock < 0)
-            {
-                ::std::cerr << "opening stream socket";
-                exit(EXIT_FAILURE);
-            }
-
-            sockaddr_in socket_server;
-            // Name socket using wildcards.
-            // It is an Internet address.
-            socket_server.sin_family = AF_INET;
-            // One computer can have several network addresses.
-            // Let all addresses be useable for this socket.
-            socket_server.sin_addr.s_addr = htonl(INADDR_ANY);
-            // Choose any of valid port numbers.
-            socket_server.sin_port = 0;
-            // Associate the address with the socket.
-
-            if(bind (sock, (struct sockaddr *) &socket_server, sizeof(socket_server)) < 0)
-            {
-                ::std::cerr << "binding stream socket";
-                exit(EXIT_FAILURE);
-            }
-            // Find out assigned port number and print it out.
-            socklen_t length = sizeof(socket_server);
-            if(getsockname(sock, (struct sockaddr *) &socket_server, &length) < 0)
-            {
-                ::std::cerr << "getting socket name";
-                exit(EXIT_FAILURE);
-            }
-            ::std::cerr << "Socket port #" << static_cast<unsigned int>(ntohs(socket_server.sin_port)) << "\n";
-
-            // Start accepting connections.
-            if(listen(sock, QUEUE_LENGTH) < 0)
-            {
-                ::std::cerr << "listening stream socket";
-                exit(EXIT_FAILURE);
-            }
+            break;
         }
-        server::~server()
+        else if(error)
         {
+            throw ::boost::system::system_error(error);
         }
-        void server::accept()
-        {
-            // TODO: Refactor
-            while(true)
-            {
-                int msgsock = ::accept(sock, NULL, NULL);
-                if(msgsock < 0)
-                {
-                    ::std::cerr << "accept";
-                }
-                else
-                {
-                    connection * c = new connection(msgsock);
-                    connections.push_back(c);
-                    main_responder(c);
-                    receiver_threads.create_thread(
-                            ::boost::bind(&receiver_thread, c));
-                }
-            }
-        }
+        ::boost::asio::write(* socket, ::boost::asio::buffer(buf, length));
     }
 }
 
+namespace coherent
+{
+namespace netserver
+{
+
+server::server(const int port_num, accept_callback_t accept_callback)
+  : io_service(),
+    acceptor(io_service, tcp::endpoint(tcp::v4(), port_num)),
+    accept_callback(accept_callback),
+    connections()
+{
+}
+
+server::~server()
+{
+}
+
+void server::run()
+{
+    connections.push_back(new connection(* this));
+    io_service.run();
+}
+
+void server::new_connection()
+{
+    connections.push_back(new connection(* this));
+}
+
+}  // namespace netserver
+}  // namespace coherent

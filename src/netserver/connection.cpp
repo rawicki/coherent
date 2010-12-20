@@ -18,123 +18,88 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include <ctime>
+
+#include <utility>
 #include <iostream>
-#include <unistd.h>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <buffercache/multi_buffer.h>
+#include "server.h"
 #include "connection.h"
 
-#include <errno.h>
+
+using ::boost::asio::ip::tcp;
+
 
 namespace coherent
 {
-    namespace netserver
+namespace netserver
+{
+
+
+connection::connection(server & s)
+  : server_(s),
+    socket(s.io_service)  //,
+    // read_observers(),
+    // outgoing_messages()
+{
+    server_.acceptor.async_accept(socket,
+            ::boost::bind(& connection::handle_accept, this, _1));
+}
+
+void connection::handle_accept(const ::boost::system::error_code & error)
+{
+    if(!error)
     {
-        void i_do_nothing()
-        {
-        }
+        server_.accept_callback(this);
+        server_.new_connection();
+    }
+}
 
-        connection::observer::observer(size_t length, callback_t callback, time_t timeout, ::boost::function<void()> timeout_callback)
-          : length(length),
-            callback(callback),
-            timeout(timeout),
-            timeout_callback(timeout_callback)
-        {
-        }
+connection::~connection()
+{
+}
 
-        connection::observer::~observer()
-        {
-        }
+void connection::read(
+        size_t message_size,
+        read_callback_t read_callback)
+{
+    // TODO: buffering
+    // read_observer_t read_observer(message_size, read_callback);
+    // read_observers.push(read_observer);
+    ptr_buffer_t buffer_ptr = new byte_t[message_size];
+    socket.async_read_some(::boost::asio::buffer(buffer_ptr, message_size),
+            ::boost::bind(& connection::handle_read, this, read_callback, buffer_ptr, _1, _2));
+}
 
-        connection::message::message(::boost::shared_ptr<buffer> data, time_t timeout)
-          : data(data),
-            timeout(timeout)
-        {
-        }
+void connection::write(size_t message_size, message_t data)
+{
+    // TODO: buffering
+    //outgoing_messages.push(data);
+    socket.async_write_some(::boost::asio::buffer(data, message_size),
+            ::boost::bind(& connection::handle_write, this, _1));
+}
 
-        connection::message::~message()
-        {
-        }
+void connection::handle_read(
+    read_callback_t read_callback,
+    ptr_buffer_t buffer,
+    const ::boost::system::error_code & error,
+    size_t bytes_transferred)
+{
+    if(!error)
+    {
+        read_callback(bytes_transferred, buffer);
+    }
+    else
+    {
+        // TODO: LOG ERROR
+    }
+}
 
-        connection::connection(int fd, ::boost::function<void()> timeout_callback)
-          : fd(fd),
-            read_observers(),
-            outgoing_messages(),
-            read_buffer(NULL),
-            read_buffer_filled_size(0),
-            timeout_callback(timeout_callback)
-        {
-        }
+void connection::handle_write(const ::boost::system::error_code & error)
+{
+}
 
-        connection::~connection()
-        {
-            delete[] read_buffer;
-            if(close(this->fd) < 0)
-            {
-                ::std::cerr << "Error closing client socket.\n";
-            }
-        }
 
-        void connection::read(size_t message_length,
-                callback_t callback,
-                time_delta_t time_delta)
-        {
-            time_t time_deadline = from_now(time_delta);  // `time_delta` seconds from now on
-            read_observers.push(observer(message_length, callback, time_deadline, timeout_callback));
-        }
-
-        void connection::write(::boost::shared_ptr<buffer> data,
-                time_delta_t time_delta)
-        {
-            time_t time_deadline = from_now(time_delta);
-            outgoing_messages.push(message(data, time_deadline));
-        }
-
-        time_t connection::from_now(time_delta_t time_delta)
-        {
-            if(time_delta == TIMEOUT_INFTY)
-            {
-                return 0;
-            }
-            else
-            {
-                return time(NULL) + time_delta;
-            }
-        }
-
-        void receiver_thread(connection * conn)
-        {
-            // TODO: Refactor
-            ssize_t rval;
-            do
-            {
-                connection::observer obs = conn->read_observers.front();
-
-                ::boost::shared_ptr<buffer> buf(new buffer(obs.length));
-                rval = read(conn->fd, buf->get_data(), buf->get_size());
-
-                if(rval < 0)
-                {
-                    ::std::cerr << "Error reading stream message";
-                }
-                else if(rval == 0)
-                {
-                    ::std::clog << "Ending connection\n";
-                }
-                else
-                {
-                    ::std::clog << "-->" << (int)rval << "  " << buf->get_data() << "\n";
-
-                    obs.callback(buf);
-                }
-            }
-            while(rval > 0);
-        }
-
-        void writer_thread(connection * conn)
-        {
-        }
-    };
-};
+}  // namespace netserver
+}  // namespace coherent

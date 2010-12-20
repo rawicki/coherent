@@ -18,23 +18,32 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include <boost/bind.hpp>
 
+#include <boost/bind.hpp>
+#include "connection.h"
 #include "echo.h"
+
 
 namespace coherent
 {
-    namespace netserver
-    {
-        void main_responder(connection * conn)
-        {
-            conn->read(MAX_BYTES, ::boost::bind(echo_responder, conn, _1));
-        }
+namespace netserver
+{
 
-        void echo_responder(connection * conn, ::boost::shared_ptr<buffer> data)
-        {
-            conn->write(data);
-        }
-    }
+
+const size_t MAX_BYTES = 42;
+
+
+void echo_acceptor(connection * conn)
+{
+    conn->read(MAX_BYTES, ::boost::bind(& echo_responder, conn, _1, _2));
 }
 
+void echo_responder(connection * conn, size_t bytes, connection::ptr_buffer_t data)
+{
+    conn->write(bytes, data);
+    conn->read(MAX_BYTES, ::boost::bind(& echo_responder, conn, _1, _2));
+}
+
+
+}  // namespace netserver
+}  // namespace coherent

@@ -18,26 +18,26 @@
  * http://www.gnu.org/licenses/.
  */
 
-#ifndef ECHO_H_1234
-#define ECHO_H_1234
 
-#include <queue>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <buffercache/multi_buffer.h>
+#ifndef __COHERENT_NETSERVER_ECHO_H__
+#define __COHERENT_NETSERVER_ECHO_H__
+
 
 #include "connection.h"
 
+
 namespace coherent
 {
-    namespace netserver
-    {
-        typedef ::coherent::buffercache::buffer buffer;
+namespace netserver
+{
 
-        void main_responder(connection * conn);
-        void echo_responder(connection * conn, ::boost::shared_ptr<buffer> data);
-    }
-}
+
+void echo_acceptor(connection * connection);
+void echo_responder(connection * connection, size_t bytes, connection::ptr_buffer_t data);
+
+
+}  // namespace netserver
+}  // namespace coherent
+
 
 #endif
-

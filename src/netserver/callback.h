@@ -18,14 +18,9 @@
  * http://www.gnu.org/licenses/.
  */
 
-#ifndef __COHERENT_NETSERVER_SERVER_H__
-#define __COHERENT_NETSERVER_SERVER_H__
 
-
-#include <boost/ptr_container/ptr_deque.hpp>
 #include <boost/function.hpp>
-#include <boost/asio.hpp>
-#include "connection.h"
+#include "callback.h"
 
 
 namespace coherent
@@ -33,33 +28,11 @@ namespace coherent
 namespace netserver
 {
 
-
-class connection;
-
-
-class server
+void i_do_nothing()
 {
-public:
-    typedef ::boost::function<void(connection *)> accept_callback_t;
-public:
-    //::boost::ptr_vector<connection> connections;
+}
 
-    //::boost::thread_group worker_threads;
-    //::boost::thread_group receiver_threads;
-    //::boost::thread_group sender_threads;
-    ::boost::asio::io_service io_service;
-    ::boost::asio::ip::tcp::acceptor acceptor;
-    accept_callback_t accept_callback;
-    ::boost::ptr_deque<connection> connections;
-public:
-    server(const int port_num, accept_callback_t accept_callback);
-    ~server();
-    void run();
-    void new_connection();
-};
+const ::boost::function<void()> EMPTY_CALLBACK = & i_do_nothing;
 
 }  // namespace netserver
 }  // namespace coherent
-
-
-#endif
