@@ -20,6 +20,3 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_BIN_
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
 
-add_executable(multi_buffer_test multi_buffer.cpp)
-target_link_libraries(multi_buffer_test config log debug2 util buffercache ${CORELIBS})
-add_test(multi_buffer_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/multi_buffer_test ${TEST_SUFFIX})

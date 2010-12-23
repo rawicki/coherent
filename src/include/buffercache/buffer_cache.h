@@ -26,7 +26,7 @@
 
 #include <boost/make_shared.hpp>
 
-#include <buffercache/multi_buffer.h>
+#include <util/multi_buffer.h>
 #include <debug/asserts.h>
 
 namespace coherent {
@@ -41,7 +41,7 @@ typedef cached_file * cached_file_ptr;
 class bound_buffer
 {
 public:
-	typedef multi_buffer::buffer_ptr buffer_ptr;
+	typedef util::multi_buffer::buffer_ptr buffer_ptr;
 
 	bound_buffer(buffer_ptr buffer);
 
@@ -50,7 +50,7 @@ public:
 	inline bool is_bound() const;
 	inline void bind(cached_file & file);
 	inline void unbind();
-	inline void ensure_uniq(uint32_t alignment = buffer::NO_ALIGNMENT);
+	inline void ensure_uniq(uint32_t alignment = util::buffer::NO_ALIGNMENT);
 
 private:
 	
@@ -70,7 +70,7 @@ private:
 	bound_buffer & operator=(bound_buffer const & bound_buffer); //unimplemented
 	//HACK END
 
-	inline void use(uint32_t alignment = buffer::NO_ALIGNMENT);
+	inline void use(uint32_t alignment = util::buffer::NO_ALIGNMENT);
 	inline void stop_using();
 
 	buffer_ptr buffer;
@@ -88,7 +88,7 @@ public:
 	buffer_cache(
 		uint32_t n_buffers,
 		uint32_t buffer_size,
-		uint32_t alignment = buffer::NO_ALIGNMENT
+		uint32_t alignment = util::buffer::NO_ALIGNMENT
 	);
 
 private:
@@ -154,7 +154,7 @@ void bound_buffer::ensure_uniq(uint32_t alignment)
 	if (!this->buffer.unique())
 	{
 		buffer_ptr old_buf = this->buffer;
-		this->buffer = boost::make_shared<buffercache::buffer>(
+		this->buffer = boost::make_shared<util::buffer>(
 			old_buf->get_size(),
 			alignment
 		);

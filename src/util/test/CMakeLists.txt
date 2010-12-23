@@ -27,3 +27,7 @@ add_test(spin_lock_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/spin_lock_test ${TEST_
 add_executable(file_test file.cpp)
 target_link_libraries(file_test config log debug2 util ${CORELIBS})
 add_test(file_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/file_test ${TEST_SUFFIX})
+
+add_executable(multi_buffer_test multi_buffer.cpp)
+target_link_libraries(multi_buffer_test config log debug2 util buffercache ${CORELIBS})
+add_test(multi_buffer_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/multi_buffer_test ${TEST_SUFFIX})

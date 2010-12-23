@@ -24,10 +24,10 @@
 
 #include <debug/asserts.h>
 #include <log/log.h>
-#include <buffercache/multi_buffer.h>
+#include <util/multi_buffer.h>
 
 namespace coherent {
-namespace buffercache {
+namespace util {
 
 using namespace std;
 using namespace coherent::debug;
@@ -212,6 +212,6 @@ void multi_buffer::do_rw<false>(
 	uint32_t align
 );
 
-} // namespace buffercache
+} // namespace util
 } // namespace coherent
 

@@ -21,13 +21,13 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <buffercache/multi_buffer.h>
+#include <util/multi_buffer.h>
 #include <config/config.h>
 #include <debug/asserts.h>
 #include <log/log.h>
 
 namespace coherent {
-namespace buffercache {
+namespace util {
 namespace unittests {
 
 using namespace log4cxx;
@@ -140,7 +140,7 @@ int start_test(const int argc, const char *const *const argv)
 {
 	scoped_test_enabler test_setup(argc, argv);
 
-	Logger::getLogger("coherent.buffercache")->setLevel(log_TRACE);	
+	Logger::getLogger("coherent.util")->setLevel(log_TRACE);	
 
 	single_test(0);
 	for (uint32_t i = 0; i < 20; ++i)
@@ -150,10 +150,10 @@ int start_test(const int argc, const char *const *const argv)
 }
 
 } // namespace unittests
-} // namespace buffercache
+} // namespace util
 } // namespace coherent
 
 int main(const int argc, const char * const * const argv)
 {
-	return coherent::buffercache::unittests::start_test(argc, argv);
+	return coherent::util::unittests::start_test(argc, argv);
 }

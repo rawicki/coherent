@@ -29,7 +29,7 @@
 #include <boost/utility.hpp>
 
 namespace coherent {
-namespace buffercache {
+namespace util {
 
 class buffer : private boost::noncopyable
 {
@@ -127,7 +127,7 @@ uint32_t multi_buffer::get_size()
 }
 
 
-} //namespace buffercache
+} //namespace util
 } //namespace coherent
 
 #endif /* MULTI_BUFFER_H_2363 */

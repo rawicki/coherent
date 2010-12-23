@@ -19,6 +19,7 @@
 
 set(SOURCES
 	thread.cpp
+	multi_buffer.cpp
 	file.cpp
 	)
 add_library(util ${SOURCES})

@@ -24,6 +24,7 @@ namespace coherent {
 namespace buffercache {
 
 using namespace std;
+using namespace util;
 
 //HACK BEGIN - see header for details
 void buffer_list_filler(
