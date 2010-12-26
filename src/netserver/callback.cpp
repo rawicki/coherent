@@ -19,11 +19,8 @@
  */
 
 
-#ifndef __COHERENT_NETSERVER_CALLBACK_H__
-#define __COHERENT_NETSERVER_CALLBACK_H__
-
-
 #include <boost/function.hpp>
+#include "callback.h"
 
 
 namespace coherent
@@ -31,10 +28,11 @@ namespace coherent
 namespace netserver
 {
 
-const ::boost::function<void()> EMPTY_CALLBACK;
+void i_do_nothing()
+{
+}
+
+const ::boost::function<void()> EMPTY_CALLBACK = & i_do_nothing;
 
 }  // namespace netserver
 }  // namespace coherent
-
-
-#endif
