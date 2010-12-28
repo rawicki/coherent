@@ -79,10 +79,6 @@ multi_buffer::multi_buffer(
 	size(size),
 	left_off(left_off)
 {
-	d_assert((size == 0 && left_off == 0) || (left_off < size),
-		"invalid use, size=" << size << ", left_off=" << left_off
-	);
-
 	buffers.swap(this->buffers);
 #ifndef NDEBUG
 	uint32_t real_size = 0;

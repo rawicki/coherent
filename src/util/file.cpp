@@ -20,6 +20,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <sys/uio.h>
 
 #include <cstring>
 
@@ -27,12 +29,28 @@
 
 #include <debug/asserts.h>
 #include <util/file.h>
+#include <util/misc.h>
 
 namespace coherent {
 namespace util {
 
 using namespace std;
 using namespace boost;
+
+//==== global helper ===========================================================
+
+
+struct global_helper
+{
+	global_helper() : page_size(::sysconf(_SC_PAGESIZE))
+	{
+	}
+
+	uint32_t const page_size;
+};
+
+static global_helper const globals;
+
 
 //==== io_exception ============================================================
 
@@ -127,6 +145,83 @@ void file::close()
 	if (err)
 		throw io_exception(*this, errno, "close");
 	this->fd = NOT_OPEN;
+}
+
+file::multi_buffer_ptr file::read(uint32_t size, uint64_t offset)
+{
+	d_assert(this->is_open(), "file \"" << this->path << "\" not open");
+	if (size == 0)
+	{
+		multi_buffer::buffer_list list;
+		return multi_buffer_ptr(new multi_buffer(list, 0, 0));
+	}
+
+	//The buffers should not be too small in order to be sure that the kernel
+	//merges them, but on the other hand they shouldn't be too big not to stress
+	//the allocator (fragmentation). I've arbitrarilly chosen 512Kb.
+	uint32_t const single_buf_size = 512 * 1024;
+
+	//if we're already dividing the read into smaller chunks we can as well
+	//align it (e.g. O_DIRECT requires alignment to 512b and there are some bugs
+	//which make that not enough - let's be wasteful and align it to one page)
+	uint32_t const alignment = globals.page_size;
+
+	uint32_t const aligned_off = align_down(offset, alignment);
+	uint32_t const shift = offset - aligned_off;
+	uint32_t const aligned_end = align_up(offset + size, alignment);
+	uint32_t const aligned_size = aligned_end - aligned_off;
+
+	multi_buffer::buffer_list bufs;
+	uint32_t const num_bufs =
+		((aligned_end - aligned_off) % single_buf_size == 0)
+		? ((aligned_end - aligned_off) / single_buf_size)
+		: ((aligned_end - aligned_off) / single_buf_size + 1);
+
+	LOG(TRACE, "num_bufs=" << num_bufs);
+	struct iovec vecs[num_bufs];
+
+	uint64_t cur_off;
+	uint32_t i;
+	for (
+		i = 0, cur_off = aligned_off;
+		cur_off < aligned_end;
+		cur_off += single_buf_size, ++i
+		)
+	{
+		d_assert(i < num_bufs, "i=" << i << " num_bufs=" << num_bufs);
+		uint32_t const buf_len = (cur_off + single_buf_size >= aligned_end)
+			? (aligned_end - cur_off)
+			: single_buf_size;
+		multi_buffer::buffer_ptr buf(new buffer(buf_len, alignment));
+		bufs.push_back(buf);
+		vecs[i].iov_base = buf->get_data();
+		vecs[i].iov_len = buf_len;
+		LOG(TRACE, "allocated buffer " << cur_off << "-" << cur_off + buf_len);
+	}
+	ssize_t err;
+	do {
+		err = preadv(this->fd, vecs, num_bufs, aligned_off);
+		LOG(TRACE, "preadv returned " << err);
+	} while (err == -1 && errno == EINTR);
+
+	if (err != aligned_size && (err < 0 || err < size + shift))
+	{
+		if (err >= 0)
+			throw io_exception(
+				*this,
+				string("short read: ") + lexical_cast<string>(err) + " "
+				+ lexical_cast<string>(aligned_size)
+				);
+		else
+			throw io_exception(*this, errno, "preadv");
+	}
+	return multi_buffer_ptr(
+		new multi_buffer(bufs, min(static_cast<ssize_t>(size), err), shift)
+		);
+}
+
+void file::write(multi_buffer const & buf, uint64_t offset)
+{
 }
 
 } // namespace util

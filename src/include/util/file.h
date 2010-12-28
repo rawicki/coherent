@@ -26,6 +26,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <util/multi_buffer.h>
+
 namespace coherent {
 namespace util {
 
@@ -47,6 +49,8 @@ private:
 class file : private boost::noncopyable
 {
 public:
+	typedef std::auto_ptr<multi_buffer> multi_buffer_ptr;
+
 	file(std::string const & path);
 
 	//O_CREAT and O_EXCL should not be passed
@@ -64,6 +68,9 @@ public:
 	void create(int flags, int mode);
 	void open(int flags);
 	void close();
+
+	multi_buffer_ptr read(uint32_t size, uint64_t offset);
+	void write(multi_buffer const & buf, uint64_t offset);
 
 	inline bool is_open() const;
 

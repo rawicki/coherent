@@ -21,6 +21,8 @@
 #ifndef MISC_H_2345
 #define MISC_H_2345
 
+#include <cassert>
+
 #define stringify(s) stringify_helper(s)
 #define stringify_helper(s) #s
 
@@ -37,5 +39,32 @@
 #else
 #define VALGRIND_SLOWDOWN 1
 #endif
+
+template <class T>
+bool is_pow2(T v)
+{
+	while (v != 0)
+	{
+		if ((v & 1) == 1)
+			return v == 1;
+		v = v >> 1;
+	}
+	return false;
+}
+
+template <class T, class A>
+inline T align_down(T v, A alignment)
+{
+	//can't use d_assert here, because the file is included by asserts.h
+	assert(is_pow2(alignment));
+	return v - (v & (alignment - 1));
+}
+
+template <class T, class A>
+inline T align_up(T v, A alignment)
+{
+	T res = align_down(v, alignment);
+	return (res < v) ? (res + alignment) : res;
+}
 
 #endif /* MISC_H_2345 */
