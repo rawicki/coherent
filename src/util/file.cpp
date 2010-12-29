@@ -114,11 +114,20 @@ file::~file()
 
 void file::create(int flags, int mode)
 {
+	LOG(
+		DEBUG,
+		"create path=\"" << this->path << "\" flags=" <<
+		flags << " mode=" << oct << mode
+		);
 	this->open_internal(flags, true, mode);
 }
 
 void file::open(int flags)
 {
+	LOG(
+		DEBUG,
+		"open path=\"" << this->path << "\" flags=" << flags
+		);
 	this->open_internal(flags, false);
 }
 
@@ -134,12 +143,21 @@ void file::open_internal(int flags, bool create, int mode)
 		flags | (create ? (O_CREAT | O_EXCL) : 0),
 		mode
 		);
-	if (this->fd == -1)
-		throw io_exception(*this, errno, "open");
+	if (this->fd == -1) {
+		io_exception ex(*this, errno, "open");
+		LOG(DEBUG, "open failed: " << ex.what());
+		throw ex;
+	}
+	LOG(DEBUG, "open succeeded path=\"" << this->path << "\" fd=" << this->fd);
+	
 }
 
 void file::close()
 {
+	LOG(
+		DEBUG,
+		"close fd=" << this->fd << " path=\"" << this->path << "\""
+		);
 	d_assert(this->is_open(), "file \"" << this->path << "\" not open");
 	int err = ::close(this->fd);
 	if (err)
@@ -149,6 +167,11 @@ void file::close()
 
 file::multi_buffer_ptr file::read(uint32_t size, uint64_t offset)
 {
+	LOG(
+		DEBUG,
+		"read fd=" << this->fd << " path=\"" << this->path << "\" off=" <<
+		offset << " size=" << size
+		);
 	d_assert(this->is_open(), "file \"" << this->path << "\" not open");
 	if (size == 0)
 	{
@@ -177,7 +200,11 @@ file::multi_buffer_ptr file::read(uint32_t size, uint64_t offset)
 		? ((aligned_end - aligned_off) / single_buf_size)
 		: ((aligned_end - aligned_off) / single_buf_size + 1);
 
-	LOG(TRACE, "num_bufs=" << num_bufs);
+	LOG(
+		TRACE,
+		"num_bufs=" << num_bufs << " aligned_size=" << aligned_size <<
+		" aligned_off=" << aligned_off << " aligned_end=" << aligned_end
+		);
 	struct iovec vecs[num_bufs];
 
 	uint64_t cur_off;
@@ -200,11 +227,19 @@ file::multi_buffer_ptr file::read(uint32_t size, uint64_t offset)
 	}
 	ssize_t err;
 	do {
+		LOG(
+			TRACE,
+			"preadv(" << this->fd << ", (" << aligned_size << "), " << num_bufs
+			<< ", " << aligned_off
+			);
 		err = preadv(this->fd, vecs, num_bufs, aligned_off);
 		LOG(TRACE, "preadv returned " << err);
 	} while (err == -1 && errno == EINTR);
 
-	if (err != aligned_size && (err < 0 || err < size + shift))
+	if (
+		err != static_cast<ssize_t>(aligned_size)
+		&& (err < 0 || err < static_cast<ssize_t>(size + shift))
+		)
 	{
 		if (err >= 0)
 			throw io_exception(
@@ -222,6 +257,11 @@ file::multi_buffer_ptr file::read(uint32_t size, uint64_t offset)
 
 void file::write(multi_buffer const & buf, uint64_t offset)
 {
+	LOG(
+		DEBUG,
+		"write fd=" << this->fd << " path=\"" << this->path << "\" off=" <<
+		offset << " size=" << buf.get_size() 
+		);
 }
 
 } // namespace util

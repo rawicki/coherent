@@ -43,7 +43,7 @@ public:
 	~buffer();
 	
 	inline char * get_data();
-	inline uint32_t get_size();
+	inline uint32_t get_size() const;
 
 private:
 	char * data;
@@ -72,7 +72,7 @@ public:
 		//what alignment shall frames allocated by COW have
 		uint32_t align = buffer::NO_ALIGNMENT
 	);
-	inline uint32_t get_size();
+	inline uint32_t get_size() const;
 
 private:
 	multi_buffer & operator=(multi_buffer const &); //not implemented on purpose
@@ -92,7 +92,7 @@ private:
 
 //================ IMPLEMENTATION ==============================================
 
-uint32_t buffer::get_size()
+uint32_t buffer::get_size() const
 {
 	return this->size;
 }
@@ -121,7 +121,7 @@ void multi_buffer::write(
 	this->do_rw<false>(const_cast<char *>(buf), size, off, align);
 }
 
-uint32_t multi_buffer::get_size()
+uint32_t multi_buffer::get_size() const
 {
 	return this->size;
 }

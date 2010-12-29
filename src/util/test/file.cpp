@@ -119,18 +119,29 @@ void check_range(
 	file & f,
 	test_pattern const & pat,
 	uint32_t start,
-	uint32_t end
+	uint32_t end,
+	bool expect_except = false
 	)
 {
 	LOG(INFO, "checking range " << start << " " << end);
-	file::multi_buffer_ptr res = f.read(end - start, start);
-	shared_array<char> buf = shared_array<char>(new char[end - start]);
-	res->read(buf.get(), end - start, 0);
+	if (!expect_except) {
+		file::multi_buffer_ptr res = f.read(end - start, start);
+		shared_array<char> buf = shared_array<char>(new char[end - start]);
+		res->read(buf.get(), end - start, 0);
 
-	r_assert(
-		!memcmp(buf.get(), pat.pattern + start, end - start),
-		"mismatch in range " << start << " " << end
-		);
+		r_assert(
+			!memcmp(buf.get(), pat.pattern + start, end - start),
+			"mismatch in range " << start << " " << end
+			);
+	} else {
+		try {
+			f.read(end - start, start);
+		} catch (io_exception & ex) {
+			LOG(INFO, "expected exception: " << ex.what());
+			return;
+		}
+		r_assert(false, "expected exception not thrown");
+	}
 }
 
 void read_test()
@@ -149,7 +160,11 @@ void read_test()
 
 	ssize_t res = write(fd, pat->pattern, file_size);
 	r_assert(res >= 0, "pwrite: " << errno << " " << strerror(errno));
-	r_assert(file_size == res, "short write: " << res << " " << file_size);
+	r_assert(
+		static_cast<ssize_t>(file_size) == res,
+		"short write: " << res << " " << file_size
+		);
+	
 	fd = close(fd);
 	r_assert(fd == 0, "close: " << errno << " " << strerror(errno));
 
@@ -165,15 +180,9 @@ void read_test()
 		check_range(*f, *pat, start, end);
 	}
 
-	bool exception_caught = false;
-	try {
-		check_range(*f, *pat, file_size - 2, 2);
-		check_range(*f, *pat, 2, file_size - 2);
-	} catch (io_exception & ex) {
-		//we expect an axception due to short read
-		exception_caught = true;
-	}
-	r_assert(exception_caught, "successfully read from past the file");
+	//we expect an axception due to short read
+	check_range(*f, *pat, file_size - 2, file_size + 1, true);
+	check_range(*f, *pat, 2, file_size + 1, true);
 
 
 	f->close();
