@@ -20,6 +20,7 @@
 
 
 #include <algorithm>
+#include <boost/scoped_array.hpp>
 #include <log/log.h>
 #include <debug/debug.h>
 #include <debug/asserts.h>
@@ -47,17 +48,17 @@ int next_natural()
 
 int it_should_behave_like_normal_queue()
 {
-    int * bigarray = new int[ELEMENTS_QUANTITY];
-    ::std::generate(bigarray, bigarray + ELEMENTS_QUANTITY, next_natural);
+    ::boost::scoped_array<int> bigarray(new int[ELEMENTS_QUANTITY]);
+    ::std::generate(bigarray.get(), bigarray.get() + ELEMENTS_QUANTITY, next_natural);
     ::coherent::netserver::queue<int> queue;
     for(int i = 0; i < ELEMENTS_QUANTITY; ++i)
     {
-        queue.push(bigarray + i);
+        queue.push(bigarray.get() + i);
     }
     for(int i = 0; i < ELEMENTS_QUANTITY; ++i)
     {
         int * ptr = queue.pop();
-        r_assert(ptr == bigarray + i, "Pointers do not match.");
+        r_assert(ptr == bigarray.get() + i, "Pointers do not match.");
     }
     return 0;
 }
