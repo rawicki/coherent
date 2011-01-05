@@ -26,6 +26,7 @@
 #include <boost/function.hpp>
 #include <boost/asio.hpp>
 #include "connection.h"
+#include "threadpool.h"
 #include "server.h"
 
 
@@ -59,11 +60,12 @@ namespace coherent
 namespace netserver
 {
 
-server::server(const int port_num, accept_callback_t accept_callback)
+server::server(const int port_num, accept_callback_t accept_callback, const int workers_num)
   : io_service(),
     acceptor(io_service, tcp::endpoint(tcp::v4(), port_num)),
     accept_callback(accept_callback),
-    connections()
+    connections(),
+    workers_threads(workers_num)
 {
 }
 
@@ -74,6 +76,7 @@ server::~server()
 void server::run()
 {
     connections.push_back(new connection(* this));
+    workers_threads.run();
     io_service.run();
 }
 

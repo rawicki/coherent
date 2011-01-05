@@ -42,6 +42,13 @@ public:
     typedef element_t * ptr_t;
 };
 
+template<typename element_t>
+class no_wrapper
+{
+public:
+    typedef element_t ptr_t;
+};
+
 
 // Synchronized queue. Stores pointers to `element_t` type elements
 // with producer-consumer synchronization on `pop` and `push`.

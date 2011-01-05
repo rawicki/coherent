@@ -22,6 +22,7 @@ set(SOURCES
     callback.cpp
     timeout.cpp
     connection.cpp
+    threadpool.cpp
     echo.cpp
 )
 

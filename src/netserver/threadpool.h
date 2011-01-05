@@ -18,15 +18,15 @@
  * http://www.gnu.org/licenses/.
  */
 
-#ifndef __COHERENT_NETSERVER_SERVER_H__
-#define __COHERENT_NETSERVER_SERVER_H__
+
+#ifndef __COHERENT_NETSERVER_THREADPOOL_H__
+#define __COHERENT_NETSERVER_THREADPOOL_H__
 
 
-#include <boost/ptr_container/ptr_deque.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/function.hpp>
-#include <boost/asio.hpp>
-#include "connection.h"
-#include "threadpool.h"
+#include <deque>
+#include "queue.h"
 
 
 namespace coherent
@@ -34,31 +34,23 @@ namespace coherent
 namespace netserver
 {
 
-
-class connection;
-
-
-class server
+class thread_pool
 {
 public:
-    typedef ::boost::function<void(connection *)> accept_callback_t;
+    typedef ::boost::function<void()> task_t;
+private:
+    int threads_num;
+    queue<task_t, ::std::deque, no_wrapper> task_queue;
+    ::boost::thread_group threads;
+    void worker_thread_body();
 public:
-    //::boost::ptr_vector<connection> connections;
-
-    //::boost::thread_group worker_threads;
-    //::boost::thread_group receiver_threads;
-    //::boost::thread_group sender_threads;
-    ::boost::asio::io_service io_service;
-    ::boost::asio::ip::tcp::acceptor acceptor;
-    accept_callback_t accept_callback;
-    ::boost::ptr_deque<connection> connections;
-    thread_pool workers_threads;
-public:
-    server(const int port_num, accept_callback_t accept_callback, const int workers_num=4);
-    ~server();
+    thread_pool(const int pool_size);
+    ~thread_pool();
     void run();
-    void new_connection();
+    void interrupt();
+    void schedule(task_t task);
 };
+
 
 }  // namespace netserver
 }  // namespace coherent

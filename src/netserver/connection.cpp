@@ -88,7 +88,8 @@ void connection::handle_read(
 {
     if(!error)
     {
-        read_callback(bytes_transferred, buffer);
+        ::boost::function<void()> task = ::boost::bind(read_callback, bytes_transferred, buffer);
+        server_.workers_threads.schedule(task);
     }
     else
     {

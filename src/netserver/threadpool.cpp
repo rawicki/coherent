@@ -18,14 +18,9 @@
  * http://www.gnu.org/licenses/.
  */
 
-#ifndef __COHERENT_NETSERVER_SERVER_H__
-#define __COHERENT_NETSERVER_SERVER_H__
 
-
-#include <boost/ptr_container/ptr_deque.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/function.hpp>
-#include <boost/asio.hpp>
-#include "connection.h"
 #include "threadpool.h"
 
 
@@ -35,33 +30,44 @@ namespace netserver
 {
 
 
-class connection;
-
-
-class server
+thread_pool::thread_pool(const int pool_size)
+  : threads_num(pool_size)
 {
-public:
-    typedef ::boost::function<void(connection *)> accept_callback_t;
-public:
-    //::boost::ptr_vector<connection> connections;
+}
 
-    //::boost::thread_group worker_threads;
-    //::boost::thread_group receiver_threads;
-    //::boost::thread_group sender_threads;
-    ::boost::asio::io_service io_service;
-    ::boost::asio::ip::tcp::acceptor acceptor;
-    accept_callback_t accept_callback;
-    ::boost::ptr_deque<connection> connections;
-    thread_pool workers_threads;
-public:
-    server(const int port_num, accept_callback_t accept_callback, const int workers_num=4);
-    ~server();
-    void run();
-    void new_connection();
-};
+thread_pool::~thread_pool()
+{
+}
+
+void thread_pool::run()
+{
+	::boost::function<void()> worker = ::boost::bind(&thread_pool::worker_thread_body, this);
+	for(int i=0; i<threads_num; i++)
+	{
+		threads.create_thread(worker);
+	}
+}
+
+void thread_pool::interrupt()
+{
+	threads.interrupt_all();
+}
+
+void thread_pool::schedule(task_t task)
+{
+	task_queue.push(task);
+}
+
+void thread_pool::worker_thread_body()
+{
+	for(;;)
+	{
+		::boost::this_thread::interruption_point();
+		task_t task = task_queue.pop();
+		task();
+	}
+}
+
 
 }  // namespace netserver
 }  // namespace coherent
-
-
-#endif
