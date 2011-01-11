@@ -144,21 +144,14 @@ void check_range(
 	}
 }
 
-void read_test()
+void prepare_file(string const & name, test_pattern const & pat)
 {
-	LOG(INFO, "===== read_test");
-
-	//ensure it doesn't exist
-	file_ptr f = file::create("read_test", 0, 0600);
-	f->close();
-
 	//bypass any file realted code
-	int fd = open("read_test", O_WRONLY);
+	int fd = open(name.c_str(), O_WRONLY);
 	r_assert(fd != -1, "open failed: " << fd);
 
-	auto_ptr<test_pattern> pat(new test_pattern());
 
-	ssize_t res = write(fd, pat->pattern, file_size);
+	ssize_t res = write(fd, pat.pattern, file_size);
 	r_assert(res >= 0, "pwrite: " << errno << " " << strerror(errno));
 	r_assert(
 		static_cast<ssize_t>(file_size) == res,
@@ -167,6 +160,20 @@ void read_test()
 	
 	fd = close(fd);
 	r_assert(fd == 0, "close: " << errno << " " << strerror(errno));
+
+}
+
+void read_test()
+{
+	LOG(INFO, "===== read_test");
+
+	//ensure it doesn't exist
+	file_ptr f = file::create("read_test", 0, 0600);
+	f->close();
+
+	auto_ptr<test_pattern> pat(new test_pattern());
+
+	prepare_file("read_test", *pat);
 
 	f = file::open("read_test", O_RDONLY);
 
@@ -187,6 +194,78 @@ void read_test()
 
 	f->close();
 }
+typedef shared_ptr<multi_buffer> multi_buffer_ptr;
+
+pair<uint32_t, multi_buffer_ptr> gen_random_buffer(test_pattern const & pat)
+{
+	uint32_t start = random() % (file_size - 1);
+	uint32_t buf_start = start;
+
+	multi_buffer::buffer_list bufs;
+
+	uint32_t total_size = 0;
+	for (uint32_t i = 0; i < 5; ++i) {
+		uint32_t const shift = random() % 100 + 1;
+		uint32_t const buf_end = min(file_size, buf_start + shift);
+
+		bufs.push_back(multi_buffer::buffer_ptr(new buffer(shift)));
+		memcpy(bufs.back()->get_data(), pat.pattern + buf_start, shift);
+
+		total_size += shift;
+
+		buf_start = buf_end;
+
+		if (buf_end == file_size)
+			break;
+
+	}
+
+	//add some shift from the left
+	uint32_t const first_buf_shift = random() % bufs[0]->get_size();
+	memset(bufs[0]->get_data(), 0, first_buf_shift);
+
+	//cut some from the right
+	uint32_t const last_buf_shift = (bufs.size() > 1)
+		? (random() % bufs.back()->get_size())
+		: 0;
+	memset(
+		bufs.back()->get_data() + bufs.back()->get_size() - last_buf_shift,
+		0,
+		last_buf_shift);
+
+	uint32_t const res_off = start + first_buf_shift;
+	multi_buffer_ptr res_buf(new multi_buffer(
+			bufs,
+			total_size - first_buf_shift - last_buf_shift, first_buf_shift
+			)
+		);
+	return make_pair(res_off, res_buf);
+}
+
+void write_test()
+{
+	LOG(INFO, "===== write_test");
+
+	file_ptr f = file::create("write_test", O_RDWR, 0600);
+	try {
+		//ensure it doesn't exist
+		auto_ptr<test_pattern> pat(new test_pattern());
+
+		prepare_file("write_test", *pat);
+
+		for (int i = 0; i < 100; ++i) {
+			pair<uint32_t, multi_buffer_ptr> const & to_write =
+				gen_random_buffer(*pat);
+			f->write(*to_write.second, to_write.first);
+		}
+
+		check_range(*f, *pat, 0, file_size);
+	} catch (io_exception const & ex) {
+		r_assert(false, "Unexpected exception caught: " << ex.what());
+	}
+
+	f->close();
+}
 
 int start_test(const int argc, const char *const *const argv)
 {
@@ -198,7 +277,7 @@ int start_test(const int argc, const char *const *const argv)
 	align_test();
 	open_test();
 	read_test();
-
+	write_test();
 	return 0;
 }
 

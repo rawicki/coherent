@@ -172,6 +172,7 @@ file::multi_buffer_ptr file::read(uint32_t size, uint64_t offset)
 		"read fd=" << this->fd << " path=\"" << this->path << "\" off=" <<
 		offset << " size=" << size
 		);
+
 	d_assert(this->is_open(), "file \"" << this->path << "\" not open");
 	if (size == 0)
 	{
@@ -262,6 +263,38 @@ void file::write(multi_buffer const & buf, uint64_t offset)
 		"write fd=" << this->fd << " path=\"" << this->path << "\" off=" <<
 		offset << " size=" << buf.get_size() 
 		);
+	uint32_t const num_bufs = buf.buffers.size();
+
+	struct iovec vecs[num_bufs];
+
+	LOG(TRACE, "start dumping buffers");
+	uint32_t size_left = buf.get_size();
+	for (uint32_t i = 0; i < num_bufs; ++i) {
+		buffer const & b = *buf.buffers[i];
+		uint32_t buf_off = (i == 0) ? buf.left_off : 0;
+		d_assert(b.get_size() >= buf_off, "mismatch: " << b.get_size() << " " <<
+				buf_off
+			);
+		uint32_t buf_len = min(b.get_size() - buf_off, size_left);
+		LOG(TRACE, "buf_len=" << buf_len << " buf_off=" << buf_off);
+		vecs[i].iov_base = const_cast<char*>(b.get_data() + buf_off);
+		vecs[i].iov_len = buf_len;
+		size_left -= buf_len;
+	}
+	LOG(TRACE, "dump complete, running pwritev with offset=" << offset);
+	d_assert(size_left == 0, "mismatch " << size_left);
+	ssize_t err = pwritev(this->fd, vecs, num_bufs, offset);
+	LOG(TRACE, "pwritev returned " << err << " errno=" << errno);
+	if (err < 0)
+		throw io_exception(*this, errno, "pwritev");
+	else
+		if (static_cast<uint64_t>(err) != buf.get_size())
+			throw io_exception(
+				*this,
+				string("short write: ") + lexical_cast<string>(err) + " "
+				+ lexical_cast<string>(buf.get_size())
+				);
+
 }
 
 } // namespace util

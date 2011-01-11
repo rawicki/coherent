@@ -43,6 +43,7 @@ public:
 	~buffer();
 	
 	inline char * get_data();
+	inline char const * get_data() const;
 	inline uint32_t get_size() const;
 
 private:
@@ -50,6 +51,8 @@ private:
 	uint32_t size;
 
 };
+
+class file;
 
 class multi_buffer
 {
@@ -75,6 +78,8 @@ public:
 	inline uint32_t get_size() const;
 
 private:
+	friend class file;
+
 	multi_buffer & operator=(multi_buffer const &); //not implemented on purpose
 
 	template<bool READ>
@@ -101,6 +106,12 @@ char * buffer::get_data()
 {
 	return this->data;
 }
+
+char const * buffer::get_data() const
+{
+	return this->data;
+}
+
 
 void multi_buffer::read(
 	char * buf,
