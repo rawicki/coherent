@@ -29,6 +29,7 @@ namespace coherent
 namespace netserver
 {
 
+boost::thread_specific_ptr<thread_pool> my_thread_pool;
 
 thread_pool::thread_pool(const int pool_size)
   : threads_num(pool_size)
@@ -60,6 +61,7 @@ void thread_pool::schedule(task_t task)
 
 void thread_pool::worker_thread_body()
 {
+	my_thread_pool.reset(this);
 	for(;;)
 	{
 		::boost::this_thread::interruption_point();
@@ -68,6 +70,44 @@ void thread_pool::worker_thread_body()
 	}
 }
 
+void defer(thread_pool::task_t task)
+{
+	my_thread_pool->schedule(task);
+}
+
+join_point::join_point(const int number_to_join, thread_pool::task_t all_joined_callback)
+  : counter(number_to_join),
+    callback(all_joined_callback)
+{
+}
+
+join_point::~join_point()
+{
+}
+
+void join_point::join()
+{
+	::boost::lock_guard< ::boost::mutex> lock(mutex);
+	counter -= 1;
+	if(counter == 0) {
+		callback();
+	}
+}
+
+void join_point::lazy_join()
+{
+	::boost::lock_guard< ::boost::mutex> lock(mutex);
+	counter -= 1;
+	if(counter == 0) {
+		defer(callback);
+	}
+}
+
+join_point::shared_ptr_t join_point::create(const int number_to_join, thread_pool::task_t all_joined_callback)
+{
+	shared_ptr_t ptr(new join_point(number_to_join, all_joined_callback));
+	return ptr;
+}
 
 }  // namespace netserver
 }  // namespace coherent

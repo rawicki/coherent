@@ -25,6 +25,7 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 #include <deque>
 #include "queue.h"
 
@@ -51,6 +52,22 @@ public:
     void schedule(task_t task);
 };
 
+void defer(thread_pool::task_t task);
+
+class join_point
+{
+private:
+	int counter;
+	thread_pool::task_t callback;
+	::boost::mutex mutex;
+public:
+	typedef ::boost::shared_ptr<join_point> shared_ptr_t;
+	join_point(const int number_to_join, thread_pool::task_t all_joined_callback);
+	~join_point();
+	void join();
+	void lazy_join();
+	static shared_ptr_t create(const int number_to_join, thread_pool::task_t all_joined_callback);
+};
 
 }  // namespace netserver
 }  // namespace coherent

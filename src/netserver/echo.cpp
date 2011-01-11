@@ -22,6 +22,7 @@
 #include <boost/bind.hpp>
 #include "connection.h"
 #include "echo.h"
+#include "threadpool.h"
 
 
 namespace coherent
@@ -38,10 +39,28 @@ void echo_acceptor(connection * conn)
     conn->read(MAX_BYTES, ::boost::bind(& echo_responder, conn, _1, _2));
 }
 
+void t1(connection * conn, join_point::shared_ptr_t join_p)
+{
+    ::boost::this_thread::sleep(::boost::posix_time::milliseconds(5000));
+    conn->write(9, (unsigned char *)"t1 done\n");
+    join_p->join();
+}
+
+void t2(connection * conn)
+{
+    conn->write(16, (unsigned char *)"2 tasks joined\n");
+}
+
 void echo_responder(connection * conn, size_t bytes, connection::ptr_buffer_t data)
 {
     conn->write(bytes, data);
     conn->read(MAX_BYTES, ::boost::bind(& echo_responder, conn, _1, _2));
+
+    join_point::shared_ptr_t join_p = join_point::create(2, ::boost::bind(& t2, conn));
+
+    defer(::boost::bind(& t1, conn, join_p));
+    defer(::boost::bind(& t1, conn, join_p));
+
 }
 
 
