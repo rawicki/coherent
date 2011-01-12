@@ -51,39 +51,25 @@ public:
 	inline void bind(cached_file & file);
 	inline void unbind();
 	inline void ensure_uniq(uint32_t alignment = util::buffer::NO_ALIGNMENT);
-
-private:
-	
-	//HACK BEGIN
-	//this is a nasty way to create a list of noncopyable elements;
-	//unfortunatelly noncopyable has to be implemented manually, because
-	//otherwise making friend wouldn't work
-	friend class std::list<bound_buffer>;
-	friend class __gnu_cxx::new_allocator<bound_buffer>;
-	friend void buffer_list_filler(
-		void * list,
-		uint32_t n_buffers,
-		uint32_t buffer_size,
-		uint32_t alignment
-	);
-	bound_buffer(bound_buffer const &); //unimplemented
-	bound_buffer & operator=(bound_buffer const & bound_buffer); //unimplemented
-	//HACK END
-
 	inline void use(uint32_t alignment = util::buffer::NO_ALIGNMENT);
 	inline void stop_using();
 
+
+	//only for assertions
+	inline bool operator==(bound_buffer const & buf);
+private:
+	
 	buffer_ptr buffer;
 	cached_file_ptr file;
-	bool is_being_used;
+	bool is_being_used; //FIXME either make use of this field or remove
 };
 
 class buffer_cache
 {
 public:
 	typedef std::list<bound_buffer> buffer_list;
-	typedef buffer_list::iterator buffer_ptr;
-	typedef buffer_list::const_iterator buffer_cptr;
+	typedef buffer_list::iterator buffer_it;
+	typedef buffer_list::const_iterator buffer_cit;
 
 	buffer_cache(
 		uint32_t n_buffers,
@@ -92,6 +78,13 @@ public:
 	);
 
 private:
+	
+	//returnde frame is in use
+	buffer_it get_frame(cached_file & file);
+	void make_unbound(buffer_it const buf);
+	void make_ready(buffer_it const buf);
+	void register_hit(buffer_it const buf);
+
 	buffer_list unbound;
 	buffer_list in_use;
 	buffer_list ready;
@@ -107,7 +100,7 @@ public:
 	cached_file(buffer_cache & bc);
 private:
 
-	typedef std::map<uint64_t, buffer_cache::buffer_ptr> file_cache_map;
+	typedef std::map<uint64_t, buffer_cache::buffer_it> file_cache_map;
 	buffer_cache & bc;
 };
 //======= inline implementation ==================================================
@@ -179,7 +172,15 @@ void bound_buffer::stop_using()
 	this->is_being_used = false;
 }
 
-//======= buffer pool ============================================================
+bool bound_buffer::operator==(bound_buffer const & buf)
+{
+	return this->buffer == buf.buffer &&
+		this->file == buf.file;
+}
+
+//======= buffer cache =========================================================
+
+
 
 } //namespace buffercache
 } //namespace coherent
