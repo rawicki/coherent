@@ -23,7 +23,7 @@
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
-#include <buffercache/multi_buffer.h>
+#include <util/multi_buffer.h>
 #include "server.h"
 #include "connection.h"
 
