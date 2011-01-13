@@ -29,7 +29,7 @@
 #include <boost/utility.hpp>
 
 namespace coherent {
-namespace buffercache {
+namespace util {
 
 class buffer : private boost::noncopyable
 {
@@ -43,13 +43,16 @@ public:
 	~buffer();
 	
 	inline char * get_data();
-	inline uint32_t get_size();
+	inline char const * get_data() const;
+	inline uint32_t get_size() const;
 
 private:
 	char * data;
 	uint32_t size;
 
 };
+
+class file;
 
 class multi_buffer
 {
@@ -72,9 +75,11 @@ public:
 		//what alignment shall frames allocated by COW have
 		uint32_t align = buffer::NO_ALIGNMENT
 	);
-	inline uint32_t get_size();
+	inline uint32_t get_size() const;
 
 private:
+	friend class file;
+
 	multi_buffer & operator=(multi_buffer const &); //not implemented on purpose
 
 	template<bool READ>
@@ -92,7 +97,7 @@ private:
 
 //================ IMPLEMENTATION ==============================================
 
-uint32_t buffer::get_size()
+uint32_t buffer::get_size() const
 {
 	return this->size;
 }
@@ -101,6 +106,12 @@ char * buffer::get_data()
 {
 	return this->data;
 }
+
+char const * buffer::get_data() const
+{
+	return this->data;
+}
+
 
 void multi_buffer::read(
 	char * buf,
@@ -121,13 +132,13 @@ void multi_buffer::write(
 	this->do_rw<false>(const_cast<char *>(buf), size, off, align);
 }
 
-uint32_t multi_buffer::get_size()
+uint32_t multi_buffer::get_size() const
 {
 	return this->size;
 }
 
 
-} //namespace buffercache
+} //namespace util
 } //namespace coherent
 
 #endif /* MULTI_BUFFER_H_2363 */

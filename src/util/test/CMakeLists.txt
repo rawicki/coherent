@@ -20,10 +20,18 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_BIN_
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
 
-set(SOURCES
-	spin_lock_test.cpp
-	)
-
-add_executable(spin_lock_test ${SOURCES})
+add_executable(spin_lock_test spin_lock_test.cpp)
 target_link_libraries(spin_lock_test config log debug2 util ${CORELIBS})
 add_test(spin_lock_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/spin_lock_test ${TEST_SUFFIX})
+
+add_executable(file_test file.cpp)
+target_link_libraries(file_test config log debug2 util ${CORELIBS})
+add_test(file_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/file_test ${TEST_SUFFIX})
+
+add_executable(multi_buffer_test multi_buffer.cpp)
+target_link_libraries(multi_buffer_test config log debug2 util buffercache ${CORELIBS})
+add_test(multi_buffer_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/multi_buffer_test ${TEST_SUFFIX})
+
+add_executable(worker_pool_test worker_pool.cpp)
+target_link_libraries(worker_pool_test config log debug2 util ${CORELIBS})
+add_test(worker_pool_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/worker_pool_test ${TEST_SUFFIX})

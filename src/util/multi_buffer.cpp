@@ -24,10 +24,10 @@
 
 #include <debug/asserts.h>
 #include <log/log.h>
-#include <buffercache/multi_buffer.h>
+#include <util/multi_buffer.h>
 
 namespace coherent {
-namespace buffercache {
+namespace util {
 
 using namespace std;
 using namespace coherent::debug;
@@ -79,10 +79,6 @@ multi_buffer::multi_buffer(
 	size(size),
 	left_off(left_off)
 {
-	d_assert((size == 0 && left_off == 0) || (left_off < size),
-		"invalid use, size=" << size << ", left_off=" << left_off
-	);
-
 	buffers.swap(this->buffers);
 #ifndef NDEBUG
 	uint32_t real_size = 0;
@@ -212,6 +208,6 @@ void multi_buffer::do_rw<false>(
 	uint32_t align
 );
 
-} // namespace buffercache
+} // namespace util
 } // namespace coherent
 
