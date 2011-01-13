@@ -21,6 +21,8 @@
 #ifndef BUFFER_CACHE_H_0304
 #define BUFFER_CACHE_H_0304
 
+#include <cstring>
+
 #include <list>
 #include <map>
 
