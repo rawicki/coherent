@@ -21,6 +21,8 @@
 #ifndef THREAD_H_3295
 #define THREAD_H_3295
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <util/misc.h>
@@ -244,6 +246,20 @@ private:
 		return detail::SPIN_IMPL_TRYLOCK(&(this->lock_impl));
 	}
 
+};
+
+class completion
+{
+public:
+	completion();
+	void wait();
+	void complete();
+	void reset();
+private:
+	boost::mutex mutex;
+	boost::condition_variable cond_var;
+	
+	bool completed;
 };
 
 

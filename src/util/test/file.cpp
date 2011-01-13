@@ -27,6 +27,8 @@
 #include <boost/shared_array.hpp>
 
 #include <util/file.h>
+#include <util/aio.h>
+#include <util/thread.h>
 #include <config/config.h>
 #include <debug/asserts.h>
 #include <log/log.h>
@@ -267,6 +269,308 @@ void write_test()
 	f->close();
 }
 
+static int32_t iovec_len(vector<iovec> const & vec)
+{
+	int32_t sum = 0;
+	for (
+		vector<iovec>::const_iterator i = vec.begin();
+		i != vec.end();
+		++i
+		)
+	{
+		sum += i->iov_len;
+	}
+	return sum;
+}
+
+class sync_file
+{
+public:
+	sync_file(async_file & impl) :
+		impl(impl)
+	{
+	}
+
+	void open(
+		int flags,
+		int mode
+		)
+	{
+		struct dummy_cb : public async_file::open_callback
+		{
+			dummy_cb(completion & comp) : comp(comp)
+			{
+			}
+
+			virtual void open_completed(
+				aio_open_req const & req,
+				int err
+				)
+			{
+				r_assert(
+					err == 0,
+					"err=" << err
+					);
+				comp.complete();
+			}
+
+		private:
+			completion & comp;
+		};
+
+		completion comp;
+		dummy_cb cb(comp);
+
+		impl.submit_open(cb, flags, mode);
+
+		comp.wait();
+	}
+
+	void pread(
+		char * buf,
+		off_t off,
+		ssize_t size
+		)
+	{
+		struct dummy_cb : public async_file::pread_callback
+		{
+			dummy_cb(completion & comp) : comp(comp)
+			{
+			}
+
+			virtual void pread_completed(
+				aio_pread_req const & req,
+				ssize_t res,
+				int err
+				)
+			{
+				r_assert(
+					res == req.size && err == 0,
+					"res=" << res << " err=" << err
+					);
+				comp.complete();
+			}
+
+		private:
+			completion & comp;
+		};
+
+		completion comp;
+		dummy_cb cb(comp);
+
+		impl.submit_pread(cb, buf, off, size);
+
+		comp.wait();
+	}
+
+	//destroys the vector
+	void preadv(
+		std::vector<iovec> & iovecs,
+		off_t off
+		)
+	{
+		struct dummy_cb : public async_file::preadv_callback
+		{
+			dummy_cb(completion & comp) : comp(comp)
+			{
+			}
+
+			virtual void preadv_completed(
+				aio_preadv_req const & req,
+				ssize_t res,
+				int err
+				)
+			{
+				r_assert(
+					res == iovec_len(req.iovecs) && err == 0,
+					"res=" << res << " err=" << err
+					);
+				comp.complete();
+			}
+
+		private:
+			completion & comp;
+		};
+
+		completion comp;
+		dummy_cb cb(comp);
+
+		impl.submit_preadv(cb, iovecs, off);
+
+		comp.wait();
+	}
+
+	void pwrite(
+		char const * buf,
+		off_t off,
+		ssize_t size
+		)
+	{
+		struct dummy_cb : public async_file::pwrite_callback
+		{
+			dummy_cb(completion & comp) : comp(comp)
+			{
+			}
+
+			virtual void pwrite_completed(
+				aio_pwrite_req const & req,
+				ssize_t res,
+				int err
+				)
+			{
+				r_assert(
+					res == req.size && err == 0,
+					"res=" << res << " err=" << err
+					);
+				comp.complete();
+			}
+		private:
+			completion & comp;
+		};
+
+		completion comp;
+		dummy_cb cb(comp);
+
+		impl.submit_pwrite(cb, buf, off, size);
+
+		comp.wait();
+	}
+
+	//destroys the vector
+	void pwritev(
+		std::vector<iovec> & iovecs,
+		off_t off
+		)
+	{
+		struct dummy_cb : public async_file::pwritev_callback
+		{
+			dummy_cb(completion & comp) : comp(comp)
+			{
+			}
+
+			virtual void pwritev_completed(
+				aio_pwritev_req const & req,
+				ssize_t res,
+				int err
+				)
+			{
+				r_assert(
+					res == iovec_len(req.iovecs) && err == 0,
+					"res=" << res << " err=" << err
+					);
+				comp.complete();
+			}
+
+		private:
+			completion & comp;
+			
+		};
+
+		completion comp;
+		dummy_cb cb(comp);
+
+		impl.submit_pwritev(cb, iovecs, off);
+
+		comp.wait();
+	}
+
+	void close()
+	{
+		struct dummy_cb : public async_file::close_callback
+		{
+			dummy_cb(completion & comp) : comp(comp)
+			{
+			}
+
+			virtual void close_completed(
+				aio_close_req const & req,
+				int res,
+				int err
+				)
+			{
+				r_assert(
+					res == 0 && err == 0,
+					"res=" << res << " err=" << err
+					);
+				comp.complete();
+			}
+
+		private:
+			completion & comp;
+		};
+
+		completion comp;
+		dummy_cb cb(comp);
+
+		impl.submit_close(cb);
+
+		comp.wait();
+	}
+
+
+
+private:
+	async_file & impl;
+};
+
+void aio_test()
+{
+	LOG(INFO, "===== aio_test");
+
+	aio_context ctx(15);
+	async_file afile(ctx, "aio");
+	sync_file sfile(afile);
+
+	sfile.open(O_RDWR | O_CREAT | O_EXCL, 0600);
+	file_ptr f = file::open("aio", O_RDONLY);
+
+	auto_ptr<test_pattern> pat(new test_pattern());
+	sfile.pwrite(pat->pattern, 0, 100);
+	check_range(*f, *pat, 0, 100);
+	
+	{
+		vector<iovec> vecs(3);
+		vecs[0].iov_len = 50;
+		vecs[0].iov_base = pat->pattern + 100;
+		vecs[1].iov_len = 100;
+		vecs[1].iov_base = pat->pattern + 150;
+		vecs[2].iov_len = 50;
+		vecs[2].iov_base = pat->pattern + 250;
+
+		sfile.pwritev(vecs, 100);
+		check_range(*f, *pat, 0, 300);
+	}
+
+	{
+		char buf[200];
+		vector<iovec> vecs(3);
+		vecs[0].iov_len = 100;
+		vecs[0].iov_base = buf;
+		vecs[1].iov_len = 30;
+		vecs[1].iov_base = buf + 100;
+		vecs[2].iov_len = 70;
+		vecs[2].iov_base = buf + 130;
+
+		sfile.preadv(vecs, 50);
+
+		r_assert(memcmp(buf, pat->pattern + 50, 200) == 0, "data corruption");
+	}
+
+	{
+		char buf[300];
+
+		sfile.pread(buf, 0, 300);
+
+		r_assert(memcmp(buf, pat->pattern, 300) == 0, "data corruption");
+	}
+
+	sfile.close();
+
+	check_range(*f, *pat, 0, 300);
+	f->close();
+	
+}
+
 int start_test(const int argc, const char *const *const argv)
 {
 	scoped_test_enabler test_setup(argc, argv);
@@ -278,6 +582,7 @@ int start_test(const int argc, const char *const *const argv)
 	open_test();
 	read_test();
 	write_test();
+	aio_test();
 	return 0;
 }
 

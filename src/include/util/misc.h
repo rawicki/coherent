@@ -67,4 +67,10 @@ inline T align_up(T v, A alignment)
 	return (res < v) ? (res + alignment) : res;
 }
 
+class virtual_dest
+{
+public:
+	virtual ~virtual_dest() {}
+};
+
 #endif /* MISC_H_2345 */

@@ -22,6 +22,32 @@
 
 namespace coherent {
 namespace util {
+
+using namespace boost;
+
+completion::completion() : completed(false)
+{
+}
+
+void completion::wait()
+{
+	mutex::scoped_lock lock(this->mutex);
+	while (!this->completed)
+		this->cond_var.wait(lock);
+}
+
+void completion::complete()
+{
+	mutex::scoped_lock lock(this->mutex);
+	this->completed = true;
+	this->cond_var.notify_all();
+}
+
+void completion::reset()
+{
+	this->completed = false;
+}
+
 } // namespace util
 } // namespace coherent
 
