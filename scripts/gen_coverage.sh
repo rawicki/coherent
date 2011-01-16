@@ -29,12 +29,33 @@ function usage
 	exit 1
 }
 
+
 OLD_PWD="`pwd`"
 if [ $# -ne 2 ] ; then
 	usage
 fi
-SOURCE_DIR=$1
-BINARY_DIR=$2
+SOURCE_DIR="`cd \"$1\"; pwd`"
+BINARY_DIR="`cd \"$2\"; pwd`"
+
+TMP="`dirname \"$0\"`"
+PROJ_DIR="`cd \"${TMP}/..\" ; pwd`"
+SEDI="${PROJ_DIR}/scripts/sed_immed.sh"
+SRC_DIR="${SOURCE_DIR}/src"
+
+TMP_DIR=`mktemp -d /tmp/coh_cov.XXXXXX`
+
+( cd "${SRC_DIR}" ; find . -type d -exec mkdir -p "${TMP_DIR}/"\{\} \; )
+
+( cd "${SRC_DIR}" ; find . -type f \( -name \*.cpp -o -name \*.h \) ) | \
+( while read file ; do 
+	cat "${SRC_DIR}/${file}" | sed \
+"s^\([^a-zA-Z0-9_]\)r_assert\([^a-zA-Z0-9_]\)^\1/*LCOV_EXCL_LINE HACK*/r_assert\2^g
+s^\([^a-zA-Z0-9_]\)d_assert\([^a-zA-Z0-9_]\)^\1/*LCOV_EXCL_LINE HACK*/d_assert\2^g
+s^\([^a-zA-Z0-9_]\)LOG\([^a-zA-Z0-9_]\)^\1/*LCOV_EXCL_LINE HACK*/LOG\2^g" \
+   	> "${TMP_DIR}/${file}"
+done
+) 
+
 
 COVERAGE_DIR="${OLD_PWD}/coverage"
 COVERAGE_OUT="${COVERAGE_DIR}/coverage.out"
@@ -48,7 +69,20 @@ if [ `find . -name \*gcda | wc -l` -eq 0 ] ; then
 	echo "It seems that you have no coverage data - compile after running \"cmake . -DUSER_COVERAGE=1\" first"
 	exit 1;
 fi
-geninfo -o "${COVERAGE_OUT}" -b . .
-cd ${SOURCE_DIR}
-lcov -r ${COVERAGE_OUT} /usr/\* > ${COVERAGE_OUT_STRIPPED}
+geninfo -o "${COVERAGE_OUT}" -b ${TMP_DIR} .
+lcov -b ${TMP_DIR} -r ${COVERAGE_OUT} /usr/\* > ${COVERAGE_OUT_STRIPPED}
+#FIXME there should be an error handler to revert it
+mv "${SRC_DIR}" "${SRC_DIR}2"
+ln -s ${TMP_DIR} "${SRC_DIR}"
+set +e
 genhtml -t "CoherentDB code coverage" -o ${COVERAGE_DIR} ${COVERAGE_OUT_STRIPPED}
+RESULT=$?
+set -e
+rm "${SRC_DIR}"
+mv "${SRC_DIR}2" "${SRC_DIR}"
+if [ ${RESULT} -ne 0 ] ; then
+	exit ${RESULT}
+fi
+rm -rf "${TMP_DIR}"
+
+find "${COVERAGE_DIR}" -type f -name \*.html -exec "${SEDI}" "s^\\/\\*LCOV_EXCL_LINE HACK\\*\\/^^g" \{\} \;
