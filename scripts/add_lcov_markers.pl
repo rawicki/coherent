@@ -1,4 +1,4 @@
-#/bin/sh
+#!/usr/pkg/bin/perl
 
 # (C) Copyright 2011 Marek Dopiera
 # 
@@ -18,27 +18,9 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
-if [ $# != 2 ] ; then
-	echo "usage: $0 command file"
-	exit 1
-fi
-CMD=$1
-FILE=$2
-TMP=`mktemp /tmp/sedi.XXXXXX`
-if [ $? != 0 ] ; then
-	echo "mktemp failed with code $?"
-	exit 1
-fi
-sed -E "$CMD" < "$FILE" >"$TMP"
-if [ $? != 0 ] ; then
-	echo "sed failed with code $?"
-	rm -f "$TMP"
-	exit 1
-fi
-mv "$TMP" "$FILE"
-if [ $? != 0 ] ; then
-	echo "mv failed with code $?"
-	rm -f "$TMP"
-	exit 1
-fi
 
+$/='';
+while ($_ = <STDIN>) {
+	 s/(\b(r_assert|d_assert|LOG)\s*)(\((?:[^\(\)]|(?3))*\))([^\n]*\n)/\/\* LCOV_EXCL_START HACK\*\/\1\3\4\/\* LCOV_EXCL_STOP HACK\*\//g;
+	 print
+}
