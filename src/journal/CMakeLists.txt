@@ -1,4 +1,4 @@
-# (C) Copyright 2010 Marek Dopiera
+# (C) Copyright 2011 Marek Dopiera
 # 
 # This file is part of CoherentDB.
 # 
@@ -17,14 +17,6 @@
 # http://www.gnu.org/licenses/.
 
 
-include_directories("include")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include") #used for generated includes
-add_subdirectory(include)
-add_subdirectory(config)
-add_subdirectory(server)
-add_subdirectory(log)
-add_subdirectory(debug)
-add_subdirectory(util)
-add_subdirectory(buffercache)
-add_subdirectory(netserver)
-add_subdirectory(journal)
+add_library(journal journal.cpp)
+
+add_subdirectory(test)

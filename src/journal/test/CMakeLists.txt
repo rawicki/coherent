@@ -1,4 +1,4 @@
-# (C) Copyright 2010 Marek Dopiera
+# (C) Copyright 2011 Marek Dopiera
 # 
 # This file is part of CoherentDB.
 # 
@@ -16,15 +16,13 @@
 # License along with CoherentDB. If not, see
 # http://www.gnu.org/licenses/.
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${TEST_BIN_DIR})
 
-include_directories("include")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include") #used for generated includes
-add_subdirectory(include)
-add_subdirectory(config)
-add_subdirectory(server)
-add_subdirectory(log)
-add_subdirectory(debug)
-add_subdirectory(util)
-add_subdirectory(buffercache)
-add_subdirectory(netserver)
-add_subdirectory(journal)
+add_library(journal_mock journal_mocks.cpp)
+
+add_executable(journal_test journal_test.cpp)
+target_link_libraries(journal_test config log debug2 util journal journal_mock ${CORELIBS})
+add_test(journal_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/journal_test ${TEST_SUFFIX})
+
