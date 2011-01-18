@@ -28,6 +28,8 @@ namespace coherent {
 namespace journal {
 namespace unittests {
 
+//==== in_mem_journal ==========================================================
+
 using namespace std;
 using namespace boost;
 using namespace coherent::config;

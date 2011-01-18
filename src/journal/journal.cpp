@@ -23,6 +23,14 @@
 namespace coherent {
 namespace journal {
 
+//====== recovery_except =======================================================
+
+
+//====== journal ===============================================================
+
+
+
+
 } // namespace journal 
 } // namespace coherent
 

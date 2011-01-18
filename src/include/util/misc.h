@@ -40,6 +40,9 @@
 #define VALGRIND_SLOWDOWN 1
 #endif
 
+namespace coherent {
+namespace util {
+
 template <class T>
 bool is_pow2(T v)
 {
@@ -72,5 +75,8 @@ class virtual_dest
 public:
 	virtual ~virtual_dest() {}
 };
+
+} // namespace util
+} // namespace coherent
 
 #endif /* MISC_H_2345 */

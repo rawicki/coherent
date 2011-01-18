@@ -27,6 +27,11 @@ namespace coherent {
 namespace journal {
 namespace unittests {
 
+class in_mem_journal : public journal
+{
+	// XXX
+};
+
 } // namespace unittests
 } // namespace journal 
 } // namespace coherent
