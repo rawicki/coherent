@@ -31,6 +31,8 @@
 #include "encoders/buffer_encoder.h"
 #include "misc/virtual_class.h"
 
+using namespace coherent::misc;
+using namespace coherent::serialization;
 
 struct A
 {

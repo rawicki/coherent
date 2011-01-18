@@ -33,6 +33,7 @@
 
 #include "codecs/little_endian.h"
 
+using namespace coherent::serialization;
 
 typedef make_list3<std::string, uint32_t, int64_t>::value       List1;
 typedef CreateEncoderSet<List1>         EncoderSet;

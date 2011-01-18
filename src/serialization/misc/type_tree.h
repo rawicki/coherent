@@ -21,6 +21,9 @@
 #ifndef MISC_TYPETREE_H
 #define MISC_TYPETREE_H
 
+namespace coherent {
+namespace misc {
+
 
 //basics:
 struct tree_leaf
@@ -40,5 +43,8 @@ struct create_tree_node
     typedef tree_node<T, tree_leaf, tree_leaf> value;
 };
 
+
+} // namespace misc
+} // namespace coherent
 
 #endif /* MISC_TYPETREE_H */

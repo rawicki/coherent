@@ -28,6 +28,9 @@
 #include <unistd.h>
 #include <inttypes.h>
 
+namespace coherent {
+namespace serialization {
+
 
 template <template <typename T> class Codec>
 struct file_encoder
@@ -158,5 +161,8 @@ private:
     size_t pos_;
 };
 
+
+} // serialization
+} // coherent
 
 #endif /* FILE_ENCODER_H */

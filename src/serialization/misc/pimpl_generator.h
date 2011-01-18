@@ -25,6 +25,8 @@
 #include <boost/shared_ptr.hpp>
 #include "misc/type_list.h"
 
+namespace coherent {
+namespace misc {
 
 
 //really ugly, sorry for that...
@@ -301,5 +303,9 @@ struct create_pimpl_set
 
 
 };
+
+
+} // namespace misc
+} // namespace coherent
 
 #endif /* MISC_PIMPL_GENERATOR_H */

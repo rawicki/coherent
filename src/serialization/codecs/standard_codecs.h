@@ -28,6 +28,9 @@
 #include <set>
 #include <inttypes.h>
 
+namespace coherent {
+namespace serialization {
+
 
 template <typename T>
 struct standard_sequence_codec
@@ -104,5 +107,7 @@ struct standard_pair_codec
 };
 
 
+} // namespace serialization
+} // namespace coherent
 
 #endif /* STANDARD_CODECS_H */

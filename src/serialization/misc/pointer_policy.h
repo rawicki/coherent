@@ -24,6 +24,9 @@
 #include <memory>
 #include <boost/shared_ptr.hpp>
 
+namespace coherent {
+namespace misc {
+
 
 template <typename T, typename Ptr = T*>
 struct std_ptr_policy
@@ -210,6 +213,7 @@ protected:
 };
 
 
-
+} // namespace misc
+} // namespace coherent
 
 #endif /* MISC_POINTER_POLICY_H */

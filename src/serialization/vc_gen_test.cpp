@@ -88,6 +88,8 @@ int main(int argc, char **argv)
             << "#include \"encoders/buffer_encoder.h\"" << std::endl
             << "#include \"gen_test.h\"" << std::endl
             << std::endl
+            << "using namespace coherent::serialization;" << std::endl
+            << std::endl
             << std::endl;
         for (size_t cid=1; cid<=n; cid++)
         {
@@ -126,6 +128,9 @@ int main(int argc, char **argv)
         
     std::cout
         << "#include \"misc/virtual_class.h\"" << std::endl
+        << std::endl
+        << "using namespace coherent::misc;" << std::endl
+        << std::endl
         << std::endl;
     //base
     std::cout

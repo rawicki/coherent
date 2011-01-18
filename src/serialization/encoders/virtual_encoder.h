@@ -29,7 +29,10 @@
 #   include "misc/demangle.h"
 #endif
 
+namespace coherent {
+namespace serialization {
 
+using namespace coherent::misc;
 
 namespace virtual_encoder_detail
 {
@@ -188,5 +191,7 @@ struct CreateEncoderSet
 };
 
 
+} // namespace serialization
+} // namespace coherent
 
 #endif /* VIRTUAL_ENCODER_H */

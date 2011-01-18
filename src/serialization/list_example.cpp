@@ -26,6 +26,8 @@
 #include "misc/type_list.h"
 #include "misc/demangle.h"
 
+using namespace coherent::misc;
+
 
 //template functor
 template <typename T> struct Signed {};

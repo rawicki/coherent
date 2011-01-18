@@ -24,6 +24,10 @@
 #include <iostream>
 #include <vector>
 
+namespace coherent {
+namespace misc {
+
+
 template <typename T>
 std::ostream& operator<< (std::ostream& os, const std::vector<T>& vec)
 {
@@ -39,5 +43,8 @@ std::ostream& operator<< (std::ostream& os, const std::vector<T>& vec)
     return os;
 }
 
+
+} // namespace misc
+} // namespace coherent
 
 #endif /* MISC_VECTOROUTPUT_H */

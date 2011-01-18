@@ -32,6 +32,9 @@
 
 #include "encoders/encoders_pimpl.h"
 
+using namespace coherent::serialization;
+using namespace coherent::misc;
+
 
 struct A_old
 {

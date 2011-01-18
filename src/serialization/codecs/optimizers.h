@@ -29,6 +29,9 @@
 #include <boost/mpl/comparison.hpp>
 #include <string>
 
+namespace coherent {
+namespace serialization {
+
 
 template <typename T>
 struct general_optimizer
@@ -178,5 +181,8 @@ struct make_codec_with_default_optimizer
     };
 };
 
+
+} // namespace serialization
+} // namespace coherent
 
 #endif /* CODECS_OPTIMIZATIONS_H */

@@ -26,6 +26,9 @@
 #include <typeinfo>
 #include <cxxabi.h>
 
+namespace coherent {
+namespace misc {
+
 
 template <typename T>
 inline std::string demangle()
@@ -43,5 +46,8 @@ inline std::string demangle()
     return xtype_s;
 }
 
+
+} // namespace misc
+} // namespace coherent
 
 #endif /*MISC_DEMANGLE_H */

@@ -24,6 +24,9 @@
 #include <inttypes.h>
 #include "codecs/standard_codecs.h"
 
+namespace coherent {
+namespace serialization {
+
 
 template <typename T>
 struct little_endian_codec
@@ -125,5 +128,7 @@ template <typename K, typename V> struct little_endian_codec<std::map<K,V> > : p
 template <typename F, typename S> struct little_endian_codec<std::pair<F,S> > : public standard_pair_codec<F, S> {};
 
 
+} // namespace serialization
+} // namespace coherent
 
 #endif /* LITTLE_ENDIAN_CODEC_H */

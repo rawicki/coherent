@@ -28,6 +28,9 @@
 #include "misc/type_tree.h"
 
 
+namespace coherent {
+namespace misc {
+
 
 template <typename F, typename TypeList>
 struct fold;
@@ -321,6 +324,8 @@ public:
 };
 
 
+} // namespace misc
+} // namespace coherent
 
 #endif /* VIRTUAL_CLASS_H */
 

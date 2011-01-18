@@ -45,6 +45,9 @@
 #include "misc/virtual_class.h"
 
 
+using namespace coherent::serialization;
+using namespace coherent::misc;
+
 //virtual structurs
 struct XA
 {

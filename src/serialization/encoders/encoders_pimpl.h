@@ -28,6 +28,9 @@
 #   include "misc/demangle.h"
 #endif
 
+namespace coherent {
+namespace serialization {
+
 
 namespace detail
 {
@@ -112,14 +115,14 @@ namespace detail
             if (boost::is_same<typename Qualifier<T>::type, const T&>::value)
                 std::cout << "encoding";
             else std::cout << "decoding";
-            std::cout << "(" << demangle<T>() << ") " << x << std::endl;
+            std::cout << "(" << coherent::misc::demangle<T>() << ") " << x << std::endl;
         }
         template <typename T> static void process_info_v(typename Qualifier<T>::type x, uint32_t v)
         {
             if (boost::is_same<typename Qualifier<T>::type, const T&>::value)
                 std::cout << "encoding_v";
             else std::cout << "decoding_v";
-            std::cout << "(" << demangle<T>() << ")(" << v << ") " << x << std::endl;
+            std::cout << "(" << coherent::misc::demangle<T>() << ")(" << v << ") " << x << std::endl;
         }
 #   define DUMP_RESULT(T, x)        process_info<T>(x)
 #   define DUMP_RESULT_V(T, x, v)   process_info_v<T>(x, v)
@@ -231,7 +234,7 @@ namespace detail
 template <typename TypeList>
 struct create_encoder_set
 {
-    typedef create_pimpl_set<
+    typedef coherent::misc::create_pimpl_set<
             TypeList,
             detail::virtual_encoder_function,
             detail::encoder_qualifier,
@@ -280,7 +283,7 @@ struct create_encoder_set
 template <typename TypeList>
 struct create_decoder_set
 {
-    typedef create_pimpl_set<
+    typedef coherent::misc::create_pimpl_set<
             TypeList,
             detail::virtual_decoder_function,
             detail::decoder_qualifier,
@@ -326,5 +329,8 @@ struct create_decoder_set
     };
 };
 
+
+} // namespace serialization
+} // namespace coherent
 
 #endif /* ENCODERS_PIMPL_H */

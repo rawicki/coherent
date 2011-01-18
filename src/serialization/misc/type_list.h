@@ -22,6 +22,9 @@
 #define MISC_TYPELIST_H
 
 
+namespace coherent {
+namespace misc {
+
 //basics:
 struct list_head
 {
@@ -106,5 +109,8 @@ struct list_join<list_head, L2>
     typedef L2 value;
 };
 
+
+} // namespace misc
+} // namespace coherent
 
 #endif /* MISC_TYPELIST_H */

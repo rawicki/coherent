@@ -27,6 +27,9 @@
 #include <string.h>
 #include <inttypes.h>
 
+namespace coherent {
+namespace serialization {
+
 
 template <template <typename T> class Codec>
 struct buffer_encoder
@@ -100,5 +103,8 @@ private:
     std::vector<char>::const_iterator end_;
 };
 
+
+} // namespace serialization
+} // namespace coherent
 
 #endif /* BUFFER_ENCODER_H */
