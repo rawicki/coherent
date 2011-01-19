@@ -29,7 +29,6 @@
 #include <log/log.h>
 #include <debug/stacktrace.h>
 
-//XXX flush logs
 #define __assertion_impl2(c, m) \
 	do {if (!(c)) { \
 		LOG(FATAL, m); \

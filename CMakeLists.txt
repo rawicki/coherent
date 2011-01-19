@@ -76,13 +76,15 @@ endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 message(STATUS "Currnet build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Selected CXXFLAGS: ${EFFECTIVE_CXX_FLAGS}")
 
-find_package(Boost COMPONENTS program_options regex filesystem system REQUIRED)
+find_package(Boost COMPONENTS program_options regex filesystem system thread REQUIRED)
 if (Boost_FOUND)
 	include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 	set(CORELIBS ${CORELIBS} ${Boost_LIBRARIES})
 else (Boost_FOUND)
 	message(FATAL_ERROR "Boost library not found")
 endif (Boost_FOUND)
+
+set(CORELIBS ${CORELIBS} ${CMAKE_DL_LIBS})
 
 find_package(Log4Cxx REQUIRED)
 if (Log4cxx_FOUND)
@@ -91,8 +93,6 @@ if (Log4cxx_FOUND)
 else(Log4cxx_FOUND)
 	message(FATAL_ERROR "Log4CXX library not found")
 endif(Log4cxx_FOUND)
-
-set(CMAKE_EXE_LINKER_FLAGS "-ldl")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)

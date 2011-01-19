@@ -363,11 +363,11 @@ global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) :
 //================= memory_manager_sect implementation =======================
 
 global_config::memory_manager_sect::memory_manager_sect(ini_config const& conf) :
-config_section_base("memory_manager", conf),
-initialLimitBytes(this->get_value<uint64_t>("initialLimitBytes")),
-defaultSessionLimitBytes(this->get_value<uint32_t>("defaultSessionLimitBytes"))
+	config_section_base("memory_manager", conf),
+	initialLimitBytes(this->get_value<uint64_t>("initialLimitBytes")),
+	defaultSessionLimitBytes(this->get_value<uint32_t>("defaultSessionLimitBytes"))
 {
-    this->check_no_others();
+	this->check_no_others();
 }
 
 global_config::~global_config()
@@ -384,17 +384,18 @@ scoped_test_enabler::scoped_test_enabler(int argc,
 	string const work_dir = "run";
 	string const tests_dir = FOR_TESTS_BIN_DIR  "/" + work_dir;
 	
-	string const orig_prog = argv[0];
-	cerr_assert(orig_prog.find(required_path) != string::npos,
-			"This is bad, path=" << argv[0]);
-	size_t pos = orig_prog.rfind('/');
+	char full_path_raw[MAXPATHLEN];
+	cerr_assert(realpath(argv[0], full_path_raw), "real_path failed with errno=" << errno);
+	string const full_path = full_path_raw;
+
+	cerr_assert(full_path.find(required_path) != string::npos,
+			"This is bad, path=" << tests_dir);
+	size_t pos = full_path.rfind('/');
 	if (pos == string::npos)
 		pos = 0;
-	string const test_name = orig_prog.substr(pos);
+	string const test_name = full_path.substr(pos);
 	string const target_dir_name = tests_dir + "/" + test_name;
 	this->working_dir = target_dir_name;
-	char full_path[MAXPATHLEN];
-	cerr_assert(realpath(argv[0], full_path), "real_path failed with errno=" << errno);
 
 	if (argc != 2 || strcmp(argv[1], "ready")) {
 		//XXX unix specific
@@ -432,7 +433,7 @@ scoped_test_enabler::scoped_test_enabler(int argc,
 		for (size_t i = 0; i < args.size(); ++i)
 			new_argv[i] = args[i].c_str();
 		new_argv[args.size()] = 0;
-		char const * const to_run = (argc > 1) ? argv[1] : full_path;
+		char const * const to_run = (argc > 1) ? argv[1] : full_path.c_str();
 		execvp(to_run, const_cast<char * const *>(new_argv));
 		cerr_assert(false, "execvp failed with errno=" << errno);
 	}
