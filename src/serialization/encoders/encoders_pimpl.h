@@ -22,10 +22,10 @@
 #define ENCODERS_PIMPL_H
 
 #include <boost/type_traits.hpp>
-#include "misc/pimpl_generator.h"
+#include <misc/pimpl_generator.h>
 
 #ifdef DUMP_TYPEINFO
-#   include "misc/demangle.h"
+#   include <misc/demangle.h>
 #endif
 
 namespace coherent {

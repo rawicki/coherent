@@ -21,11 +21,14 @@
 #ifndef VIRTUAL_CLASS_H
 #define VIRTUAL_CLASS_H
 
+#include <stdexcept>
 #include <boost/shared_ptr.hpp>
 #include <inttypes.h>
-#include "misc/pointer_policy.h"
-#include "misc/type_list.h"
-#include "misc/type_tree.h"
+
+#include <debug/asserts.h>
+#include <misc/pointer_policy.h>
+#include <misc/type_list.h>
+#include <misc/type_tree.h>
 
 
 namespace coherent {
@@ -51,7 +54,7 @@ struct fold<F, list_head>
 {
     void operator() (F&) const
     {
-        throw "End of List!";
+        throw std::runtime_error("End of List!");
     }
 };
 
@@ -78,7 +81,7 @@ struct fold<F, tree_leaf>
 {
     void operator() (F&) const
     {
-        throw "Tree Leaf!";
+        throw std::runtime_error("Tree Leaf!");
     }
 };
 
@@ -160,7 +163,7 @@ struct tree_checker<tree_node<Current, tree_node<LType, LLeftNode, LRightNode>, 
 template <typename Tree>
 inline void check_tree()
 {
-    assert(checker_detail::tree_checker<Tree>::ok);
+    r_assert(checker_detail::tree_checker<Tree>::ok, "check_tree error");
 }
 
 
@@ -206,7 +209,7 @@ private:
         }
         template <typename Type>
         void process_checked() {
-            assert( (tag_type)Type::TAG == tag_ );
+            r_assert( (tag_type)Type::TAG == tag_, "tag mismatch");
             process_unchecked<Type>();
         }
 
@@ -248,7 +251,7 @@ private:
         }
         template <typename Type>
         void process_checked() {
-            assert( (tag_type)Type::TAG == tag_ );
+            r_assert( (tag_type)Type::TAG == tag_, "tag mismatch");
             process_unchecked<Type>();
         }
 

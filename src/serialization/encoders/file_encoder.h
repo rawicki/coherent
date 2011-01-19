@@ -21,9 +21,9 @@
 #ifndef FILE_ENCODER_H
 #define FILE_ENCODER_H
 
+#include <stdexcept>
 #include <vector>
 #include <iterator>
-#include <assert.h>
 #include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
@@ -64,7 +64,7 @@ struct file_encoder
         if (buffer_.size()) {
             ssize_t len = write(fd_, &(*buffer_.begin()), buffer_.size());
             if (len!=buffer_.size()) {
-                throw "write error";
+                throw std::runtime_error("write error");
             }
             buffer_.clear();
         }
@@ -131,7 +131,7 @@ struct file_decoder
         buffer_.resize(bufferSize_);
         ssize_t len = read(fd_, &(*buffer_.begin()), buffer_.size());
         if (len<=0) {
-            throw "read error";
+            throw std::runtime_error("read error");
         }
         buffer_.resize(len);
         pos_ = 0;

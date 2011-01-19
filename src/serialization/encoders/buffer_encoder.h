@@ -21,9 +21,9 @@
 #ifndef BUFFER_ENCODER_H
 #define BUFFER_ENCODER_H
 
+#include <stdexcept>
 #include <vector>
 #include <iterator>
-#include <assert.h>
 #include <string.h>
 #include <inttypes.h>
 
@@ -36,7 +36,6 @@ struct buffer_encoder
 {
     buffer_encoder(std::vector<char>& buffer)
         : buffer_(buffer)
-        //: it_(std::back_inserter(buffer))
     {
     }
     template <typename T>
@@ -53,7 +52,6 @@ struct buffer_encoder
     }
     void write_char(char c)
     {
-        //*it_++ = c;
         buffer_.push_back(c);
     }
     //optimizer
@@ -64,7 +62,6 @@ struct buffer_encoder
         ::memcpy( (void*)(&(buffer_[size_])), (void*)src, n);
     }
 private:
-    //std::back_insert_iterator<std::vector<char> > it_;
     std::vector<char>& buffer_;
 };
 
@@ -88,13 +85,17 @@ struct buffer_decoder
     }
     char get_char()
     {
-        assert(begin_!=end_);
+        if (begin_==end_) {
+            throw std::out_of_range("buffer_decoder::get_char");
+        }
         return *(begin_++);
     }
     //optimizer
     void memcpy(char * dest, size_t n)
     {
-        assert(end_-begin_ >= n);
+        if (end_-begin_ < n) {
+            throw std::out_of_range("buffer_decoder::memcpy");
+        }
         ::memcpy( (void*)dest, (void*)(&(*begin_)), n);
         begin_ += n;
     }
