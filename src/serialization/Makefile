@@ -19,41 +19,42 @@
 
 PATHS		:=	codecs encoders misc
 HEADERS		:=	$(foreach dir, $(PATHS), $(wildcard $(dir)/*.h))
-
+INCDIRS		:= -I. -I../include
+LIBS		:= -L../../bin/ -llog -ldebug2 -llog4cxx
 
 all: serialize gen_test venc_test version_test vc_example list_example
 
 
 serialize: serialize.cpp $(HEADERS)
-	g++ -O3 -I. -o serialize serialize.cpp
+	g++ -O3 $(INCDIRS) -o serialize serialize.cpp $(LIBS)
 
 inline: inline_int64_t.cpp $(HEADERS)
-	g++ -O3 -I. -c -o inline.o inline_int64_t.cpp
+	g++ -O3 $(INCDIRS) -c -o inline.o inline_int64_t.cpp
 	objdump -d inline.o
 
 gen_test: vc_gen_test.cpp gen_main.cpp $(HEADERS)
 	g++ -O3 -o vc_gen_test vc_gen_test.cpp
 	./vc_gen_test 6 > gen_test.h
 	./vc_gen_test 6 static > gen_test.cpp
-	g++ -O3 -I. -c -o gen_test.o gen_test.cpp
-	g++ -O3 -I. -c -o gen_main.o gen_main.cpp
-	g++ -o gen_test gen_test.o gen_main.o
+	g++ -O3 $(INCDIRS) -c -o gen_test.o gen_test.cpp
+	g++ -O3 $(INCDIRS) -c -o gen_main.o gen_main.cpp
+	g++ -o gen_test gen_test.o gen_main.o $(LIBS)
 
 venc_test: venc_test.cpp $(HEADERS)
-	g++ -O3 -I. -c -o venc_test.o venc_test.cpp
-	g++ -o venc_test venc_test.o
+	g++ -O3 $(INCDIRS) -c -o venc_test.o venc_test.cpp
+	g++ -o venc_test venc_test.o $(LIBS)
 
 version_test: version_test.cpp $(HEADERS)
-	g++ -O3 -I. -c -o version_test.o version_test.cpp
-	g++ -o version_test version_test.o
+	g++ -O3 $(INCDIRS) -c -o version_test.o version_test.cpp
+	g++ -o version_test version_test.o $(LIBS)
 
 vc_example: vc_example.cpp $(HEADERS)
-	g++ -O3 -I. -c -o vc_example.o vc_example.cpp
-	g++ -o vc_example vc_example.o
+	g++ -O3 $(INCDIRS) -c -o vc_example.o vc_example.cpp
+	g++ -o vc_example vc_example.o $(LIBS)
 
 list_example: list_example.cpp misc/type_list.h
-	g++ -O3 -I. -c -o list_example.o list_example.cpp
-	g++ -o list_example list_example.o
+	g++ -O3 $(INCDIRS) -c -o list_example.o list_example.cpp
+	g++ -o list_example list_example.o $(LIBS)
 
 clean:
 	rm -f serialize *.o *test vc_example list_example  gen_test.h gen_test.cpp $$(find -name "*~")
