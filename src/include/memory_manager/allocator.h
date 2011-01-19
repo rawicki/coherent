@@ -25,152 +25,194 @@
 #include <cassert>
 #include <bits/allocator.h>
 #include <memory_manager/session.h>
+#include <memory_manager/sub_session.h>
 #include <sys/mman.h>
 #include <cstdio> // TODO delete
 #include <memory_manager/pthread_wrapper.h>
 
-namespace coherent {
-namespace memory_manager {
+#include "manager.h"
 
-class OutOfSessionMemory: public std::exception {
-    virtual const char* what() const throw() {
-        return "Insufficent session memory left for memory allocation.";
-    }
-};
+namespace coherent
+{
+	namespace memory_manager
+	{
 
-template <class T>
-class Allocator;
+		class out_of_session_memory : public std::exception
+		{
 
-// specialize for void
-template <>
-class Allocator<void>: public std::allocator<void> {
-};
+			virtual const char*
+			what() const throw ()
+			{
+				return "Insufficent session memory left for memory allocation.";
+			}
+		};
 
-template <class T>
-class Allocator: public std::allocator<T> {
-public:
-    typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
-    typedef T* pointer;
-    typedef const T* const_pointer;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T value_type;
+		template <class T>
+		class allocator;
 
-    template<typename W>
-    struct rebind {
-        typedef Allocator<W> other;
-    };
+		// specialize for void
 
-    Allocator() throw (): std::allocator<T>() {}
-    Allocator(const Allocator& orig) throw (): std::allocator<T>(orig) {}
-    template <class U>
-    Allocator(const Allocator<U>& orig) throw (): std::allocator<T>(orig) {}
-    ~Allocator() throw () {}
+		template <>
+		class allocator<void> : public std::allocator<void>
+		{
+		};
 
-    pointer allocate(size_type n, Allocator<void>::const_pointer hint = 0) {
-        if (n == 0)
-            return 0;
+		template <class T>
+		class allocator : public std::allocator<T>
+		{
+		public:
+			typedef size_t size_type;
+			typedef ptrdiff_t difference_type;
+			typedef T* pointer;
+			typedef const T* const_pointer;
+			typedef T& reference;
+			typedef const T& const_reference;
+			typedef T value_type;
 
-        MemorySession* ms = MemorySession::current();
-        assert(ms);
+			template<typename W>
+			struct rebind
+			{
+				typedef allocator<W> other;
+			};
 
-        size_t bytes = sizeof(T) * n;
+			allocator() throw () : std::allocator<T>()
+			{
+			}
 
-        ScopedRWLockRead ll(&ms->limitLock);
-        ScopedRWLockWrite al(&ms->allocLock);
+			allocator(const allocator& orig) throw () : std::allocator<T>(orig)
+			{
+			}
 
-        if (n > max_size_noLock())
-            throw OutOfSessionMemory();
+			template <class U>
+			allocator(const allocator<U>& orig) throw () : std::allocator<T>(orig)
+			{
+			}
 
-        void* p = mmap(0, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+			~allocator() throw ()
+			{
+			}
 
-        if (p == MAP_FAILED)
-            throw std::bad_alloc();
+			pointer
+			allocate(size_type n, allocator<void>::const_pointer hint = 0)
+			{
+				if (n == 0)
+					return 0;
 
-        ms->allocatedBytes += bytes;
-        ms->allocations.insert(std::make_pair(p, bytes));
+				size_t needed_bytes = sizeof (T) * n;
 
-        return static_cast<T*>(p);
-    }
+				memory_sub_session* mss = memory_sub_session::current();
+				assert(mss);
 
-    void deallocate(pointer p, size_type n) {
-        if (n == 0)
-            return;
+				scoped_rwlock_write als(&mss->alloc_lock);
 
-        MemorySession* ms = MemorySession::current();
-        assert(ms);
+				memory_session* ms = mss->get_parent();
 
-        size_t bytes = sizeof(T) * n;
+				scoped_rwlock_read ll(&ms->limit_lock);
+				scoped_rwlock_write al(&ms->alloc_lock);
 
-        ScopedRWLockWrite al(&ms->allocLock);
+				//        fprintf(stderr, "allocate %d", n * sizeof(T));
 
-        if (munmap(static_cast<void*>(p), bytes))
-            printf("UNMAP ERROR\n"); // TODO do zapisu do loga
+				if (n > max_size_no_lock(ms))
+					throw out_of_session_memory();
 
-        ms->allocatedBytes -= bytes;
-        ms->allocations.erase(p);
-    }
+				pointer res = reinterpret_cast<pointer> (mss->allocate(needed_bytes));
 
-    size_type max_size() const throw() {
-        MemorySession* ms = MemorySession::current();
-        
-        assert(ms);
-        
-        ScopedRWLockRead ll(&ms->limitLock);
-        ScopedRWLockRead al(&ms->allocLock);
-        
-        assert(ms->limitBytes <= base::max_size());
+				//        fprintf(stderr, ";\tcurrent %u\n", ms->allocated_bytes);
 
-        if (ms->limitBytes >= ms->allocatedBytes)
-            return ms->limitBytes - ms->allocatedBytes;
-        else
-            return 0;
-    }
+				return res;
+			}
 
-private:
-    size_type max_size_noLock() const throw() {
-        MemorySession* ms = MemorySession::current();
+			void
+			deallocate(pointer ptr, size_type n)
+			{
+				if (n == 0)
+					return;
 
-        assert(ms);
-        assert(ms->limitBytes <= base::max_size());
+				memory_sub_session* mss = memory_sub_session::current();
+				assert(mss);
 
-        if (ms->limitBytes >= ms->allocatedBytes)
-            return ms->limitBytes - ms->allocatedBytes;
-        else
-            return 0;
-    }
+				scoped_rwlock_write als(&mss->alloc_lock);
 
-    typedef std::allocator<T> base;
-};
+				memory_session* ms = mss->get_parent();
 
-template <class T1, class T2>
-bool operator ==(const Allocator<T1>&, const Allocator<T2>&) throw () {
-    return true;
-}
+				scoped_rwlock_write al(&ms->alloc_lock);
+				scoped_rwlock_read ll(&ms->limit_lock);
 
-template <class T1, class T2>
-bool operator !=(const Allocator<T1>&, const Allocator<T2>&) throw () {
-    return false;
-}
+				byte* p = reinterpret_cast<byte*> (ptr);
+				size_t bytes = sizeof (T) * n;
 
-template <typename T>
-Allocator<T>& allocator() {
-    static Allocator<T> instance;
-    return instance;
-}
+				//        fprintf(stderr, "deallocate %d", n * sizeof(T));
 
-template <typename T>
-T* allocate(size_t size) {
-    return allocator<T>().allocate(size);
-}
+				mss->deallocate(p, bytes);
 
-template <typename T>
-void deallocate(T* p, size_t size) {
-    return allocator<T>().deallocate(p, size);
-}
+				//        fprintf(stderr, ";\tcurrent %u small_allocs %u free_small_chunks %u allocs %u\n    free_small_chunks: ", ms->allocated_bytes, ms->small_allocs.size(), ms->free_small_chunks.size(), ms->allocs.size());
+				//        for (std::map<byte*, size_t>::iterator i = ms->free_small_chunks.begin(); i != ms->free_small_chunks.end(); ++i) {
+				//            fprintf(stderr, "%u-%u(%u) ", (unsigned int) i->first, (unsigned int) i->first + i->second - 1, i->second);
+				//        }
+				//        fprintf(stderr, "\n");
+			}
 
-}
+			size_type
+			max_size() const throw ()
+			{
+				memory_session* ms = memory_session::current();
+				assert(ms);
+
+				scoped_rwlock_read ll(&ms->limit_lock);
+				scoped_rwlock_read al(&ms->alloc_lock);
+
+				return max_size_no_lock(ms);
+			}
+
+		private:
+
+			size_type
+			max_size_no_lock(memory_session* ms) const throw ()
+			{
+				assert(ms->limit_bytes <= std::allocator<T>::max_size());
+
+				if (ms->limit_bytes >= ms->allocated_bytes)
+					return ms->limit_bytes - ms->allocated_bytes;
+				else
+					return 0;
+			}
+		};
+
+		template <class T1, class T2>
+		bool operator ==(const allocator<T1>&, const allocator<T2>&) throw ()
+		{
+			return true;
+		}
+
+		template <class T1, class T2>
+		bool operator !=(const allocator<T1>&, const allocator<T2>&) throw ()
+		{
+			return false;
+		}
+
+		template <typename T>
+		allocator<T>&
+		allocator_instance()
+		{
+			static allocator<T> instance;
+			return instance;
+		}
+
+		template <typename T>
+		T*
+		allocate(size_t size)
+		{
+			return allocator<T > ().allocate(size);
+		}
+
+		template <typename T>
+		void
+		deallocate(T* p, size_t size)
+		{
+			return allocator<T > ().deallocate(p, size);
+		}
+
+	}
 }
 
 #endif

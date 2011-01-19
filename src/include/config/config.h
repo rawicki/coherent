@@ -93,7 +93,8 @@ public:
 		uint16_t syncer_sleep_time;
 	};
 
-        struct memory_manager_sect : public config_section_base, private boost::noncopyable {
+        struct memory_manager_sect : public config_section_base, private boost::noncopyable
+        {
             memory_manager_sect(ini_config const& conf);
 
             uint64_t initialLimitBytes;

@@ -22,29 +22,41 @@
 #include <stdlib.h>
 #include "thread.h"
 
-namespace coherent {
-namespace memory_manager {
+namespace coherent
+{
+	namespace memory_manager
+	{
 
-void memoryThreadClean(void* tls) {
-    delete static_cast<TLSContent*>(tls);
-}
+		pthread_key_t tls_key;
 
-void tlsInit() {
-    assert(!pthread_key_create(&tlsKey, memoryThreadClean));
-}
+		void
+		memory_thread_clean(void* tls)
+		{
+			delete reinterpret_cast<tls_content*> (tls);
+		}
 
-void tlsClean() {
-    assert(!pthread_key_delete(tlsKey));
-}
+		void
+		tls_init()
+		{
+			assert(!pthread_key_create(&tls_key, memory_thread_clean));
+		}
 
-void memoryThreadInitIfNeeded() {
-    TLSContent* tlsContent = tls();
+		void
+		tls_clean()
+		{
+			assert(!pthread_key_delete(tls_key));
+		}
 
-    if (!tlsContent) {
-        tlsContent = new TLSContent;
-        assert(!pthread_setspecific(tlsKey, tlsContent));
-    }
-}
+		void
+		memory_thread_init_if_needed()
+		{
+			tls_content* tlsc = tls();
 
-}
+			if (!tlsc) {
+				tlsc = new tls_content;
+				assert(!pthread_setspecific(tls_key, tlsc));
+			}
+		}
+
+	}
 }

@@ -26,50 +26,62 @@
 #include <config/config.h>
 #include "thread.h"
 
-namespace coherent {
-namespace memory_manager {
+namespace coherent
+{
+	namespace memory_manager
+	{
 
-const char* OutOfTotalMemory::what() const throw() {
-    return "Insufficent total memory left for memory reservation.";
-}
+		const char*
+		out_of_total_memory::what() const throw ()
+		{
+			return "Insufficent total memory left for memory reservation.";
+		}
 
-MemoryManager* MemoryManager::instance = 0;
+		memory_manager* memory_manager::instance = 0;
 
-MemoryManager::~MemoryManager() {
-    tlsClean();
-    assert(!pthread_mutex_destroy(&reservedBytesMutex));
-}
+		memory_manager::~memory_manager()
+		{
+			tls_clean();
+			assert(!pthread_mutex_destroy(&reserved_bytes_mutex));
+		}
 
-void MemoryManager::reserveBytes(size_t bytes) throw(OutOfTotalMemory) {
-    ScopedMutex rm(&reservedBytesMutex);
+		void
+		memory_manager::reserve_bytes(size_t bytes) throw (out_of_total_memory)
+		{
+			scoped_mutex rm(&reserved_bytes_mutex);
 
-    if (reservedBytes + bytes > limitBytes)
-        throw OutOfTotalMemory();
+			if (reserved_bytes + bytes > limit_bytes)
+				throw out_of_total_memory();
 
-    reservedBytes += bytes;
-}
+			reserved_bytes += bytes;
+		}
 
-void MemoryManager::freeBytes(size_t bytes) throw() {
-    ScopedMutex rm(&reservedBytesMutex);
+		void
+		memory_manager::free_bytes(size_t bytes) throw ()
+		{
+			scoped_mutex rm(&reserved_bytes_mutex);
 
-    assert(bytes <= reservedBytes); // TODO na locku lub w ogóle
+			assert(bytes <= reserved_bytes);
 
-    reservedBytes -= bytes;
-}
+			reserved_bytes -= bytes;
+		}
 
-void MemoryManager::init(const config::global_config& conf) {
-    assert(!instance);
+		void
+		memory_manager::init(const config::global_config& conf)
+		{
+			assert(!instance);
 
-    instance = new MemoryManager(conf);
-}
+			instance = new memory_manager(conf);
+		}
 
-MemoryManager::MemoryManager(const config::global_config& conf):
-reservedBytes(0), limitBytes(conf.memory_manager.initialLimitBytes), defaultSessionLimitBytes(conf.memory_manager.defaultSessionLimitBytes) {
-    pageSize = sysconf(_SC_PAGESIZE);
+		memory_manager::memory_manager(const config::global_config& conf) :
+		reserved_bytes(0), limit_bytes(conf.memory_manager.initialLimitBytes), default_session_limit_bytes(conf.memory_manager.defaultSessionLimitBytes)
+		{
+			page_size = sysconf(_SC_PAGESIZE);
 
-    tlsInit();
-    assert(!pthread_mutex_init(&reservedBytesMutex, 0));
-}
+			tls_init();
+			assert(!pthread_mutex_init(&reserved_bytes_mutex, 0));
+		}
 
-}
+	}
 }

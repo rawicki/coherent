@@ -12,52 +12,66 @@
 #include <pthread.h>
 #include <cassert>
 
-namespace coherent {
-namespace memory_manager {
+namespace coherent
+{
+	namespace memory_manager
+	{
 
-class ScopedRWLockRead: private boost::noncopyable {
-public:
-    ScopedRWLockRead(pthread_rwlock_t* initializedLock) throw(): lock(initializedLock) {
-        assert(!pthread_rwlock_rdlock(lock));
-    }
+		class scoped_rwlock_read : private boost::noncopyable
+		{
+		public:
 
-    ~ScopedRWLockRead() throw() {
-        assert(!pthread_rwlock_unlock(lock));
-    }
+			scoped_rwlock_read(pthread_rwlock_t* initialized_lock) throw () : lock(initialized_lock)
+			{
+				assert(!pthread_rwlock_rdlock(lock));
+			}
 
-private:
-    pthread_rwlock_t* lock;
-};
+			~scoped_rwlock_read() throw ()
+			{
+				assert(!pthread_rwlock_unlock(lock));
+			}
 
-class ScopedRWLockWrite: private boost::noncopyable {
-public:
-    ScopedRWLockWrite(pthread_rwlock_t* initializedLock) throw(): lock(initializedLock) {
-        assert(!pthread_rwlock_wrlock(lock));
-    }
+		private:
+			pthread_rwlock_t* lock;
+		};
 
-    ~ScopedRWLockWrite() throw() {
-        assert(!pthread_rwlock_unlock(lock));
-    }
+		class scoped_rwlock_write : private boost::noncopyable
+		{
+		public:
 
-private:
-    pthread_rwlock_t* lock;
-};
+			scoped_rwlock_write(pthread_rwlock_t* initialized_lock) throw () : lock(initialized_lock)
+			{
+				assert(!pthread_rwlock_wrlock(lock));
+			}
 
-class ScopedMutex: private boost::noncopyable {
-public:
-    ScopedMutex(pthread_mutex_t* initializedMutex) throw(): mutex(initializedMutex) {
-        assert(!pthread_mutex_lock(mutex));
-    }
+			~scoped_rwlock_write() throw ()
+			{
+				assert(!pthread_rwlock_unlock(lock));
+			}
 
-    ~ScopedMutex() throw() {
-        assert(!pthread_mutex_unlock(mutex));
-    }
+		private:
+			pthread_rwlock_t* lock;
+		};
 
-private:
-    pthread_mutex_t* mutex;
-};
+		class scoped_mutex : private boost::noncopyable
+		{
+		public:
 
-}
+			scoped_mutex(pthread_mutex_t* initialized_mutex) throw () : mutex(initialized_mutex)
+			{
+				assert(!pthread_mutex_lock(mutex));
+			}
+
+			~scoped_mutex() throw ()
+			{
+				assert(!pthread_mutex_unlock(mutex));
+			}
+
+		private:
+			pthread_mutex_t* mutex;
+		};
+
+	}
 }
 
 #endif

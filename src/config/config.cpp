@@ -362,10 +362,11 @@ global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) :
 
 //================= memory_manager_sect implementation =======================
 
-global_config::memory_manager_sect::memory_manager_sect(ini_config const& conf):
+global_config::memory_manager_sect::memory_manager_sect(ini_config const& conf) :
 config_section_base("memory_manager", conf),
 initialLimitBytes(this->get_value<uint64_t>("initialLimitBytes")),
-defaultSessionLimitBytes(this->get_value<uint32_t>("defaultSessionLimitBytes")) {
+defaultSessionLimitBytes(this->get_value<uint32_t>("defaultSessionLimitBytes"))
+{
     this->check_no_others();
 }
 

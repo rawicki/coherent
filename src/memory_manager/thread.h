@@ -24,36 +24,46 @@
 #include <pthread.h>
 #include <boost/noncopyable.hpp>
 
-namespace coherent {
-namespace memory_manager {
+namespace coherent
+{
+	namespace memory_manager
+	{
 
-class MemorySession;
+		class memory_sub_session;
 
-/// thread local storage key
-static pthread_key_t tlsKey;
+		/// thread local storage key
+		extern pthread_key_t tls_key;
 
-/// Container for thread-specific data used for memory management.
-class TLSContent: private boost::noncopyable {
-public:
-    TLSContent(): currentSession(0) {}
+		/// Container for thread-specific data used for memory management.
 
-    MemorySession* currentSession;
-};
+		class tls_content : private boost::noncopyable
+		{
+		public:
 
-/// Initializes thread local storage. Should be called before usage of memory manager in threads. Must not be called again before tlsClean.
-void tlsInit();
-/// Deallocates resources for thread local storage. Must not be called when threads are still using memory manager, before tlsInit or twice.
-void tlsClean();
+			tls_content() : current_sub_session(0)
+			{
+			}
 
-/// Initializes thread for usage with memory manager. Must be called in each thread before usage of memory manager in it.
-void memoryThreadInitIfNeeded();
+			memory_sub_session* current_sub_session;
+		};
 
-/// Returns TLS content for current thread.
-inline TLSContent* tls() {
-    return static_cast<TLSContent*>(pthread_getspecific(tlsKey));
-}
+		/// Initializes thread local storage. Should be called before usage of memory manager in threads. Must not be called again before tlsClean.
+		void tls_init();
+		/// Deallocates resources for thread local storage. Must not be called when threads are still using memory manager, before tlsInit or twice.
+		void tls_clean();
 
-}
+		/// Initializes thread for usage with memory manager. Must be called in each thread before usage of memory manager in it.
+		void memory_thread_init_if_needed();
+
+		/// Returns TLS content for current thread.
+
+		inline tls_content*
+		tls()
+		{
+			return reinterpret_cast<tls_content*> (pthread_getspecific(tls_key));
+		}
+
+	}
 }
 
 #endif
