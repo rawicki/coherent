@@ -79,6 +79,7 @@ public:
     ~queue();
     element_ptr_t pop();
     void push(element_ptr_t element_ptr);
+    bool empty();
 };
 
 
@@ -139,6 +140,19 @@ void queue<element_t, container_template, ptr_wrapper_template, allocator_templa
         container.push_back(element_ptr);
     }
     condition.notify_one();
+}
+
+
+template <
+    typename element_t,
+    template <typename, typename> class container_template,
+    template <typename> class ptr_wrapper_template,
+    template <typename> class allocator_template
+    >
+bool queue<element_t, container_template, ptr_wrapper_template, allocator_template>::empty()
+{
+    unique_lock_t lock(mutex);
+    return container.empty();
 }
 
 
