@@ -17,13 +17,17 @@
 # http://www.gnu.org/licenses/.
 
 
-PATHS		:=	codecs encoders misc
+PATHS		:=	encoders ../include/misc ../include/serialization/codecs ../include/serialization/encoders
 HEADERS		:=	$(foreach dir, $(PATHS), $(wildcard $(dir)/*.h))
-INCDIRS		:= -I. -I../include
+INCDIRS		:= -I. -I../include -I../include/misc -I../include/serialization
 LIBS		:= -L../../bin/ -llog -ldebug2 -llog4cxx
 
 all: serialize gen_test venc_test version_test vc_example list_example
 
+headers:
+	@echo $(HEADERS)
+
+.PHONY: headers
 
 serialize: serialize.cpp $(HEADERS)
 	g++ -O3 $(INCDIRS) -o serialize serialize.cpp $(LIBS)
@@ -52,7 +56,7 @@ vc_example: vc_example.cpp $(HEADERS)
 	g++ -O3 $(INCDIRS) -c -o vc_example.o vc_example.cpp
 	g++ -o vc_example vc_example.o $(LIBS)
 
-list_example: list_example.cpp misc/type_list.h
+list_example: list_example.cpp ../include/misc/type_list.h
 	g++ -O3 $(INCDIRS) -c -o list_example.o list_example.cpp
 	g++ -o list_example list_example.o $(LIBS)
 
