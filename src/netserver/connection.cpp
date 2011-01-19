@@ -39,9 +39,8 @@ namespace netserver
 
 connection::connection(server & s)
   : server_(s),
-    socket(s.io_service)  //,
-    // read_observers(),
-    // outgoing_messages()
+    socket(s.io_service),
+    out_queue(socket)
 {
     server_.acceptor.async_accept(socket,
             ::boost::bind(& connection::handle_accept, this, _1));
@@ -72,13 +71,6 @@ void connection::read(
             ::boost::bind(& connection::handle_read, this, read_callback, buffer_ptr, _1, _2));
 }
 
-void connection::write(size_t message_size, message_t data)
-{
-    // TODO: buffering
-    //outgoing_messages.push(data);
-    socket.async_write_some(::boost::asio::buffer(data, message_size),
-            ::boost::bind(& connection::handle_write, this, _1));
-}
 
 void connection::handle_read(
     read_callback_t read_callback,
@@ -95,10 +87,6 @@ void connection::handle_read(
     {
         // TODO: LOG ERROR
     }
-}
-
-void connection::handle_write(const ::boost::system::error_code & error)
-{
 }
 
 

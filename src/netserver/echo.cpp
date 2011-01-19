@@ -42,18 +42,18 @@ void echo_acceptor(connection * conn)
 void t1(connection * conn, join_point::shared_ptr_t join_p)
 {
     ::boost::this_thread::sleep(::boost::posix_time::milliseconds(5000));
-    conn->write(9, (unsigned char *)"t1 done\n");
+    conn->write((unsigned char *)"t1 done\n", 9);
     join_p->join();
 }
 
 void t2(connection * conn)
 {
-    conn->write(16, (unsigned char *)"2 tasks joined\n");
+    conn->write((unsigned char *)"2 tasks joined\n", 16);
 }
 
 void echo_responder(connection * conn, size_t bytes, connection::ptr_buffer_t data)
 {
-    conn->write(bytes, data);
+    conn->write(data, bytes);
     conn->read(MAX_BYTES, ::boost::bind(& echo_responder, conn, _1, _2));
 
     join_point::shared_ptr_t join_p = join_point::create(2, ::boost::bind(& t2, conn));

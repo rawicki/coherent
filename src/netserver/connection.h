@@ -29,6 +29,7 @@
 #include <boost/function.hpp>
 #include <boost/asio.hpp>
 #include "server.h"
+#include "write_queue.h"
 
 
 using ::boost::asio::ip::tcp;
@@ -54,22 +55,28 @@ public:
 private:
     server & server_;
     tcp::socket socket;
-    // TODO: buffering
-    // ::std::queue<read_observer_t> read_observers;
-    // ::std::queue<message_t> outgoing_messages;
+    write_queue out_queue;
+public:
+    connection(server & s);
+    ~connection();
+    void read(size_t message_size, read_callback_t callback);
+    template <typename memory_t>
+    void write(const memory_t * message, ::std::size_t message_size);
+private:
     void handle_read(
             read_callback_t read_callback,
             ptr_buffer_t buffer,
             const ::boost::system::error_code & error,
             size_t bytes_transferred);
-    void handle_write(const ::boost::system::error_code & error);
     void handle_accept(const ::boost::system::error_code & error);
-public:
-    connection(server & s);
-    ~connection();
-    void read(size_t message_size, read_callback_t callback);
-    void write(size_t message_size, message_t data);
 };
+
+
+template <typename memory_t>
+void connection::write(const memory_t * message, ::std::size_t message_size)
+{
+    out_queue.write(message, message_size);
+}
 
 
 }  // namespace netserver
