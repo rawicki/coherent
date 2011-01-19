@@ -89,6 +89,11 @@ void connection::handle_read(
     }
 }
 
+void connection::close()
+{
+    socket.close();
+}
+
 
 }  // namespace netserver
 }  // namespace coherent

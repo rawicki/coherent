@@ -1,4 +1,5 @@
-# (C) Copyright 2010 Rafał Rawicki
+#
+# (C) Copyright 2010 Cezary Bartoszuk, Michał Stachurski, Rafał Rawicki
 #
 # This file is part of CoherentDB.
 #
@@ -17,17 +18,15 @@
 # http://www.gnu.org/licenses/.
 
 set(SOURCES
-    server.cpp
+    ../server.cpp
     main.cpp
-    callback.cpp
-    timeout.cpp
-    connection.cpp
-    write_queue.cpp
-    threadpool.cpp
-    echo.cpp
+    ../callback.cpp
+    ../timeout.cpp
+    ../connection.cpp
+    ../threadpool.cpp
+    ../write_queue.cpp
+    random_data.cpp
 )
 
-add_subdirectory(test)
-add_subdirectory(random_data_server)
-add_executable(netserver ${SOURCES})
-target_link_libraries(netserver config buffercache log debug2 pthread ${CORELIBS})
+add_executable(random_data_server ${SOURCES})
+target_link_libraries(random_data_server config buffercache log debug2 pthread ${CORELIBS})

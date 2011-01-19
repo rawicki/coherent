@@ -65,6 +65,7 @@ public:
     void read(size_t message_size, read_callback_t callback);
     template <typename memory_t>
     void write(const memory_t * message, ::std::size_t message_size, write_callback_t callback);
+    void close();
 private:
     void handle_read(
             read_callback_t read_callback,
