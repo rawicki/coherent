@@ -31,8 +31,7 @@ namespace coherent
 namespace memory_manager
 {
 
-const char*
-out_of_total_memory::what() const throw ()
+const char* out_of_total_memory::what() const throw ()
 {
     return "Insufficent total memory left for memory reservation.";
 }
@@ -45,8 +44,7 @@ memory_manager::~memory_manager()
     assert(!pthread_mutex_destroy(&reserved_bytes_mutex));
 }
 
-void
-memory_manager::reserve_bytes(size_t bytes) throw (out_of_total_memory)
+void memory_manager::reserve_bytes(size_t bytes) throw (out_of_total_memory)
 {
     scoped_mutex rm(&reserved_bytes_mutex);
 
@@ -56,8 +54,7 @@ memory_manager::reserve_bytes(size_t bytes) throw (out_of_total_memory)
     reserved_bytes += bytes;
 }
 
-void
-memory_manager::free_bytes(size_t bytes) throw ()
+void memory_manager::free_bytes(size_t bytes) throw ()
 {
     scoped_mutex rm(&reserved_bytes_mutex);
 
@@ -66,8 +63,7 @@ memory_manager::free_bytes(size_t bytes) throw ()
     reserved_bytes -= bytes;
 }
 
-void
-memory_manager::init(const config::global_config& conf)
+void memory_manager::init(const config::global_config& conf)
 {
     assert(!instance);
 

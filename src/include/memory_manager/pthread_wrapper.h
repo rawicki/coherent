@@ -20,7 +20,6 @@ namespace memory_manager
 class scoped_rwlock_read : private boost::noncopyable
 {
 public:
-
     scoped_rwlock_read(pthread_rwlock_t* initialized_lock) throw () : lock(initialized_lock)
     {
 	assert(!pthread_rwlock_rdlock(lock));
@@ -38,7 +37,6 @@ private:
 class scoped_rwlock_write : private boost::noncopyable
 {
 public:
-
     scoped_rwlock_write(pthread_rwlock_t* initialized_lock) throw () : lock(initialized_lock)
     {
 	assert(!pthread_rwlock_wrlock(lock));
@@ -56,7 +54,6 @@ private:
 class scoped_mutex : private boost::noncopyable
 {
 public:
-
     scoped_mutex(pthread_mutex_t* initialized_mutex) throw () : mutex(initialized_mutex)
     {
 	assert(!pthread_mutex_lock(mutex));

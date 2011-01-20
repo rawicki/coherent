@@ -53,14 +53,12 @@ memory_sub_session::~memory_sub_session()
     assert(!pthread_rwlock_destroy(&alloc_lock));
 }
 
-memory_sub_session*
-memory_sub_session::current()
+memory_sub_session* memory_sub_session::current()
 {
     return tls()->current_sub_session;
 }
 
-void
-memory_sub_session::begin()
+void memory_sub_session::begin()
 {
     activate();
 
@@ -68,8 +66,7 @@ memory_sub_session::begin()
     ++active_threads_count;
 }
 
-void
-memory_sub_session::end()
+void memory_sub_session::end()
 {
     deactivate();
 
@@ -78,8 +75,7 @@ memory_sub_session::end()
 	--active_threads_count;
 }
 
-void
-memory_sub_session::stop()
+void memory_sub_session::stop()
 {
     deactivate();
 
@@ -99,8 +95,7 @@ memory_sub_session::stop()
     }
 }
 
-void
-memory_sub_session::resume()
+void memory_sub_session::resume()
 {
     {
 	scoped_mutex am(&active_threads_mutex);
@@ -121,27 +116,23 @@ memory_sub_session::resume()
     activate();
 }
 
-void
-memory_sub_session::set_current()
+void memory_sub_session::set_current()
 {
     activate();
 }
 
-size_t
-memory_sub_session::get_allocated_bytes() const
+size_t memory_sub_session::get_allocated_bytes() const
 {
     scoped_rwlock_read al(&alloc_lock);
     return allocated_bytes;
 }
 
-memory_session*
-memory_sub_session::get_parent() const
+memory_session* memory_sub_session::get_parent() const
 {
     return parent;
 }
 
-void
-memory_sub_session::internal_init(bool autostart)
+void memory_sub_session::internal_init(bool autostart)
 {
     assert(!pthread_mutex_init(&active_threads_mutex, 0));
     assert(!pthread_rwlock_init(&alloc_lock, 0));
@@ -150,16 +141,14 @@ memory_sub_session::internal_init(bool autostart)
 	begin();
 }
 
-void
-memory_sub_session::activate()
+void memory_sub_session::activate()
 {
     tls_content* tlsContent = tls();
 
     tlsContent->current_sub_session = this;
 }
 
-void
-memory_sub_session::deactivate()
+void memory_sub_session::deactivate()
 {
     tls_content* tlsContent = tls();
 
@@ -167,8 +156,7 @@ memory_sub_session::deactivate()
 	tlsContent->current_sub_session = 0;
 }
 
-byte*
-memory_sub_session::allocate(size_t needed_bytes)
+byte* memory_sub_session::allocate(size_t needed_bytes)
 {
     size_t page_size = memory_manager::instance->get_page_size();
 
@@ -230,8 +218,7 @@ memory_sub_session::allocate(size_t needed_bytes)
     return res;
 }
 
-void
-memory_sub_session::deallocate(byte* p, size_t bytes)
+void memory_sub_session::deallocate(byte* p, size_t bytes)
 {
     // TODO asercje na bytes
 
@@ -264,8 +251,7 @@ memory_sub_session::deallocate(byte* p, size_t bytes)
     }
 }
 
-void
-memory_sub_session::add_alloc(byte* p, size_t bytes)
+void memory_sub_session::add_alloc(byte* p, size_t bytes)
 {
     allocated_bytes += bytes;
     allocs.insert(std::make_pair(p, bytes));
@@ -274,8 +260,7 @@ memory_sub_session::add_alloc(byte* p, size_t bytes)
     parent->allocs.insert(std::make_pair(p, this));
 }
 
-void
-memory_sub_session::remove_alloc(byte* p)
+void memory_sub_session::remove_alloc(byte* p)
 {
     std::map<byte*, size_t>::iterator i = allocs.find(p);
     assert(i != allocs.end());
@@ -289,8 +274,7 @@ memory_sub_session::remove_alloc(byte* p)
     parent->allocs.insert(std::make_pair(p, this));
 }
 
-std::pair<size_t, byte*>
-memory_sub_session::smallest_sufficent_free_small_chunk(size_t bytes)
+std::pair<size_t, byte*> memory_sub_session::smallest_sufficent_free_small_chunk(size_t bytes)
 {
     std::set<std::pair<size_t, byte*> >::iterator i = free_small_chunks_inv.upper_bound(std::make_pair(bytes, (byte*) 0));
 
@@ -300,14 +284,12 @@ memory_sub_session::smallest_sufficent_free_small_chunk(size_t bytes)
 	return *i;
 }
 
-void
-memory_sub_session::add_small_alloc(byte* p, size_t bytes)
+void memory_sub_session::add_small_alloc(byte* p, size_t bytes)
 {
     small_allocs.insert(std::make_pair(p, bytes));
 }
 
-void
-memory_sub_session::remove_small_alloc(byte* p)
+void memory_sub_session::remove_small_alloc(byte* p)
 {
     std::set<std::pair<byte*, size_t> >::const_iterator i = small_allocs.upper_bound(std::make_pair(p, 0));
     assert(i != small_allocs.end());
@@ -316,30 +298,26 @@ memory_sub_session::remove_small_alloc(byte* p)
     small_allocs.erase(i);
 }
 
-bool
-memory_sub_session::is_small_alloc(byte* p) const
+bool memory_sub_session::is_small_alloc(byte* p) const
 {
     std::set<std::pair<byte*, size_t> >::iterator sa = small_allocs.upper_bound(std::make_pair(p, 0));
 
     return sa != small_allocs.end() && sa->first == p;
 }
 
-void
-memory_sub_session::add_free_small_chunk(byte* p, size_t bytes)
+void memory_sub_session::add_free_small_chunk(byte* p, size_t bytes)
 {
     free_small_chunks.insert(std::make_pair(p, bytes));
     free_small_chunks_inv.insert(std::make_pair(bytes, p));
 }
 
-void
-memory_sub_session::remove_free_small_chunk(byte* p)
+void memory_sub_session::remove_free_small_chunk(byte* p)
 {
     free_small_chunks_inv.erase(std::make_pair(free_small_chunks[p], p));
     free_small_chunks.erase(p);
 }
 
-std::pair<byte*, size_t>
-memory_sub_session::free_small_chunk_alloc(byte* p) const
+std::pair<byte*, size_t> memory_sub_session::free_small_chunk_alloc(byte* p) const
 {
     std::map<byte*, size_t>::const_iterator chunk_alloc = allocs.upper_bound(p);
     assert(chunk_alloc != allocs.begin());
@@ -348,8 +326,7 @@ memory_sub_session::free_small_chunk_alloc(byte* p) const
     return *chunk_alloc;
 }
 
-std::pair<byte*, size_t>
-memory_sub_session::add_merge_remove_free_small_chunk(byte* p, size_t bytes)
+std::pair<byte*, size_t> memory_sub_session::add_merge_remove_free_small_chunk(byte* p, size_t bytes)
 {
     std::pair<byte*, size_t> chunk_alloc = free_small_chunk_alloc(p);
 

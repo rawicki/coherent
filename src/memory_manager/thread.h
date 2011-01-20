@@ -57,8 +57,7 @@ void memory_thread_init_if_needed();
 
 /// Returns TLS content for current thread.
 
-inline tls_content*
-tls()
+inline tls_content* tls()
 {
     return reinterpret_cast<tls_content*> (pthread_getspecific(tls_key));
 }

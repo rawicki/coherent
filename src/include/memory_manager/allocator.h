@@ -92,8 +92,7 @@ public:
     {
     }
 
-    pointer
-    allocate(size_type n, allocator<void>::const_pointer hint = 0)
+    pointer allocate(size_type n, allocator<void>::const_pointer hint = 0)
     {
 	if (n == 0)
 	    return 0;
@@ -122,8 +121,7 @@ public:
 	return res;
     }
 
-    void
-    deallocate(pointer ptr, size_type n)
+    void deallocate(pointer ptr, size_type n)
     {
 	if (n == 0)
 	    return;
@@ -152,8 +150,7 @@ public:
 	//        fprintf(stderr, "\n");
     }
 
-    size_type
-    max_size() const throw ()
+    size_type max_size() const throw ()
     {
 	memory_session* ms = memory_session::current();
 	assert(ms);
@@ -165,9 +162,7 @@ public:
     }
 
 private:
-
-    size_type
-    max_size_no_lock(memory_session* ms) const throw ()
+    size_type max_size_no_lock(memory_session* ms) const throw ()
     {
 	assert(ms->limit_bytes <= std::allocator<T>::max_size());
 
@@ -191,23 +186,20 @@ bool operator !=(const allocator<T1>&, const allocator<T2>&) throw ()
 }
 
 template <typename T>
-allocator<T>&
-allocator_instance()
+allocator<T>& allocator_instance()
 {
     static allocator<T> instance;
     return instance;
 }
 
 template <typename T>
-T*
-allocate(size_t size)
+T* allocate(size_t size)
 {
     return allocator<T > ().allocate(size);
 }
 
 template <typename T>
-void
-deallocate(T* p, size_t size)
+void deallocate(T* p, size_t size)
 {
     return allocator<T > ().deallocate(p, size);
 }

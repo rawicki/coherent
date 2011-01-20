@@ -61,14 +61,12 @@ memory_session::~memory_session()
     // TODO możliwa asercja na wyczyszczenie pamięci
 }
 
-memory_session*
-memory_session::current()
+memory_session* memory_session::current()
 {
     return memory_sub_session::current()->get_parent();
 }
 
-void
-memory_session::begin()
+void memory_session::begin()
 {
     memory_thread_init_if_needed();
 
@@ -80,8 +78,7 @@ memory_session::begin()
     ++active_threads_count;
 }
 
-void
-memory_session::end()
+void memory_session::end()
 {
     deactivate();
 
@@ -90,8 +87,7 @@ memory_session::end()
 	--active_threads_count;
 }
 
-void
-memory_session::stop()
+void memory_session::stop()
 {
     deactivate();
 
@@ -107,8 +103,7 @@ memory_session::stop()
     --active_threads_count;
 }
 
-void
-memory_session::resume()
+void memory_session::resume()
 {
     {
 	scoped_mutex am(&active_threads_mutex);
@@ -119,35 +114,30 @@ memory_session::resume()
     default_sub_session->resume();
 }
 
-void
-memory_session::set_default_current()
+void memory_session::set_default_current()
 {
     default_sub_session->set_current();
 }
 
-size_t
-memory_session::get_limit_bytes() const
+size_t memory_session::get_limit_bytes() const
 {
     scoped_rwlock_read ll(&limit_lock);
     return limit_bytes;
 }
 
-void
-memory_session::set_limit_bytes(size_t bytes)
+void memory_session::set_limit_bytes(size_t bytes)
 {
     scoped_rwlock_write ll(&limit_lock);
     limit_bytes = bytes;
 }
 
-size_t
-memory_session::get_allocated_bytes() const
+size_t memory_session::get_allocated_bytes() const
 {
     scoped_rwlock_read al(&alloc_lock);
     return allocated_bytes;
 }
 
-void
-memory_session::internal_init(bool autostart)
+void memory_session::internal_init(bool autostart)
 {
     memory_manager::instance->reserve_bytes(limit_bytes);
 
@@ -162,8 +152,7 @@ memory_session::internal_init(bool autostart)
 	begin();
 }
 
-void
-memory_session::activate()
+void memory_session::activate()
 {
     tls_content* tls_content = tls();
 
@@ -174,8 +163,7 @@ memory_session::activate()
     tls_content->current_sub_session = default_sub_session;
 }
 
-void
-memory_session::deactivate()
+void memory_session::deactivate()
 {
     tls_content* tls_content = tls();
 
