@@ -1,0 +1,399 @@
+(C) Copyright 2010 Tomasz Zolnowski
+
+This file is part of CoherentDB.
+
+CoherentDB is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+CoherentDB is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with CoherentDB. If not, see
+http://www.gnu.org/licenses/.
+
+
+Task (in polish, from site http://marek.dopiera.pl/project_ideas.txt):
+
+2. Zaimplementowaæ generyczn± serializacjê danych.
+Zadanie przeznaczone jest dla 2-3 (raczej 3) osób.
+Nale¿y zaimplementowaæ zestaw klas, które umo¿liwi± zamianê obiektów w ci±g
+bajtów i odwrotnie.
+
+Wymagania:
+-szybko¶æ
+-mo¿liwo¶æ serializacji dowolnych klas
+-predefiniowana serializacja dla standardowych klas stl-owych (pary, mapy,
+ napisy, wektory, ...)
+-mo¿liwo¶æ serializacji zarówno wirtualnie (maj±c wska¼nik do nadklasy) jak i
+ bezpo¶rednio, z unikniêciem przej¶cia przez tablicê funkcji wirtualnych
+-mo¿liwo¶æ serializacji i deserializacji poprzez bezmy¶ln± kopiê pamiêci
+ zajmowanej przez obiekt; powinna tu byæ zaimplementowana mo¿liwo¶æ
+ poprawnej, powolniejszej deserializacji na maszynach z innym porz±dkiem bajtów
+-mo¿liwo¶æ serializacji do innego porz±dku bajtów
+-wsparcie dla wersji, czyli danie programi¶cie mo¿liwo¶ci napisania kodu
+ deserializuj±cego dane w innej wersji
+-wsparcie dla wielu strumieni danych - pamiêæ, deskryptor (z buforowaniem),
+ zaimplementowana najlepiej przez u¿ycie template'ów zamiast dziedziczenia
+-kod u¿ywaj±cy serializowanych klas, który nie u¿ywa serializacji nie powinien
+ wymagaæ wci±gniêcia nag³ówków serializacji
+
+Rozwi±zanie nale¿y przetestowaæ pod k±tem wydajno¶ci (alokacje pamiêci, czas
+procesora, zu¿ycie pamiêci, lokalno¶æ) i zoptymalizowaæ w miarê wydajno¶ci.
+Wskazane jest pos³u¿enie siê narzêdziami do ¶ledzenia alokacji, czasu spêdzonego
+w konkretnych funkcjach, wykorzystania cache-a procesora. (google perftools,
+cachegrind).
+
+
+1. Solution description:
+
+First decision ? divide objects into two groups:
+a) codecs:
+template <typename T> struct codec
+{
+    template <typename Encoder> static void encode(Encoder&, const T&);
+    template <typename Decoder> static void decode(Decoder&, T&);
+}
+b) encoders/decoders
+template <Codec> struct encoder
+{
+    template <typename T> encoder& operator() (const T&);
+    void write_char(char);
+}
+Note 1: decoder works in similar way.
+Note 2: encoder - how usually operator()(x) is implemented?
+{
+    codec<T>::encode(*this, x); return *this;
+}
+
+
+- how to use it?
+    std::vector<char> buf;
+    buffer_encoder<little_endian_codec> enc(buf);
+    enc(uint32_t(15))(std::string("hello"))(int16_t(-1));
+
+- definition of standard codecs:
+partial specialization for basic STL structures, then use it in a proper codec;
+integers defined with simple arithmetic (checked loops are perfectly unrolled)
+default: x.for_each(enc);
+
+- how to make our class/struct serializable?
+it must own:
+    template <typename F> void for_each(F & f) [const] {...}
+so struct may be serializable, and it is fully independent from serialization
+headers; [const] defines is it encoding or decoding
+class should be default constructible
+
+
+- now we add optimizations:
+extend interface of encoder/decoder with additional method:
+    void memcpy(const void * src, size_t n);
+
+- to create optimized codec we use sth like this:
+template <template <class> class Codecs>
+struct make_codec_with_default_optimizers
+{
+    template <typename T> struct value : public default_optimizer<Codecs, T> {}
+};
+where default_optimizer is set of boost::mpl methods, that for some simple
+types defines new optimized codecs using memcpy (e.g. string, vector<pod>,
+[u]int64_t)
+
+little sum up:
+- advantages
+    efficiency - for sure it is fast (only templates, everythin can be inlined,
+    configurability - we can setup own class combining codecs with encoders,
+    simplicity - in external usage, just only what is really needed
+- disadvantages
+    everything is defined in headers,
+    combined classes have different types (and no base class), for instance
+        encoder<little_endian> and encoder<big_endian>
+    currently no mention about virtual classes (there's some problems?)
+
+
+2. Virtual class serialization:
+
+little misc helper:
+- type list, with simple definition (no need for internal typedefs etc)
+    struct list_head {};
+    template <typename This, typename Next> struct list_elem {};
+- how to define type list?
+    make_listX to make it easier,
+    from the other way: This - current type, Next - list tail (next list_elem)
+- some useful stuff to work with type lists:
+    template <template <class> class F, typename List> struct list_apply;
+    template <typename List1, typename List2> struct list_join;
+    template <typename F, typename List> struct list_apply_fn;
+
+- virtual_class
+basic problem ? we don't know type of encoder/decoder, for_each is template;
+and there's nothing like template<typename T> virtual void foo();
+so simple solution with virtual for_each() doesn't work...
+
+
+- how we solve it?
+
+First elementary solution:
+- we have our class hierarchy, in every class defined standard for_each,
+- so we can serialize directly, omitting virtuality,
+- base class additionally gives:
+    typedef [e.g. int32_t] TagType;
+    virtual tag_type get_tag() const = 0;
+in derived classes:
+    TAG (e.g. static const, or enum)
+    virtual TagType get_tag() const { return TAG; }
+
+Above definitions are complete, so we can pass into declaring virtual_class:
+    typedef Virtual<BaseType, TypeList [,PointerPolicy]> my_virtual;
+This class already has for_each. Pointer accordant to policy is kept as field.
+
+encoder ? get_tag(); we browse our type list to find proper TAG, then
+    static_cast and direct encoding (without virtual),
+    there's one virtual call get_tag()
+decoder ? we read TAG, then we browse type list, default construct, static_cast
+    and direct decoding
+    there's no virtual call here
+
+advantages:
+    - quite simple solution and fast for small number of classes in hierarchy,
+    - only one virtual call in encoder and no such calls in decoder,
+disadvantages:
+    - we have to keep my_virtual instead of pointer etc.
+    - limited template depth (type list might be too long),
+
+
+We can get rid of my_virtual as a field in our class. We keep it in our way
+(shared_ptr, auto_ptr, T*). In for_each we use Virtual::helper struct, direct
+cast before encoding. Usage example:
+    typedef [...] virtual_A;    //Virtual with pointer_policy, base, type_list
+    typedef Virtual_A::Helper virtual_AH;       //typedef for nested Helper
+    A * ptr = new A1(x,y,z);    //create new object (A1 inherits from A)
+    virtual_AH(enc, ptr);       //encode, it works also in for_each()
+
+
+3. Virtual class improvements:
+
+Second solution, small modifications:
+
+in first solution we have defined fold to pass type list:
+    typename <typename F, typename TypeList> struct fold;
+specialization:
+    struct Fold<F, list_head> - throw exception, class was not found
+    struct Fold<F, list_elem<Head, Tail> > - with defined operator(),
+        and getting functor F encoding/decoding and returning to Virtual
+        calling f.template process<Head>()
+
+next misc helper:
+- type tree :), in the same way as list type:
+    struct tree_leaf {};
+    template <typename This, typename LeftNode, typename RightNode>
+    struct tree_node;
+
+we can specialize the same fold class for tree structure, but this time we call
+f.template processNode<Node>() returning state - TAG is less/equal/greater
+and then we choose a proper subtree
+
+- we get rid of troubles with template depth (log for types count); fold is now
+logarithmic,
+- type tree can be given in place of previous type_list, and everything should
+work - what's more solution is backward compatible - as this template parameter
+we can define both list or tree (and then fold function specialization will be
+choose correctly),
+- there's tree checker available, which can work statically during compilation,
+if only tag_type==enum we can even use BOOST_STATIC_ASSERT(), otherwise code
+works perfectly in runtime (just assert bool checker::ok)
+
+- solution now can be broken while linking because of too long tree name mangle
+- and we wonder about next optimization - is it possible to get constant time?
+
+
+Third solution, create object factory...
+exactly factory of object factory because of unknown encoder functor type.
+
+firstly:
+    template <typename Factory> struct object_factory;
+works as type container, we can now specialize fold<F,object_factory<Factory> >
+in class Virtual we define next two methods: processChecked/processUnchecked.
+what is done in operator() in Fold?
+    typename Factory::template Factory<F>() (f);
+And how to define factory (it is provided by user)?
+    struct factory_A {
+        template <typename F> struct Factory {
+            static const struct CallBacks callbacks;
+            void operator() (F & f) { callbacks.go(f); }
+        };
+    };
+callbacks initialization:
+    e.g: cbs_[1] = boost::bind(& F::template processChecked<A1>, _1);
+call:
+    e.g.: void go(F & f) const { cbs_[f.tag_] (f); }
+
+What's next? maybe ObjectFactory generated from type list? :)
+
+
+4. Virtual encoder/decoder.
+
+There's one problem left, which I decided to solve.
+Actually enc<little_endian> and enc<big_endian> are two different types.
+
+I would like that scenario below works:
+    //firstly I create any from types above, maybe file_encoder, whatever...
+    AbstractEncoder enc = ChooseEncoder();
+    //next I can encode some objects
+    enc(a1)(a2);
+    //and then I can push enc to some function (which is independent from
+    //enc type - it's not a template of enc) - so we can enclose foo in other
+    //compilation unit etc.
+    foo(enc);
+
+First thought - foo<EncoderType>, but source will be unrolled for every encoder
+type - which can be bad idea with heavy foo() function.
+And next issue/usecase? when we want to decide in runtime and choose source or
+destination of serialization (e.g. in memory or swap to disk).
+Effective solution requires similar tricks as in Virtual (e.g. object factory),
+but this is ugly as we can take advantage of virtuality in c++.
+
+
+Solution:
+Let's assume, that we know list of encoded/decoded types.
+We would like to enclose serialization in certain compilation unit and provide
+proper interface.
+Moreover we will use pimpl (Pointer to Implementation), according to scheme:
+
+ class_abs ? abstract base class for next implementation (only pure virtual)
+class_type ? keeping pointer to implementation, it's not abstract class, in
+        fact only external interface; mapped methods from implementation
+class_impl ? proper implementation, in our case it would be fine to think
+        about general creator (from e.g. buffer_encoder<little_endian> etc)
+
+Those three typedefs will be enclosed in class_set (pimpl_generator).
+For serialization we need two sets: for encoders and decoders.
+
+Details of first attempt:
+limited only to one group - encoders:
+we start with:
+    template <typename TypeList> struct create_encoder_set;
+where TypeList is list of types we want to encode. we fold this list creating:
+  class_abs: using inheritancea, combining classes:
+            template <typename T> struct virtual_encoder_function {
+                    virtual void operator() (const T&) = 0;
+            };
+  class_type: also with help of inheritance; with constructors getting impl_ptr
+        (default constructor, class_abs*, boost::shared_ptr<class_abs>);
+        it's important to call proper method (virtual can't be over overloaded)
+            void encode(const Current& x) {
+                    ((virtual_encoder_function<Current>&)(*Super::impl_))(x);
+                }
+        definition at level of proper class (unfortunately simple inheritance
+        doesn't work, only last operator() would be available which drives to
+        cast error):
+            template <typename T> class_type& operator() (const T& x) {
+                    find_class_super<class_abs, TypeList, T>::Type::encode(x);
+                    return *this;
+                }
+        here there's one issue - we must tell to compiler which method - from
+        which base class - is used, and that's why find_class_super.
+  class_impl: firstly simple version
+            template <typename Encoder> struct create_impl;
+        solved with inheritance, at the end out class_abs (we must implement
+        methods of this class); next class for keeping reference to encoder
+        (constructor enc&); then consecutively classes with simple
+        implementation:
+            virtual void operator() (const Current& x) { enc_(x); }
+        I used cxxabi and typeinfo to check if proper methods was chosen for
+        given encoded types;
+
+Version for Decoder was created in extremely primitive way... just copy of code
+above and change s/Encoder/Decoder/ and delete some const in `const Current&'.
+
+imho source is at this moement really interesting; so idea ? make pimpl
+generator more general with every differences done with policies (or similar
+ways) ? gives lot of doubts related to readability and further development...
+
+
+5. Versioning:
+
+Let's take scenario of project development - to certain class (serializable)
+we add new field. We want to be able to encode new version (perhaps only this
+one), and correctly decode also archive data in a few versions.
+
+Solution must be obviously connected with for_each in struct ? this is the only
+sensible place in the library (in fact this is place defined by user, but from
+here all fields are visible, so putting here any versioning system seems to
+simply make sense).
+
+
+We implement something like we can find in boost::serialization. Optionally
+it's possible to define method
+    template <typename F> void for_each(F & f, uint32_t version) {...}
+global version is supplied from outside. case, when we want to read version
+with every object is trivial and solvable with standard for_each.
+
+Some examples:
+1) if (v>2) f(x_); else x_=7;              //default value
+2) if (v>=1) f(y_);                        /new field
+3) if (v<1) {f(a);f(b);} else {f(b);f(a);} //field order
+4) if (v>3) f(z, v);                       //pass version to decode next object
+
+Versions must be supported in other layers. Fortunately main classes are
+templates, so we don't need to define everything - it's required only when
+used.
+
+Layer of encoder/decoder, e.g:
+    template <typename T> decoder& operator() (T & x, uint32_t v) {
+        codec<T>::decode(*this, x, v); return *this;
+    }
+Layer of codecs:
+    standard codecs with no versions (user is able to define his own codecs),
+    for structures we add:
+    template <typename Encoder>
+    static void encode(Encoder& enc, const T& t, uint32_t v) {
+        t.forEach(enc, v);
+    }
+    which is used on demand
+Usage:
+    encoder enc;
+    enc(a, 4)(b)(c, 3);
+    //encode A with version 4, b in default version, c with version 3
+
+
+6. General pimpl.
+
+With introducing those versioning system, there are minimal changes that touch
+create_pimpl. I decided to benefit from this changes and I decided to rewrite
+PImplGenerator. Common parts for decoders and encoders were gathered in one
+place creating just PImplGenerator, which is template class getting list of
+types and some policies:
+  VirtualFnTmpl ? virtual function creater,
+      Qualifier ? static functor adding required [const][&ref],
+  TypeExtractor ? extract proper type, because type list may contain some
+            not serializable wrapped elements (described below),
+
+With this generator it's easy to define previous encoder_set and decoder_set.
+Previous interface stayed nearly without changes (some ::Type and headers).
+New policy for implementation creater was added (encoder can be kept as
+a reference, as a field, or any other way defined by user)
+
+Versioning support: list can store simple types (works as previous version),
+or types in dedicated containers; with folding list proper specialization
+takes place (thanks to earlier partial specialization, which choose proper
+behaviour for each type). And so we can define:
+    typedef make_list3<std::string, Version<A>, Both<B> >::value my_list;
+which unrolls in class_set to encoder/decoder set, where:
+    string is processed without any versions, objects of class A only with
+    given version (no defaul available), and B in both ways.
+
+
+7. Files:
+src/serialization   - some examples, old files and tests
+src/include         - main part in serialization subdir (codecs, encoders)
+                      and a few files in misc dir (type list/tree, virtual
+                      class, pimpl_generator and other simple tools)
+
+
+Tomasz Zolnowski, serialization project, as a part of CoherentDB, ZBD 2010/11
+
