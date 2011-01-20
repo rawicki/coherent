@@ -30,66 +30,66 @@
 
 namespace coherent
 {
-	namespace memory_manager
-	{
+namespace memory_manager
+{
 
-		typedef char byte;
-		class memory_session;
+typedef char byte;
+class memory_session;
 
-		class memory_sub_session : private boost::noncopyable
-		{
-		public:
-			memory_sub_session(bool autostart = true);
-			memory_sub_session(memory_session* session, bool autostart = false);
-			~memory_sub_session();
+class memory_sub_session : private boost::noncopyable
+{
+public:
+    memory_sub_session(bool autostart = true);
+    memory_sub_session(memory_session* session, bool autostart = false);
+    ~memory_sub_session();
 
-			static memory_sub_session* current();
+    static memory_sub_session* current();
 
-			void begin();
-			void end();
-			void stop();
-			void resume();
-			void set_current();
+    void begin();
+    void end();
+    void stop();
+    void resume();
+    void set_current();
 
-			size_t get_allocated_bytes() const;
-			memory_session* get_parent() const;
+    size_t get_allocated_bytes() const;
+    memory_session* get_parent() const;
 
-		private:
-			void internal_init(bool autostart);
-			void activate();
-			void deactivate();
+private:
+    void internal_init(bool autostart);
+    void activate();
+    void deactivate();
 
-			// TODO napisać jakie locki potrzebne
-			byte* allocate(size_t needed_bytes);
-			void deallocate(byte* p, size_t bytes);
-			void add_alloc(byte* p, size_t bytes);
-			void remove_alloc(byte* p);
-			std::pair<size_t, byte*> smallest_sufficent_free_small_chunk(size_t bytes);
-			void add_small_alloc(byte* p, size_t bytes);
-			void remove_small_alloc(byte* p);
-			bool is_small_alloc(byte* p) const;
-			void add_free_small_chunk(byte* p, size_t bytes);
-			void remove_free_small_chunk(byte* p);
-			std::pair<byte*, size_t> free_small_chunk_alloc(byte* p) const;
-			std::pair<byte*, size_t> add_merge_remove_free_small_chunk(byte* p, size_t bytes);
+    // TODO napisać jakie locki potrzebne
+    byte* allocate(size_t needed_bytes);
+    void deallocate(byte* p, size_t bytes);
+    void add_alloc(byte* p, size_t bytes);
+    void remove_alloc(byte* p);
+    std::pair<size_t, byte*> smallest_sufficent_free_small_chunk(size_t bytes);
+    void add_small_alloc(byte* p, size_t bytes);
+    void remove_small_alloc(byte* p);
+    bool is_small_alloc(byte* p) const;
+    void add_free_small_chunk(byte* p, size_t bytes);
+    void remove_free_small_chunk(byte* p);
+    std::pair<byte*, size_t> free_small_chunk_alloc(byte* p) const;
+    std::pair<byte*, size_t> add_merge_remove_free_small_chunk(byte* p, size_t bytes);
 
-			template <typename T>
-			friend class allocator;
+    template <typename T>
+    friend class allocator;
 
-			size_t active_threads_count;
-			mutable pthread_mutex_t active_threads_mutex;
+    size_t active_threads_count;
+    mutable pthread_mutex_t active_threads_mutex;
 
-			size_t allocated_bytes;
-			std::map<byte*, size_t> allocs;
-			std::set<std::pair<byte*, size_t> > small_allocs;
-			std::map<byte*, size_t> free_small_chunks;
-			std::set<std::pair<size_t, byte*> > free_small_chunks_inv;
-			mutable pthread_rwlock_t alloc_lock;
+    size_t allocated_bytes;
+    std::map<byte*, size_t> allocs;
+    std::set<std::pair<byte*, size_t> > small_allocs;
+    std::map<byte*, size_t> free_small_chunks;
+    std::set<std::pair<size_t, byte*> > free_small_chunks_inv;
+    mutable pthread_rwlock_t alloc_lock;
 
-			memory_session * const parent;
-		};
+    memory_session * const parent;
+};
 
-	}
+}
 }
 
 #endif

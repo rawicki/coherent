@@ -33,58 +33,58 @@
 
 namespace coherent
 {
-	namespace memory_manager
-	{
+namespace memory_manager
+{
 
-		typedef char byte;
-		class memory_sub_session;
+typedef char byte;
+class memory_sub_session;
 
-		class memory_session : private boost::noncopyable
-		{
-		public:
-			memory_session(bool autostart = true);
-			memory_session(size_t starting_limit_bytes, bool autostart = true);
-			~memory_session();
+class memory_session : private boost::noncopyable
+{
+public:
+    memory_session(bool autostart = true);
+    memory_session(size_t starting_limit_bytes, bool autostart = true);
+    ~memory_session();
 
-			static memory_session* current();
+    static memory_session* current();
 
-			void begin();
-			void end();
-			void stop();
-			void resume();
-			void set_default_current();
+    void begin();
+    void end();
+    void stop();
+    void resume();
+    void set_default_current();
 
-			size_t get_limit_bytes() const;
-			void set_limit_bytes(size_t bytes);
-			size_t get_allocated_bytes() const;
+    size_t get_limit_bytes() const;
+    void set_limit_bytes(size_t bytes);
+    size_t get_allocated_bytes() const;
 
-		private:
-			void internal_init(bool autostart);
-			void activate();
-			void deactivate();
+private:
+    void internal_init(bool autostart);
+    void activate();
+    void deactivate();
 
-			template <typename T>
-			friend class allocator;
+    template <typename T>
+    friend class allocator;
 
-			friend class memory_sub_session;
+    friend class memory_sub_session;
 
-			size_t active_threads_count;
-			mutable pthread_mutex_t active_threads_mutex;
+    size_t active_threads_count;
+    mutable pthread_mutex_t active_threads_mutex;
 
-			size_t limit_bytes;
-			mutable pthread_rwlock_t limit_lock;
+    size_t limit_bytes;
+    mutable pthread_rwlock_t limit_lock;
 
-			size_t allocated_bytes;
-			std::map<byte*, memory_sub_session*> allocs;
-			mutable pthread_rwlock_t alloc_lock;
+    size_t allocated_bytes;
+    std::map<byte*, memory_sub_session*> allocs;
+    mutable pthread_rwlock_t alloc_lock;
 
-			memory_sub_session* default_sub_session;
+    memory_sub_session* default_sub_session;
 
-			std::set<memory_sub_session*> sub_sessions;
-			mutable pthread_rwlock_t sub_sessions_lock;
-		};
+    std::set<memory_sub_session*> sub_sessions;
+    mutable pthread_rwlock_t sub_sessions_lock;
+};
 
-	}
+}
 }
 
 #endif

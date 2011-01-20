@@ -24,39 +24,40 @@
 
 namespace coherent
 {
-	namespace memory_manager
-	{
+namespace memory_manager
+{
 
-		pthread_key_t tls_key;
+pthread_key_t tls_key;
 
-		void
-		memory_thread_clean(void* tls)
-		{
-			delete reinterpret_cast<tls_content*> (tls);
-		}
+void
+memory_thread_clean(void* tls)
+{
+    delete reinterpret_cast<tls_content*> (tls);
+}
 
-		void
-		tls_init()
-		{
-			assert(!pthread_key_create(&tls_key, memory_thread_clean));
-		}
+void
+tls_init()
+{
+    assert(!pthread_key_create(&tls_key, memory_thread_clean));
+}
 
-		void
-		tls_clean()
-		{
-			assert(!pthread_key_delete(tls_key));
-		}
+void
+tls_clean()
+{
+    assert(!pthread_key_delete(tls_key));
+}
 
-		void
-		memory_thread_init_if_needed()
-		{
-			tls_content* tlsc = tls();
+void
+memory_thread_init_if_needed()
+{
+    tls_content* tlsc = tls();
 
-			if (!tlsc) {
-				tlsc = new tls_content;
-				assert(!pthread_setspecific(tls_key, tlsc));
-			}
-		}
+    if (!tlsc)
+    {
+	tlsc = new tls_content;
+	assert(!pthread_setspecific(tls_key, tlsc));
+    }
+}
 
-	}
+}
 }
