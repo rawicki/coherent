@@ -67,7 +67,7 @@ public:
 		char * buf,
 		uint32_t size,
 		uint32_t off
-	);
+	) const;
 	inline void write(
 		char const * buf,
 		uint32_t size,
@@ -117,9 +117,9 @@ void multi_buffer::read(
 	char * buf,
 	uint32_t size,
 	uint32_t off
-)
+) const
 {
-	this->do_rw<true>(buf, size, off);
+	const_cast<multi_buffer*>(this)->do_rw<true>(buf, size, off);
 }
 
 void multi_buffer::write(

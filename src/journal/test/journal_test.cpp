@@ -34,6 +34,15 @@ using namespace log4cxx;
 using namespace coherent::config;
 using namespace coherent::log;
 
+
+void in_mem_journal_simple()
+{
+	LOG(INFO, "===== in_mem_journal_simple");
+	in_mem_journal j;
+	sync_journal_wrapper sj(j);
+
+}
+
 int start_test(const int argc, const char *const *const argv)
 {
 	scoped_test_enabler test_setup(argc, argv);
