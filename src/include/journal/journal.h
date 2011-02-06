@@ -49,12 +49,12 @@ public:
 	{
 		virtual void insert_success(
 			owner_id_t owner,
-			util::multi_buffer & buf,
+			util::multi_buffer const & buf,
 			handle_t handle
 			) throw() = 0;
 		virtual void insert_failure(
 			owner_id_t owner,
-			util::multi_buffer & buf,
+			util::multi_buffer const & buf,
 			int err
 			) throw() = 0;
 	};
@@ -82,13 +82,13 @@ public:
 	};
 
 	virtual void insert(
-		owner_id_t,
+		owner_id_t owner,
 		util::multi_buffer const & buf,
 		insert_cb & cb
 		) throw() = 0;
 
 	virtual void erase(
-		owner_id_t,
+		owner_id_t owner,
 		handle_t handle,
 		erase_cb & erase
 		) throw() = 0;

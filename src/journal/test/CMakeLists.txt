@@ -23,6 +23,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${TEST_BIN_
 add_library(journal_mock journal_mocks.cpp)
 
 add_executable(journal_test journal_test.cpp)
-target_link_libraries(journal_test config log debug2 util journal journal_mock ${CORELIBS})
+target_link_libraries(journal_test config log debug2 journal_mock journal util ${CORELIBS})
 add_test(journal_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/journal_test ${TEST_SUFFIX})
 
