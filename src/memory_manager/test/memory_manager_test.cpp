@@ -42,8 +42,7 @@ static const int sorted_bytes = 4 * 1024 * 1024;
 // total memory usage for writer <= 2 * writer_bytes
 // total memory usage for mergesort < threads_count * sorted_bytes * (5 + ceil(lg sorting_threads_count))
 
-void*
-writer(void*)
+void* writer(void*)
 {
     memory_session ms;
 
@@ -78,8 +77,7 @@ writer(void*)
     return 0;
 }
 
-void
-merge(int* begin, int* end, int* target)
+void merge(int* begin, int* end, int* target)
 {
     const int len = end - begin;
     int* left = begin;
@@ -101,8 +99,7 @@ merge(int* begin, int* end, int* target)
     }
 }
 
-void
-merge_sort(int* begin, int* end, memory_session* ms)
+void merge_sort(int* begin, int* end, memory_session* ms)
 {
     if (end - begin <= 1)
 	return;
@@ -131,8 +128,7 @@ struct merge_sub_sorter_data
     int threadsSpawn;
 };
 
-void*
-merge_sub_sorter(void* data)
+void* merge_sub_sorter(void* data)
 {
     try
     {
@@ -186,8 +182,7 @@ merge_sub_sorter(void* data)
     return 0;
 }
 
-void*
-merge_sorter(void*)
+void* merge_sorter(void*)
 {
     memory_session ms;
 
@@ -254,8 +249,7 @@ merge_sorter(void*)
     return 0;
 }
 
-int
-main(const int argc, const char *const *const argv)
+int main(const int argc, const char *const *const argv)
 {
     srand(time(0));
 
