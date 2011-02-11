@@ -18,8 +18,8 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include <cassert>
 #include <stdlib.h>
+#include <debug/asserts.h>
 #include "thread.h"
 
 namespace coherent
@@ -36,12 +36,12 @@ void memory_thread_clean(void* tls)
 
 void tls_init()
 {
-    assert(!pthread_key_create(&tls_key, memory_thread_clean));
+    r_assert(!pthread_key_create(&tls_key, memory_thread_clean));
 }
 
 void tls_clean()
 {
-    assert(!pthread_key_delete(tls_key));
+    r_assert(!pthread_key_delete(tls_key));
 }
 
 void memory_thread_init_if_needed()
@@ -51,7 +51,7 @@ void memory_thread_init_if_needed()
     if (!tlsc)
     {
 	tlsc = new tls_content;
-	assert(!pthread_setspecific(tls_key, tlsc));
+	r_assert(!pthread_setspecific(tls_key, tlsc));
     }
 }
 

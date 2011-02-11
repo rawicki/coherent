@@ -59,7 +59,7 @@ private:
     void activate();
     void deactivate();
 
-    // TODO napisać jakie locki potrzebne
+    // TODO write comment what locks are needed
     byte* allocate(size_t needed_bytes);
     void deallocate(byte* p, size_t bytes);
     void add_alloc(byte* p, size_t bytes);
@@ -86,7 +86,7 @@ private:
     std::set<std::pair<size_t, byte*> > free_small_chunks_inv;
     mutable pthread_rwlock_t alloc_lock;
 
-    memory_session * const parent;
+    memory_session* const parent;
 };
 
 }

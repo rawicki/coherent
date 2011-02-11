@@ -18,9 +18,7 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include <cassert>
 #include <sys/mman.h>
-#include <cstdio> // TODO delete
 #include <memory_manager/manager.h>
 #include <memory_manager/session.h>
 #include <memory_manager/sub_session.h>
@@ -49,16 +47,16 @@ memory_session::~memory_session()
 {
     end();
 
-    assert(!pthread_mutex_destroy(&active_threads_mutex));
-    assert(!pthread_rwlock_destroy(&limit_lock));
-    assert(!pthread_rwlock_destroy(&alloc_lock));
-    assert(!pthread_rwlock_destroy(&sub_sessions_lock));
+    r_assert(!pthread_mutex_destroy(&active_threads_mutex));
+    r_assert(!pthread_rwlock_destroy(&limit_lock));
+    r_assert(!pthread_rwlock_destroy(&alloc_lock));
+    r_assert(!pthread_rwlock_destroy(&sub_sessions_lock));
 
     delete default_sub_session;
 
     memory_manager::instance->free_bytes(limit_bytes);
 
-    // TODO możliwa asercja na wyczyszczenie pamięci
+    // TODO triggerable assert if there is non-released memory left
 }
 
 memory_session* memory_session::current()
@@ -69,6 +67,8 @@ memory_session* memory_session::current()
 void memory_session::begin()
 {
     memory_thread_init_if_needed();
+
+    r_assert(tls(), "tls null begin");
 
     activate();
 
@@ -99,7 +99,7 @@ void memory_session::stop()
     }
 
     scoped_mutex am(&active_threads_mutex);
-    assert(active_threads_count > 0);
+    d_assert(active_threads_count > 0);
     --active_threads_count;
 }
 
@@ -143,10 +143,10 @@ void memory_session::internal_init(bool autostart)
 
     sub_sessions.insert(default_sub_session);
 
-    assert(!pthread_mutex_init(&active_threads_mutex, 0));
-    assert(!pthread_rwlock_init(&limit_lock, 0));
-    assert(!pthread_rwlock_init(&alloc_lock, 0));
-    assert(!pthread_rwlock_init(&sub_sessions_lock, 0));
+    r_assert(!pthread_mutex_init(&active_threads_mutex, 0));
+    r_assert(!pthread_rwlock_init(&limit_lock, 0));
+    r_assert(!pthread_rwlock_init(&alloc_lock, 0));
+    r_assert(!pthread_rwlock_init(&sub_sessions_lock, 0));
 
     if (autostart)
 	begin();
@@ -156,9 +156,11 @@ void memory_session::activate()
 {
     tls_content* tls_content = tls();
 
+    r_assert(tls_content, "tls null");
+    
     if (tls_content->current_sub_session && tls_content->current_sub_session->get_parent() != this)
 	tls_content->current_sub_session->get_parent()->stop();
-    // TODO może dać asserta tylko?
+    // TODO maybe only assert here
 
     tls_content->current_sub_session = default_sub_session;
 }

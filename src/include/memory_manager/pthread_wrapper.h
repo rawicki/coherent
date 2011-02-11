@@ -10,7 +10,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <pthread.h>
-#include <cassert>
+#include <debug/asserts.h>
 
 namespace coherent
 {
@@ -22,12 +22,12 @@ class scoped_rwlock_read : private boost::noncopyable
 public:
     scoped_rwlock_read(pthread_rwlock_t* initialized_lock) throw () : lock(initialized_lock)
     {
-	assert(!pthread_rwlock_rdlock(lock));
+	r_assert(!pthread_rwlock_rdlock(lock));
     }
 
     ~scoped_rwlock_read() throw ()
     {
-	assert(!pthread_rwlock_unlock(lock));
+	r_assert(!pthread_rwlock_unlock(lock));
     }
 
 private:
@@ -39,12 +39,12 @@ class scoped_rwlock_write : private boost::noncopyable
 public:
     scoped_rwlock_write(pthread_rwlock_t* initialized_lock) throw () : lock(initialized_lock)
     {
-	assert(!pthread_rwlock_wrlock(lock));
+	r_assert(!pthread_rwlock_wrlock(lock));
     }
 
     ~scoped_rwlock_write() throw ()
     {
-	assert(!pthread_rwlock_unlock(lock));
+	r_assert(!pthread_rwlock_unlock(lock));
     }
 
 private:
@@ -56,12 +56,12 @@ class scoped_mutex : private boost::noncopyable
 public:
     scoped_mutex(pthread_mutex_t* initialized_mutex) throw () : mutex(initialized_mutex)
     {
-	assert(!pthread_mutex_lock(mutex));
+	r_assert(!pthread_mutex_lock(mutex));
     }
 
     ~scoped_mutex() throw ()
     {
-	assert(!pthread_mutex_unlock(mutex));
+	r_assert(!pthread_mutex_unlock(mutex));
     }
 
 private:

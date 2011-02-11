@@ -57,8 +57,8 @@ public:
 	return default_session_limit_bytes;
     }
 
-    void reserve_bytes(size_t bytes) throw (out_of_total_memory);
-    void free_bytes(size_t bytes) throw ();
+    void reserve_bytes(size_t bytes) throw(out_of_total_memory);
+    void free_bytes(size_t bytes) throw();
 
     /// Creates instance of memory manager. Must be invoked before any memory manager operations.
     static void init(const config::global_config& conf);

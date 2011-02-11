@@ -22,12 +22,10 @@
 #define	MEMORY_ALLOCATOR_H
 
 #include <cstddef>
-#include <cassert>
 #include <bits/allocator.h>
 #include <memory_manager/session.h>
 #include <memory_manager/sub_session.h>
 #include <sys/mman.h>
-#include <cstdio> // TODO delete
 #include <memory_manager/pthread_wrapper.h>
 
 #include "manager.h"
@@ -100,7 +98,7 @@ public:
 	size_t needed_bytes = sizeof (T) * n;
 
 	memory_sub_session* mss = memory_sub_session::current();
-	assert(mss);
+	r_assert(mss);
 
 	scoped_rwlock_write als(&mss->alloc_lock);
 
@@ -127,7 +125,7 @@ public:
 	    return;
 
 	memory_sub_session* mss = memory_sub_session::current();
-	assert(mss);
+	r_assert(mss);
 
 	scoped_rwlock_write als(&mss->alloc_lock);
 
@@ -153,7 +151,7 @@ public:
     size_type max_size() const throw ()
     {
 	memory_session* ms = memory_session::current();
-	assert(ms);
+	r_assert(ms);
 
 	scoped_rwlock_read ll(&ms->limit_lock);
 	scoped_rwlock_read al(&ms->alloc_lock);
@@ -164,7 +162,7 @@ public:
 private:
     size_type max_size_no_lock(memory_session* ms) const throw ()
     {
-	assert(ms->limit_bytes <= std::allocator<T>::max_size());
+	d_assert(ms->limit_bytes <= std::allocator<T>::max_size());
 
 	if (ms->limit_bytes >= ms->allocated_bytes)
 	    return ms->limit_bytes - ms->allocated_bytes;

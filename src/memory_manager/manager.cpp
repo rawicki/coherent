@@ -18,9 +18,7 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include <cassert>
 #include <unistd.h>
-#include <cstdio> // TODO delete
 #include <memory_manager/manager.h>
 #include <memory_manager/pthread_wrapper.h>
 #include <config/config.h>
@@ -41,10 +39,10 @@ memory_manager* memory_manager::instance = 0;
 memory_manager::~memory_manager()
 {
     tls_clean();
-    assert(!pthread_mutex_destroy(&reserved_bytes_mutex));
+    r_assert(!pthread_mutex_destroy(&reserved_bytes_mutex));
 }
 
-void memory_manager::reserve_bytes(size_t bytes) throw (out_of_total_memory)
+void memory_manager::reserve_bytes(size_t bytes) throw(out_of_total_memory)
 {
     scoped_mutex rm(&reserved_bytes_mutex);
 
@@ -54,18 +52,18 @@ void memory_manager::reserve_bytes(size_t bytes) throw (out_of_total_memory)
     reserved_bytes += bytes;
 }
 
-void memory_manager::free_bytes(size_t bytes) throw ()
+void memory_manager::free_bytes(size_t bytes) throw()
 {
     scoped_mutex rm(&reserved_bytes_mutex);
 
-    assert(bytes <= reserved_bytes);
+    d_assert(bytes <= reserved_bytes);
 
     reserved_bytes -= bytes;
 }
 
 void memory_manager::init(const config::global_config& conf)
 {
-    assert(!instance);
+    d_assert(!instance);
 
     instance = new memory_manager(conf);
 }
@@ -76,7 +74,7 @@ reserved_bytes(0), limit_bytes(conf.memory_manager.initialLimitBytes), default_s
     page_size = sysconf(_SC_PAGESIZE);
 
     tls_init();
-    assert(!pthread_mutex_init(&reserved_bytes_mutex, 0));
+    r_assert(!pthread_mutex_init(&reserved_bytes_mutex, 0));
 }
 
 }

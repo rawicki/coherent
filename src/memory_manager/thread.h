@@ -39,7 +39,6 @@ extern pthread_key_t tls_key;
 class tls_content : private boost::noncopyable
 {
 public:
-
     tls_content() : current_sub_session(0)
     {
     }

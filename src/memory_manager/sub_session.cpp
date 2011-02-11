@@ -18,9 +18,7 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include <cassert>
 #include <sys/mman.h>
-#include <cstdio> // TODO delete
 #include <memory_manager/manager.h>
 #include <memory_manager/session.h>
 #include <memory_manager/sub_session.h>
@@ -49,8 +47,8 @@ memory_sub_session::~memory_sub_session()
 {
     end();
 
-    assert(!pthread_mutex_destroy(&active_threads_mutex));
-    assert(!pthread_rwlock_destroy(&alloc_lock));
+    r_assert(!pthread_mutex_destroy(&active_threads_mutex));
+    r_assert(!pthread_rwlock_destroy(&alloc_lock));
 }
 
 memory_sub_session* memory_sub_session::current()
@@ -80,7 +78,7 @@ void memory_sub_session::stop()
     deactivate();
 
     scoped_mutex am(&active_threads_mutex);
-    assert(active_threads_count > 0);
+    d_assert(active_threads_count > 0);
     --active_threads_count;
 
     if (active_threads_count == 0)
@@ -90,7 +88,7 @@ void memory_sub_session::stop()
 	for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
 	{
 	    if (madvise(i->first, i->second, MADV_DONTNEED))
-		printf("MADVISE ERROR\n"); // TODO change to log
+		LOG(WARN, "madvise error on freezing\n");
 	}
     }
 }
@@ -108,7 +106,7 @@ void memory_sub_session::resume()
 	    for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
 	    {
 		if (madvise(i->first, i->second, MADV_NORMAL))
-		    printf("MADVISE ERROR\n"); // TODO change to log
+		    LOG(ERROR, "madvise error on unfreezing\n");
 	    }
 	}
     }
@@ -134,8 +132,8 @@ memory_session* memory_sub_session::get_parent() const
 
 void memory_sub_session::internal_init(bool autostart)
 {
-    assert(!pthread_mutex_init(&active_threads_mutex, 0));
-    assert(!pthread_rwlock_init(&alloc_lock, 0));
+    r_assert(!pthread_mutex_init(&active_threads_mutex, 0));
+    r_assert(!pthread_rwlock_init(&alloc_lock, 0));
 
     if (autostart)
 	begin();
@@ -220,7 +218,7 @@ byte* memory_sub_session::allocate(size_t needed_bytes)
 
 void memory_sub_session::deallocate(byte* p, size_t bytes)
 {
-    // TODO asercje na bytes
+    // TODO assertions for bytes
 
     if (is_small_alloc(p))
     {
@@ -233,7 +231,7 @@ void memory_sub_session::deallocate(byte* p, size_t bytes)
 	if (chunk_alloc.second == remainder.second)
 	{
 	    if (munmap(chunk_alloc.first, chunk_alloc.second))
-		printf("UNMAP ERROR\n"); // TODO change to log
+		LOG(WARN, "unmap error\n");
 
 	    remove_alloc(chunk_alloc.first);
 	}
@@ -245,7 +243,7 @@ void memory_sub_session::deallocate(byte* p, size_t bytes)
     else
     {
 	if (munmap(reinterpret_cast<void*> (p), bytes))
-	    printf("UNMAP ERROR\n"); // TODO change to log
+	    LOG(WARN, "unmap error\n");
 
 	remove_alloc(p);
     }
@@ -263,7 +261,7 @@ void memory_sub_session::add_alloc(byte* p, size_t bytes)
 void memory_sub_session::remove_alloc(byte* p)
 {
     std::map<byte*, size_t>::iterator i = allocs.find(p);
-    assert(i != allocs.end());
+    d_assert(i != allocs.end());
 
     size_t bytes = i->second;
 
@@ -292,8 +290,8 @@ void memory_sub_session::add_small_alloc(byte* p, size_t bytes)
 void memory_sub_session::remove_small_alloc(byte* p)
 {
     std::set<std::pair<byte*, size_t> >::const_iterator i = small_allocs.upper_bound(std::make_pair(p, 0));
-    assert(i != small_allocs.end());
-    assert(i->first == p);
+    d_assert(i != small_allocs.end());
+    d_assert(i->first == p);
 
     small_allocs.erase(i);
 }
@@ -320,7 +318,7 @@ void memory_sub_session::remove_free_small_chunk(byte* p)
 std::pair<byte*, size_t> memory_sub_session::free_small_chunk_alloc(byte* p) const
 {
     std::map<byte*, size_t>::const_iterator chunk_alloc = allocs.upper_bound(p);
-    assert(chunk_alloc != allocs.begin());
+    d_assert(chunk_alloc != allocs.begin());
     --chunk_alloc;
 
     return *chunk_alloc;
@@ -345,10 +343,10 @@ std::pair<byte*, size_t> memory_sub_session::add_merge_remove_free_small_chunk(b
 
 	    if (previous->first >= chunk_alloc.first)
 	    {
-		assert(remainder_pointer > previous->first);
+		d_assert(remainder_pointer > previous->first);
 
 		size_t diff = remainder_pointer - previous->first;
-		assert(diff >= previous->second);
+		d_assert(diff >= previous->second);
 
 		if (diff == previous->second)
 		{
@@ -365,7 +363,7 @@ std::pair<byte*, size_t> memory_sub_session::add_merge_remove_free_small_chunk(b
 
 	if (next != free_small_chunks.end() && remainder_size != chunk_alloc.second)
 	{
-	    assert(next->first > remainder_pointer);
+	    d_assert(next->first > remainder_pointer);
 
 	    size_t diff = next->first - remainder_pointer;
 
