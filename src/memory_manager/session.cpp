@@ -22,16 +22,21 @@
 #include <memory_manager/manager.h>
 #include <memory_manager/session.h>
 #include <memory_manager/sub_session.h>
-#include <memory_manager/pthread_wrapper.h>
 #include <debug/asserts.h>
-#include "thread.h"
 
 namespace coherent
 {
 namespace memory_manager
 {
 
-memory_session::memory_session(bool autostart) : allocated_bytes(0), default_sub_session(new memory_sub_session(this, false))
+typedef boost::shared_lock<boost::shared_mutex> scoped_read_lock;
+typedef boost::unique_lock<boost::shared_mutex> scoped_write_lock;
+typedef boost::unique_lock<boost::mutex> scoped_lock;
+
+void dummy_function(memory_sub_session*) {}
+boost::thread_specific_ptr<memory_sub_session> memory_session::current_sub_session(dummy_function);
+
+memory_session::memory_session(bool autostart): allocated_bytes(0), default_sub_session(new memory_sub_session(this, false))
 {
     limit_bytes = memory_manager::instance->get_default_session_limit_bytes();
 
@@ -47,11 +52,6 @@ memory_session::~memory_session()
 {
     end();
 
-    r_assert(!pthread_mutex_destroy(&active_threads_mutex));
-    r_assert(!pthread_rwlock_destroy(&limit_lock));
-    r_assert(!pthread_rwlock_destroy(&alloc_lock));
-    r_assert(!pthread_rwlock_destroy(&sub_sessions_lock));
-
     delete default_sub_session;
 
     memory_manager::instance->free_bytes(limit_bytes);
@@ -61,20 +61,19 @@ memory_session::~memory_session()
 
 memory_session* memory_session::current()
 {
-    return memory_sub_session::current()->get_parent();
+    if (current_sub_session.get() == 0)
+	return 0;
+    
+    return current_sub_session->get_parent();
 }
 
 void memory_session::begin()
 {
-    memory_thread_init_if_needed();
-
-    r_assert(tls(), "tls null begin");
-
     activate();
 
     default_sub_session->begin();
 
-    scoped_mutex am(&active_threads_mutex);
+    scoped_lock am(active_threads_mutex);
     ++active_threads_count;
 }
 
@@ -82,7 +81,7 @@ void memory_session::end()
 {
     deactivate();
 
-    scoped_mutex am(&active_threads_mutex);
+    scoped_lock am(active_threads_mutex);
     if (active_threads_count > 0)
 	--active_threads_count;
 }
@@ -91,14 +90,14 @@ void memory_session::stop()
 {
     deactivate();
 
-    scoped_rwlock_read ss(&sub_sessions_lock);
+    scoped_read_lock ss(sub_sessions_lock);
 
     for (std::set<memory_sub_session*>::const_iterator i = sub_sessions.begin(); i != sub_sessions.end(); ++i)
     {
 	(*i)->stop();
     }
 
-    scoped_mutex am(&active_threads_mutex);
+    scoped_lock am(active_threads_mutex);
     d_assert(active_threads_count > 0);
     --active_threads_count;
 }
@@ -106,7 +105,7 @@ void memory_session::stop()
 void memory_session::resume()
 {
     {
-	scoped_mutex am(&active_threads_mutex);
+	scoped_lock am(active_threads_mutex);
 	++active_threads_count;
     }
 
@@ -121,19 +120,19 @@ void memory_session::set_default_current()
 
 size_t memory_session::get_limit_bytes() const
 {
-    scoped_rwlock_read ll(&limit_lock);
+    scoped_read_lock ll(limit_lock);
     return limit_bytes;
 }
 
 void memory_session::set_limit_bytes(size_t bytes)
 {
-    scoped_rwlock_write ll(&limit_lock);
+    scoped_write_lock ll(limit_lock);
     limit_bytes = bytes;
 }
 
 size_t memory_session::get_allocated_bytes() const
 {
-    scoped_rwlock_read al(&alloc_lock);
+    scoped_read_lock al(alloc_lock);
     return allocated_bytes;
 }
 
@@ -143,34 +142,23 @@ void memory_session::internal_init(bool autostart)
 
     sub_sessions.insert(default_sub_session);
 
-    r_assert(!pthread_mutex_init(&active_threads_mutex, 0));
-    r_assert(!pthread_rwlock_init(&limit_lock, 0));
-    r_assert(!pthread_rwlock_init(&alloc_lock, 0));
-    r_assert(!pthread_rwlock_init(&sub_sessions_lock, 0));
-
     if (autostart)
 	begin();
 }
 
 void memory_session::activate()
-{
-    tls_content* tls_content = tls();
-
-    r_assert(tls_content, "tls null");
-    
-    if (tls_content->current_sub_session && tls_content->current_sub_session->get_parent() != this)
-	tls_content->current_sub_session->get_parent()->stop();
+{   
+    if (current_sub_session.get() && current_sub_session->get_parent() != this)
+	current_sub_session->get_parent()->stop();
     // TODO maybe only assert here
 
-    tls_content->current_sub_session = default_sub_session;
+    default_sub_session->set_current();
 }
 
 void memory_session::deactivate()
 {
-    tls_content* tls_content = tls();
-
-    if (tls_content->current_sub_session && tls_content->current_sub_session->get_parent() == this)
-	tls_content->current_sub_session = 0;
+    if (current_sub_session.get() && current_sub_session->get_parent() == this)
+	current_sub_session.reset();
 }
 
 }

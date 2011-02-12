@@ -22,8 +22,8 @@
 #define MEMORY_MANAGER_H
 
 #include <boost/noncopyable.hpp>
+#include <boost/thread.hpp>
 #include <exception>
-#include <pthread.h>
 #include <stdint.h>
 
 namespace coherent
@@ -39,7 +39,7 @@ namespace memory_manager
 
 class out_of_total_memory : public std::exception
 {
-    virtual const char* what() const throw ();
+    virtual const char* what() const throw();
 };
 
 class memory_manager : private boost::noncopyable
@@ -47,18 +47,18 @@ class memory_manager : private boost::noncopyable
 public:
     ~memory_manager();
 
-    size_t get_page_size() const throw ()
+    size_t get_page_size() const throw()
     {
 	return page_size;
     }
 
-    size_t get_default_session_limit_bytes() const throw ()
+    size_t get_default_session_limit_bytes() const throw()
     {
 	return default_session_limit_bytes;
     }
 
-    void reserve_bytes(size_t bytes) throw(out_of_total_memory);
-    void free_bytes(size_t bytes) throw();
+    void reserve_bytes(size_t bytes);
+    void free_bytes(size_t bytes);
 
     /// Creates instance of memory manager. Must be invoked before any memory manager operations.
     static void init(const config::global_config& conf);
@@ -68,7 +68,7 @@ private:
     memory_manager(const config::global_config& conf);
 
     uint64_t reserved_bytes;
-    mutable pthread_mutex_t reserved_bytes_mutex;
+    mutable boost::mutex reserved_bytes_mutex;
     uint64_t limit_bytes;
     size_t page_size;
     size_t default_session_limit_bytes;

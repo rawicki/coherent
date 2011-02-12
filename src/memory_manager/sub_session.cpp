@@ -22,9 +22,9 @@
 #include <memory_manager/manager.h>
 #include <memory_manager/session.h>
 #include <memory_manager/sub_session.h>
-#include <memory_manager/pthread_wrapper.h>
-#include "thread.h"
+#include <debug/asserts.h>
 
+// TODO to config
 static const double max_small_alloc_pages = 0.75;
 static const size_t single_small_alloc_pages = 64;
 
@@ -32,6 +32,10 @@ namespace coherent
 {
 namespace memory_manager
 {
+
+typedef boost::shared_lock<boost::shared_mutex> scoped_read_lock;
+typedef boost::unique_lock<boost::shared_mutex> scoped_write_lock;
+typedef boost::unique_lock<boost::mutex> scoped_lock;
 
 memory_sub_session::memory_sub_session(bool autostart) : allocated_bytes(0), parent(memory_session::current())
 {
@@ -46,21 +50,18 @@ memory_sub_session::memory_sub_session(memory_session* session, bool autostart) 
 memory_sub_session::~memory_sub_session()
 {
     end();
-
-    r_assert(!pthread_mutex_destroy(&active_threads_mutex));
-    r_assert(!pthread_rwlock_destroy(&alloc_lock));
 }
 
 memory_sub_session* memory_sub_session::current()
 {
-    return tls()->current_sub_session;
+    return memory_session::current_sub_session.get();
 }
 
 void memory_sub_session::begin()
 {
     activate();
 
-    scoped_mutex am(&active_threads_mutex);
+    scoped_lock am(active_threads_mutex);
     ++active_threads_count;
 }
 
@@ -68,7 +69,7 @@ void memory_sub_session::end()
 {
     deactivate();
 
-    scoped_mutex am(&active_threads_mutex);
+    scoped_lock am(active_threads_mutex);
     if (active_threads_count > 0)
 	--active_threads_count;
 }
@@ -77,13 +78,13 @@ void memory_sub_session::stop()
 {
     deactivate();
 
-    scoped_mutex am(&active_threads_mutex);
+    scoped_lock am(active_threads_mutex);
     d_assert(active_threads_count > 0);
     --active_threads_count;
 
     if (active_threads_count == 0)
     {
-	scoped_rwlock_read al(&alloc_lock);
+	scoped_read_lock al(alloc_lock);
 
 	for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
 	{
@@ -96,12 +97,12 @@ void memory_sub_session::stop()
 void memory_sub_session::resume()
 {
     {
-	scoped_mutex am(&active_threads_mutex);
+	scoped_lock am(active_threads_mutex);
 	++active_threads_count;
 
 	if (active_threads_count == 1)
 	{
-	    scoped_rwlock_read al(&alloc_lock);
+	    scoped_read_lock al(alloc_lock);
 
 	    for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
 	    {
@@ -121,7 +122,7 @@ void memory_sub_session::set_current()
 
 size_t memory_sub_session::get_allocated_bytes() const
 {
-    scoped_rwlock_read al(&alloc_lock);
+    scoped_read_lock al(alloc_lock);
     return allocated_bytes;
 }
 
@@ -132,26 +133,19 @@ memory_session* memory_sub_session::get_parent() const
 
 void memory_sub_session::internal_init(bool autostart)
 {
-    r_assert(!pthread_mutex_init(&active_threads_mutex, 0));
-    r_assert(!pthread_rwlock_init(&alloc_lock, 0));
-
     if (autostart)
 	begin();
 }
 
 void memory_sub_session::activate()
 {
-    tls_content* tlsContent = tls();
-
-    tlsContent->current_sub_session = this;
+    memory_session::current_sub_session.reset(this);
 }
 
 void memory_sub_session::deactivate()
 {
-    tls_content* tlsContent = tls();
-
-    if (tlsContent->current_sub_session == this)
-	tlsContent->current_sub_session = 0;
+    if (memory_session::current_sub_session.get() == this)
+	memory_session::current_sub_session.reset();
 }
 
 byte* memory_sub_session::allocate(size_t needed_bytes)

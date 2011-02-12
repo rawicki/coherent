@@ -18,7 +18,6 @@
 
 set(SOURCES
 	manager.cpp
-	thread.cpp
 	session.cpp
 	sub_session.cpp
 	)

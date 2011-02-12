@@ -22,11 +22,11 @@
 #define MEMORY_SUB_SESSION_H
 
 #include <cstddef>
-#include <boost/noncopyable.hpp>
 #include <map>
 #include <set>
 #include <utility>
-#include <pthread.h>
+#include <boost/noncopyable.hpp>
+#include <boost/thread.hpp>
 
 namespace coherent
 {
@@ -77,14 +77,14 @@ private:
     friend class allocator;
 
     size_t active_threads_count;
-    mutable pthread_mutex_t active_threads_mutex;
+    mutable boost::mutex active_threads_mutex;
 
     size_t allocated_bytes;
     std::map<byte*, size_t> allocs;
     std::set<std::pair<byte*, size_t> > small_allocs;
     std::map<byte*, size_t> free_small_chunks;
     std::set<std::pair<size_t, byte*> > free_small_chunks_inv;
-    mutable pthread_rwlock_t alloc_lock;
+    mutable boost::shared_mutex alloc_lock;
 
     memory_session* const parent;
 };

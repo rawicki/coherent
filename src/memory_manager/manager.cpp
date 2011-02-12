@@ -20,9 +20,8 @@
 
 #include <unistd.h>
 #include <memory_manager/manager.h>
-#include <memory_manager/pthread_wrapper.h>
+#include <debug/asserts.h>
 #include <config/config.h>
-#include "thread.h"
 
 namespace coherent
 {
@@ -38,13 +37,11 @@ memory_manager* memory_manager::instance = 0;
 
 memory_manager::~memory_manager()
 {
-    tls_clean();
-    r_assert(!pthread_mutex_destroy(&reserved_bytes_mutex));
 }
 
-void memory_manager::reserve_bytes(size_t bytes) throw(out_of_total_memory)
+void memory_manager::reserve_bytes(size_t bytes)
 {
-    scoped_mutex rm(&reserved_bytes_mutex);
+    boost::mutex::scoped_lock rm(reserved_bytes_mutex);
 
     if (reserved_bytes + bytes > limit_bytes)
 	throw out_of_total_memory();
@@ -52,9 +49,9 @@ void memory_manager::reserve_bytes(size_t bytes) throw(out_of_total_memory)
     reserved_bytes += bytes;
 }
 
-void memory_manager::free_bytes(size_t bytes) throw()
+void memory_manager::free_bytes(size_t bytes)
 {
-    scoped_mutex rm(&reserved_bytes_mutex);
+    boost::mutex::scoped_lock rm(reserved_bytes_mutex);
 
     d_assert(bytes <= reserved_bytes);
 
@@ -72,9 +69,6 @@ memory_manager::memory_manager(const config::global_config& conf) :
 reserved_bytes(0), limit_bytes(conf.memory_manager.initialLimitBytes), default_session_limit_bytes(conf.memory_manager.defaultSessionLimitBytes)
 {
     page_size = sysconf(_SC_PAGESIZE);
-
-    tls_init();
-    r_assert(!pthread_mutex_init(&reserved_bytes_mutex, 0));
 }
 
 }

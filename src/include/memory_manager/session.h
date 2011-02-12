@@ -21,15 +21,12 @@
 #ifndef MEMORY_SESSION_H
 #define MEMORY_SESSION_H
 
-#include "sub_session.h"
-
-
 #include <cstddef>
-#include <boost/noncopyable.hpp>
 #include <map>
 #include <set>
 #include <utility>
-#include <pthread.h>
+#include <boost/noncopyable.hpp>
+#include <boost/thread.hpp>
 
 namespace coherent
 {
@@ -68,20 +65,22 @@ private:
 
     friend class memory_sub_session;
 
+    static boost::thread_specific_ptr<memory_sub_session> current_sub_session;
+
     size_t active_threads_count;
-    mutable pthread_mutex_t active_threads_mutex;
+    mutable boost::mutex active_threads_mutex;
 
     size_t limit_bytes;
-    mutable pthread_rwlock_t limit_lock;
+    mutable boost::shared_mutex limit_lock;
 
     size_t allocated_bytes;
     std::map<byte*, memory_sub_session*> allocs;
-    mutable pthread_rwlock_t alloc_lock;
+    mutable boost::shared_mutex alloc_lock;
 
     memory_sub_session* default_sub_session;
 
     std::set<memory_sub_session*> sub_sessions;
-    mutable pthread_rwlock_t sub_sessions_lock;
+    mutable boost::shared_mutex sub_sessions_lock;
 };
 
 }
