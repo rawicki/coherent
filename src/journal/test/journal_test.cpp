@@ -23,6 +23,7 @@
 #include <log/log.h>
 #include <journal/journal.h>
 #include <journal/test/journal_mocks.h>
+#include <util/multi_buffer.h>
 
 namespace coherent {
 namespace journal {
@@ -41,6 +42,49 @@ void in_mem_journal_simple()
 	in_mem_journal j;
 	sync_journal_wrapper sj(j);
 
+	int owners_num = 5;
+	int size = 3;
+	util::multi_buffer::buffer_list buflist;
+	forloop(i,owners_num){
+		buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(100)));
+	}
+
+	util::multi_buffer buf(buflist,size,0);
+	vector<journal::handle_t> handlers;
+	journal::handle_t handle;
+	forloop(i,size*owners_num){
+		cerr << i << endl;
+		LOG(INFO, "insert " << i%owners_num);
+		handle = sj.insert(i%owners_num, buf);
+		sj.erase(i%owners_num,handle);
+	}
+
+}
+
+void journal_simple()
+{
+	LOG(INFO, "starting simple journal");
+	journal j;
+	sync_journal_wrapper sj(j);
+
+        int owners_num = 5;
+        int size = 3;
+        util::multi_buffer::buffer_list buflist;
+        forloop(i,owners_num){
+                buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(100)));
+        }
+
+        util::multi_buffer buf(buflist,size,0);
+        vector<journal::handle_t> handlers;
+        journal::handle_t handle;
+        forloop(i,size*owners_num){
+                cerr << i << endl;
+                LOG(INFO, "insert " << i%owners_num);
+                handle = sj.insert(i%owners_num, buf);
+                LOG(INFO, "erase " << i%owners_num);
+                sj.erase(i%owners_num,handle);
+        }
+	markthis();	
 }
 
 int start_test(const int argc, const char *const *const argv)
@@ -49,6 +93,8 @@ int start_test(const int argc, const char *const *const argv)
 
 	Logger::getLogger("coherent.journal")->setLevel(log_TRACE);	
 
+	//in_mem_journal_simple();
+	journal_simple();
 	return 0;
 }
 
