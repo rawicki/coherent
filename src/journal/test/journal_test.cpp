@@ -45,14 +45,14 @@ void in_mem_journal_simple()
 	int owners_num = 5;
 	int size = 3;
 	util::multi_buffer::buffer_list buflist;
-	forloop(i,owners_num){
-		buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(100)));
+	for( int i = 0; i < owners_num; i++){
+		buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(size)));
 	}
 
-	util::multi_buffer buf(buflist,size,0);
+	util::multi_buffer buf(buflist,owners_num*size,0);
 	vector<journal::handle_t> handlers;
 	journal::handle_t handle;
-	forloop(i,size*owners_num){
+	for( int i = 0; i < size*owners_num; i++){
 		cerr << i << endl;
 		LOG(INFO, "insert " << i%owners_num);
 		handle = sj.insert(i%owners_num, buf);
@@ -67,19 +67,19 @@ void journal_simple()
 	journal j;
 	sync_journal_wrapper sj(j);
 
-        int owners_num = 5;
-        int size = 3;
-        util::multi_buffer::buffer_list buflist;
-        forloop(i,owners_num){
-                buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(100)));
-        }
+	int owners_num = 5;
+	int size = 3;
+	util::multi_buffer::buffer_list buflist;
+	for( int i = 0; i < owners_num; i++){
+		buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(size)));
+	}
 
-        util::multi_buffer buf(buflist,size,0);
-        vector<journal::handle_t> handlers;
-        journal::handle_t handle;
-        forloop(i,size*owners_num){
-                cerr << i << endl;
-                LOG(INFO, "insert " << i%owners_num);
+	util::multi_buffer buf(buflist,owners_num*size,0);
+	vector<journal::handle_t> handlers;
+	journal::handle_t handle;
+	for( int i = 0; i < size*owners_num; i++){
+		cerr << i << endl;
+		LOG(INFO, "insert " << i%owners_num);
                 handle = sj.insert(i%owners_num, buf);
                 LOG(INFO, "erase " << i%owners_num);
                 sj.erase(i%owners_num,handle);
