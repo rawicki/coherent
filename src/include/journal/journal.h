@@ -34,7 +34,6 @@
 #include <journal/absjournal.h>
 #include <iostream>
 #include <map>
-#define markthis() cerr << __FILE__ << "[ " << __LINE__ << "]:\t" << pthread_self() << endl;
 
 	template<class K,class V>
 bool inline key_exists( const std::map<K,V> &m, const K &k)
