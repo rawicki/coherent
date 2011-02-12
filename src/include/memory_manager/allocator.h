@@ -23,23 +23,23 @@
 
 #include <cstddef>
 #include <bits/allocator.h>
+#include <sys/mman.h>
 #include <memory_manager/session.h>
 #include <memory_manager/sub_session.h>
-#include <sys/mman.h>
-#include <memory_manager/pthread_wrapper.h>
-
-#include "manager.h"
+#include <debug/asserts.h>
 
 namespace coherent
 {
 namespace memory_manager
 {
 
+typedef boost::shared_lock<boost::shared_mutex> scoped_read_lock;
+typedef boost::unique_lock<boost::shared_mutex> scoped_write_lock;
+typedef boost::unique_lock<boost::mutex> scoped_lock;
+
 class out_of_session_memory : public std::exception
 {
-
-    virtual const char*
-    what() const throw ()
+    virtual const char* what() const throw ()
     {
 	return "Insufficent session memory left for memory allocation.";
     }
@@ -100,12 +100,12 @@ public:
 	memory_sub_session* mss = memory_sub_session::current();
 	r_assert(mss);
 
-	scoped_rwlock_write als(&mss->alloc_lock);
+	scoped_write_lock als(mss->alloc_lock);
 
 	memory_session* ms = mss->get_parent();
 
-	scoped_rwlock_read ll(&ms->limit_lock);
-	scoped_rwlock_write al(&ms->alloc_lock);
+	scoped_read_lock ll(ms->limit_lock);
+	scoped_write_lock al(ms->alloc_lock);
 
 	//        fprintf(stderr, "allocate %d", n * sizeof(T));
 
@@ -127,13 +127,13 @@ public:
 	memory_sub_session* mss = memory_sub_session::current();
 	r_assert(mss);
 
-	scoped_rwlock_write als(&mss->alloc_lock);
+	scoped_write_lock als(mss->alloc_lock);
 
 	memory_session* ms = mss->get_parent();
 
-	scoped_rwlock_write al(&ms->alloc_lock);
-	scoped_rwlock_read ll(&ms->limit_lock);
-
+	scoped_read_lock ll(ms->limit_lock);
+	scoped_write_lock al(ms->alloc_lock);
+	
 	byte* p = reinterpret_cast<byte*> (ptr);
 	size_t bytes = sizeof (T) * n;
 
@@ -153,8 +153,8 @@ public:
 	memory_session* ms = memory_session::current();
 	r_assert(ms);
 
-	scoped_rwlock_read ll(&ms->limit_lock);
-	scoped_rwlock_read al(&ms->alloc_lock);
+	scoped_read_lock ll(ms->limit_lock);
+	scoped_read_lock al(ms->alloc_lock);
 
 	return max_size_no_lock(ms);
     }
