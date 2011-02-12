@@ -31,7 +31,6 @@
 #include <util/misc.h>
 #include <util/multi_buffer.h>
 #include <util/worker_pool.h>
-#include <misc/iterator_macros.h>
 #include <journal/absjournal.h>
 #include <iostream>
 #include <map>
