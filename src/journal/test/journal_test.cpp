@@ -36,30 +36,6 @@ using namespace coherent::config;
 using namespace coherent::log;
 
 
-void in_mem_journal_simple()
-{
-	LOG(INFO, "===== in_mem_journal_simple");
-	in_mem_journal j;
-	sync_journal_wrapper sj(j);
-
-	int owners_num = 5;
-	int size = 3;
-	util::multi_buffer::buffer_list buflist;
-	for( int i = 0; i < owners_num; i++){
-		buflist.push_back(util::multi_buffer::buffer_ptr(new util::buffer(size)));
-	}
-
-	util::multi_buffer buf(buflist,owners_num*size,0);
-	vector<journal::handle_t> handlers;
-	journal::handle_t handle;
-	for( int i = 0; i < size*owners_num; i++){
-		cerr << i << endl;
-		LOG(INFO, "insert " << i%owners_num);
-		handle = sj.insert(i%owners_num, buf);
-		sj.erase(i%owners_num,handle);
-	}
-
-}
 
 void journal_simple()
 {
@@ -78,13 +54,11 @@ void journal_simple()
 	vector<journal::handle_t> handlers;
 	journal::handle_t handle;
 	for( int i = 0; i < size*owners_num; i++){
-		cerr << i << endl;
 		LOG(INFO, "insert " << i%owners_num);
                 handle = sj.insert(i%owners_num, buf);
                 LOG(INFO, "erase " << i%owners_num);
                 sj.erase(i%owners_num,handle);
         }
-	markthis();	
 }
 
 int start_test(const int argc, const char *const *const argv)

@@ -226,6 +226,7 @@ journal::handle_t sync_journal_wrapper::insert(
 				" " << reinterpret_cast<void const *>(&buf)
 				);
 			this->handle = handle;
+			this->cmpl.complete();
 		}
 
 		virtual void insert_failure(
@@ -248,6 +249,7 @@ journal::handle_t sync_journal_wrapper::insert(
 				"unexpected failure for " << this->owner << " " <<
 					reinterpret_cast<void const *>(&buf) << " " << err
 				);
+			this->cmpl.complete();
 		}
 
 		completion & cmpl;
@@ -295,6 +297,7 @@ void sync_journal_wrapper::erase(
 				this->handle == handle,
 				"mismatch: " << this->handle << " " << handle
 				);
+			this->cmpl.complete();
 		}
 
 		virtual void erase_failure(
@@ -316,6 +319,7 @@ void sync_journal_wrapper::erase(
 				"unexpected failure for " << this->owner << " " <<
 					this->handle << " " << err
 				);
+			this->cmpl.complete();
 		}
 
 		completion & cmpl;
