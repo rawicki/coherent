@@ -26,3 +26,9 @@ add_executable(journal_test journal_test.cpp)
 target_link_libraries(journal_test config log debug2 journal_mock journal util ${CORELIBS})
 add_test(journal_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/journal_test ${TEST_SUFFIX})
 
+
+
+add_executable(journal_file_test journal_file_test.cpp)
+target_link_libraries(journal_file_test config log debug2 journal util ${CORELIBS})
+add_test(journal_file_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/journal_file_test ${TEST_SUFFIX})
+

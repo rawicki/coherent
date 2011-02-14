@@ -17,6 +17,6 @@
 # http://www.gnu.org/licenses/.
 
 
-add_library(journal journal.cpp)
+add_library(journal journal.cpp journal_file.cpp)
 
 add_subdirectory(test)
