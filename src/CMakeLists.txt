@@ -25,7 +25,7 @@ add_subdirectory(server)
 add_subdirectory(log)
 add_subdirectory(debug)
 add_subdirectory(util)
-add_subdirectory(memory_manager)
+#add_subdirectory(memory_manager) will be added later
 add_subdirectory(buffercache)
 add_subdirectory(netserver)
 add_subdirectory(journal)
