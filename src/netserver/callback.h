@@ -33,6 +33,8 @@ namespace netserver
 
 extern const ::boost::function<void()> EMPTY_CALLBACK;
 
+extern const ::boost::function<void(const ::boost::system::error_code &, ::std::size_t)> EMPTY_WRITE_CALLBACK;
+
 }  // namespace netserver
 }  // namespace coherent
 

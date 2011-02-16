@@ -20,6 +20,7 @@
 
 
 #include <boost/function.hpp>
+#include <boost/system/error_code.hpp>
 #include "callback.h"
 
 
@@ -32,7 +33,13 @@ void i_do_nothing()
 {
 }
 
+void i_can_callback_on_write(const ::boost::system::error_code & error_code, ::std::size_t size)
+{
+}
+
 const ::boost::function<void()> EMPTY_CALLBACK = & i_do_nothing;
+
+const ::boost::function<void(const ::boost::system::error_code &, ::std::size_t)> EMPTY_WRITE_CALLBACK = i_can_callback_on_write;
 
 }  // namespace netserver
 }  // namespace coherent

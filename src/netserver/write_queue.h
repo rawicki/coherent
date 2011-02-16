@@ -43,13 +43,14 @@ public:
     typedef write_queue self_t;
     typedef ::std::size_t size_type;
     typedef unsigned char byte_t;
+    typedef const ::boost::system::error_code & error_code_ref;
+    typedef ::boost::function<void(error_code_ref, size_type)> write_handler_t;
 private:
     typedef ::boost::asio::const_buffers_1 message_t;
-    typedef queue<message_t, ::std::deque, no_wrapper, ::std::allocator> queue_t;
+    typedef ::std::pair<message_t, write_handler_t> message_observer_t;
+    typedef queue<message_observer_t, ::std::deque, no_wrapper, ::std::allocator> queue_t;
     typedef ::std::size_t messages_count_t;
     typedef ::boost::asio::ip::tcp::socket socket_t;
-    typedef const ::boost::system::error_code & error_code_ref;
-    typedef ::boost::function<void(error_code_ref, size_type)> write_handle_t;
     typedef ::boost::mutex mutex_t;
     typedef ::boost::unique_lock<mutex_t> unique_lock_t;
 private:
@@ -63,15 +64,16 @@ public:
     write_queue(socket_t & socket);
     ~write_queue();
     template <typename memory_t>
-    void write(const memory_t * memory, size_type message_size);
+    void write(const memory_t * memory, size_type message_size, write_handler_t handler);
 private:
-    void handle_write(error_code_ref error, size_type bytes_transferred, message_t message);
-    void asio_direct_send(message_t message);
+    void handle_write(error_code_ref error, size_type bytes_transferred, message_t message, write_handler_t handler);
+    void asio_direct_send(message_t message, write_handler_t handler);
+    write_handler_t wrap_handler(message_t, write_handler_t handler);
 };
 
 
 template <typename memory_t>
-void write_queue::write(const memory_t * memory, size_type message_size)
+void write_queue::write(const memory_t * memory, size_type message_size, write_handler_t handler)
 {
     message_t message = ::boost::asio::buffer(memory, message_size);
     unique_lock_t lock(mutex);
@@ -80,13 +82,13 @@ void write_queue::write(const memory_t * memory, size_type message_size)
     if(waits)
     {
         lock.unlock();
-        messages_queue.push(message);
+        messages_queue.push(::std::make_pair(message, handler));
     }
     else
     {
         waits = true;
         lock.unlock();
-        asio_direct_send(message);
+        asio_direct_send(message, handler);
     }
 }
 

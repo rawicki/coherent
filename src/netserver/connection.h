@@ -49,9 +49,12 @@ class connection
 public:
     typedef unsigned char byte_t;
     typedef byte_t * ptr_buffer_t;
+    typedef ::std::size_t size_type;
     typedef ::boost::function<void(size_t, ptr_buffer_t)> read_callback_t;
     typedef ::std::pair<size_t, read_callback_t> read_observer_t;
     typedef ptr_buffer_t message_t;
+    typedef const ::boost::system::error_code & error_code_ref;
+    typedef ::boost::function<void(error_code_ref, size_type)> write_callback_t;
 private:
     server & server_;
     tcp::socket socket;
@@ -61,21 +64,21 @@ public:
     ~connection();
     void read(size_t message_size, read_callback_t callback);
     template <typename memory_t>
-    void write(const memory_t * message, ::std::size_t message_size);
+    void write(const memory_t * message, ::std::size_t message_size, write_callback_t callback);
 private:
     void handle_read(
             read_callback_t read_callback,
             ptr_buffer_t buffer,
             const ::boost::system::error_code & error,
             size_t bytes_transferred);
-    void handle_accept(const ::boost::system::error_code & error);
+    void handle_accept(error_code_ref error);
 };
 
 
 template <typename memory_t>
-void connection::write(const memory_t * message, ::std::size_t message_size)
+void connection::write(const memory_t * message, ::std::size_t message_size, write_callback_t callback)
 {
-    out_queue.write(message, message_size);
+    out_queue.write(message, message_size, callback);
 }
 
 

@@ -45,7 +45,7 @@ write_queue::~write_queue()
 }
 
 
-void write_queue::handle_write(error_code_ref error, size_type bytes_transferred, message_t message)
+void write_queue::handle_write(error_code_ref error, size_type bytes_transferred, message_t message, write_handler_t handler)
 {
     unique_lock_t lock(mutex);
     messages_unconfirmed -= 1;
@@ -55,15 +55,16 @@ void write_queue::handle_write(error_code_ref error, size_type bytes_transferred
     {
         lock.unlock();
         const void * offset_message = static_cast<const byte_t *>(::boost::asio::detail::buffer_cast_helper(message)) + bytes_transferred;
-        asio_direct_send(::boost::asio::buffer(offset_message, message_size - bytes_transferred));
+        // FIXME: add the bytes_transferred that was transferred already
+        asio_direct_send(::boost::asio::buffer(offset_message, message_size - bytes_transferred), handler);
     }
     else
     {
         if(!messages_queue.empty())
         {
             lock.unlock();
-            message_t message = messages_queue.pop();
-            asio_direct_send(message);
+            message_observer_t message = messages_queue.pop();
+            asio_direct_send(message.first, message.second);
         }
         else
         {
@@ -73,11 +74,15 @@ void write_queue::handle_write(error_code_ref error, size_type bytes_transferred
 }
 
 
-void write_queue::asio_direct_send(message_t message)
+void write_queue::asio_direct_send(message_t message, write_handler_t handler)
 {
-    write_handle_t write_handle = ::boost::bind(
-            & write_queue::handle_write, this, _1, _2, message);
-    socket.async_write_some(message, write_handle);
+    socket.async_write_some(message, wrap_handler(message, handler));
+}
+
+
+write_queue::write_handler_t write_queue::wrap_handler(message_t message, write_handler_t handler)
+{
+    return ::boost::bind(& write_queue::handle_write, this, _1, _2, message, handler);
 }
 
 

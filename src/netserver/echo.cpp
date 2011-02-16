@@ -23,6 +23,7 @@
 #include "connection.h"
 #include "echo.h"
 #include "threadpool.h"
+#include "callback.h"
 
 
 namespace coherent
@@ -42,18 +43,18 @@ void echo_acceptor(connection * conn)
 void t1(connection * conn, join_point::shared_ptr_t join_p)
 {
     ::boost::this_thread::sleep(::boost::posix_time::milliseconds(5000));
-    conn->write((unsigned char *)"t1 done\n", 9);
+    conn->write((unsigned char *)"t1 done\n", 9, EMPTY_WRITE_CALLBACK);
     join_p->join();
 }
 
 void t2(connection * conn)
 {
-    conn->write((unsigned char *)"2 tasks joined\n", 16);
+    conn->write((unsigned char *)"2 tasks joined\n", 16, EMPTY_WRITE_CALLBACK);
 }
 
 void echo_responder(connection * conn, size_t bytes, connection::ptr_buffer_t data)
 {
-    conn->write(data, bytes);
+    conn->write(data, bytes, EMPTY_WRITE_CALLBACK);
     conn->read(MAX_BYTES, ::boost::bind(& echo_responder, conn, _1, _2));
 
     join_point::shared_ptr_t join_p = join_point::create(2, ::boost::bind(& t2, conn));
