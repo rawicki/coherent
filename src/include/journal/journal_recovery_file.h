@@ -21,9 +21,6 @@
 #ifndef JOURNAL_RECOVERY_FILE_H_9243
 #define JOURNAL_RECOVERY_FILE_H_9243
 
-#include <fstream>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <util/multi_buffer.h>
@@ -35,30 +32,9 @@ namespace coherent {
 		typedef abs_journal::handle_t handle_t;
 		typedef uint32_t rec_num_t;
 		typedef uint64_t checksum_t;
+		typedef std::map<owner_id_t,
+			std::map<handle_t, boost::shared_ptr<util::multi_buffer> > > dispatch_t;
 
-		class dispatch_map
-		{
-			private:
-				friend class boost::serialization::access;
-    // When the class Archive corresponds to an output archive, the
-    // & operator is defined similar to <<.  Likewise, when the class Archive
-    // is a type of input archive the & operator is defined similar to >>.
-				template<class Archive>
-				void serialize(Archive & ar, const unsigned int version)
-				{
-					ar & degrees;
-					ar & minutes;
-					ar & seconds;
-				}
-				int degrees;
-				int minutes;
-				float seconds;
-			public:
-				dispatch_map(){};
-				dispatch_map(int d, int m, float s) :
-					    degrees(d), minutes(m), seconds(s)
-				{}
-		};
 
 		class journal_recovery_file : private boost::noncopyable
 		{
@@ -72,7 +48,7 @@ namespace coherent {
 					const std::string & pathname
 				);
 				~journal_recovery_file();
-				void write_dispatch_map_to_file(dispatch_map &);
+// 				void write_dispatch_map_to_file(dispatch_map &);
     
 		};
 	} // namespace journal
