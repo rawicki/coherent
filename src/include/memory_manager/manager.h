@@ -24,6 +24,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 #include <exception>
+#include <deque>
 #include <stdint.h>
 
 namespace coherent
@@ -37,28 +38,55 @@ class global_config;
 namespace memory_manager
 {
 
-class out_of_total_memory : public std::exception
+class out_of_ram_memory: public std::exception
 {
-    virtual const char* what() const throw();
+    virtual const char* what() const throw ();
 };
 
-class memory_manager : private boost::noncopyable
+class out_of_total_memory: public std::exception
+{
+    virtual const char* what() const throw ();
+};
+
+class memory_manager: private boost::noncopyable
 {
 public:
     ~memory_manager();
 
-    size_t get_page_size() const throw()
+    size_t get_page_size() const throw ()
     {
 	return page_size;
     }
 
-    size_t get_default_session_limit_bytes() const throw()
+    uint64_t get_default_session_ram_limit_bytes() const throw ()
     {
-	return default_session_limit_bytes;
+	return default_session_ram_limit_bytes;
     }
 
-    void reserve_bytes(size_t bytes);
-    void free_bytes(size_t bytes);
+    uint64_t get_default_session_total_limit_bytes() const throw ()
+    {
+	return default_session_ram_limit_bytes;
+    }
+
+    size_t get_max_small_alloc_bytes() const throw ()
+    {
+	return max_small_alloc_pages_1024 * page_size / 1024;
+    }
+
+    size_t get_single_small_alloc_bytes() const throw ()
+    {
+	return single_small_alloc_pages * page_size;
+    }
+
+    void reserve_ram_bytes(boost::condition_variable* unfreeze_condition, size_t bytes);
+    bool try_reserve_ram_bytes(size_t bytes);
+    bool timed_reserve_ram_bytes(boost::condition_variable* unfreeze_condition, size_t bytes, const boost::system_time& abs_time);
+    void free_ram_bytes(size_t bytes);
+
+    void reserve_total_bytes(boost::condition_variable* unfreeze_condition, size_t bytes);
+    bool try_reserve_total_bytes(size_t bytes);
+    bool timed_reserve_total_bytes(boost::condition_variable* unfreeze_condition, size_t bytes, const boost::system_time& abs_time);
+    void free_total_bytes(size_t bytes);
 
     /// Creates instance of memory manager. Must be invoked before any memory manager operations.
     static void init(const config::global_config& conf);
@@ -67,11 +95,20 @@ public:
 private:
     memory_manager(const config::global_config& conf);
 
-    uint64_t reserved_bytes;
-    mutable boost::mutex reserved_bytes_mutex;
-    uint64_t limit_bytes;
+    friend class memory_session;
+
+    uint64_t ram_reserved_bytes;
+    uint64_t total_reserved_bytes;
+    std::deque<boost::condition_variable*> unfreeze_queue;
+    mutable boost::mutex mutex;
+
+    uint64_t ram_limit_bytes;
+    uint64_t total_limit_bytes;
+    uint64_t default_session_ram_limit_bytes;
+    uint64_t default_session_total_limit_bytes;
+    uint16_t max_small_alloc_pages_1024;
+    uint16_t single_small_alloc_pages;
     size_t page_size;
-    size_t default_session_limit_bytes;
 };
 
 }

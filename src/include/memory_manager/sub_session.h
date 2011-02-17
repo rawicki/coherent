@@ -36,19 +36,22 @@ namespace memory_manager
 typedef char byte;
 class memory_session;
 
-class memory_sub_session : private boost::noncopyable
+class memory_sub_session: private boost::noncopyable
 {
 public:
     memory_sub_session(bool autostart = true);
-    memory_sub_session(memory_session* session, bool autostart = false);
+    memory_sub_session(memory_session* session, bool autostart = true);
     ~memory_sub_session();
 
     static memory_sub_session* current();
 
+    // on initial begin, sub session begins in frozen state if it or its parent session is frozen on all other threads, otherwise unfrozen
+    // you can ensure session is frozen/unfrozen by calling freeze/unfreeze explicitly
     void begin();
     void end();
-    void stop();
-    void resume();
+    void freeze();
+    bool unfreeze();
+    bool is_frozen() const;
     void set_current();
 
     size_t get_allocated_bytes() const;
@@ -56,6 +59,8 @@ public:
 
 private:
     void internal_init(bool autostart);
+
+    // marks and unmarks session as being used in current context in this thread
     void activate();
     void deactivate();
 
@@ -76,17 +81,20 @@ private:
     template <typename T>
     friend class allocator;
 
-    size_t active_threads_count;
-    mutable boost::mutex active_threads_mutex;
+    memory_session * const parent;
+
+    boost::thread_specific_ptr<bool> frozen;
+
+    // variables accessed with lock on
+    int unfrozen_threads_count;
 
     size_t allocated_bytes;
     std::map<byte*, size_t> allocs;
     std::set<std::pair<byte*, size_t> > small_allocs;
     std::map<byte*, size_t> free_small_chunks;
     std::set<std::pair<size_t, byte*> > free_small_chunks_inv;
-    mutable boost::shared_mutex alloc_lock;
 
-    memory_session* const parent;
+    mutable boost::recursive_mutex mutex;
 };
 
 }

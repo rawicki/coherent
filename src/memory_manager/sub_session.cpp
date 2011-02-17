@@ -24,25 +24,25 @@
 #include <memory_manager/sub_session.h>
 #include <debug/asserts.h>
 
-// TODO to config
-static const double max_small_alloc_pages = 0.75;
-static const size_t single_small_alloc_pages = 64;
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS MAP_ANON
+#endif
 
 namespace coherent
 {
 namespace memory_manager
 {
 
-typedef boost::shared_lock<boost::shared_mutex> scoped_read_lock;
-typedef boost::unique_lock<boost::shared_mutex> scoped_write_lock;
-typedef boost::unique_lock<boost::mutex> scoped_lock;
+typedef boost::unique_lock<boost::recursive_mutex> scoped_lock;
 
-memory_sub_session::memory_sub_session(bool autostart) : allocated_bytes(0), parent(memory_session::current())
+memory_sub_session::memory_sub_session(bool autostart):
+parent(memory_session::current()), unfrozen_threads_count(-1), allocated_bytes(0)
 {
     internal_init(autostart);
 }
 
-memory_sub_session::memory_sub_session(memory_session* session, bool autostart) : allocated_bytes(0), parent(session)
+memory_sub_session::memory_sub_session(memory_session* session, bool autostart):
+parent(session), unfrozen_threads_count(-1), allocated_bytes(0)
 {
     internal_init(autostart);
 }
@@ -50,6 +50,9 @@ memory_sub_session::memory_sub_session(memory_session* session, bool autostart) 
 memory_sub_session::~memory_sub_session()
 {
     end();
+
+    if (allocated_bytes != 0)
+	LOG(WARN, "memory leak - not all memory was deallocated while destroying memory sub session\n");
 }
 
 memory_sub_session* memory_sub_session::current()
@@ -61,58 +64,82 @@ void memory_sub_session::begin()
 {
     activate();
 
-    scoped_lock am(active_threads_mutex);
-    ++active_threads_count;
+    if (!frozen.get())
+    {
+	scoped_lock l(mutex);
+	frozen.reset(new bool(unfrozen_threads_count == 0));
+
+	if (!*frozen.get())
+	{
+	    if (unfrozen_threads_count == -1)
+		unfrozen_threads_count = 1;
+	    else
+		++unfrozen_threads_count;
+	}
+    }
 }
 
 void memory_sub_session::end()
 {
     deactivate();
-
-    scoped_lock am(active_threads_mutex);
-    if (active_threads_count > 0)
-	--active_threads_count;
 }
 
-void memory_sub_session::stop()
+void memory_sub_session::freeze()
 {
-    deactivate();
+    d_assert(frozen.get());
 
-    scoped_lock am(active_threads_mutex);
-    d_assert(active_threads_count > 0);
-    --active_threads_count;
+    if (*frozen.get())
+	return;
 
-    if (active_threads_count == 0)
+    scoped_lock l(mutex);
+    --unfrozen_threads_count;
+    frozen.reset(new bool(true));
+
+    if (unfrozen_threads_count == 0)
     {
-	scoped_read_lock al(alloc_lock);
+	for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
+	{
+	    if (posix_madvise(i->first, i->second, POSIX_MADV_DONTNEED))
+		LOG(WARN, "madvise error on freezing\n");
+	}
+
+	scoped_lock pl(parent->mutex);
+	parent->ram_allocated_bytes -= allocated_bytes;
+    }
+}
+
+bool memory_sub_session::unfreeze()
+{
+    d_assert(frozen.get());
+
+    if (!*frozen.get())
+	return true;
+
+    scoped_lock l(mutex);
+    if (unfrozen_threads_count == 0)
+    {
+	scoped_lock pl(parent->mutex);
+	if (parent->ram_allocated_bytes + allocated_bytes > parent->ram_limit_bytes)
+	    return false;
+
+	parent->ram_allocated_bytes += allocated_bytes;
+
+	++unfrozen_threads_count;
+	frozen.reset(new bool(false));
 
 	for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
 	{
-	    if (madvise(i->first, i->second, MADV_DONTNEED))
-		LOG(WARN, "madvise error on freezing\n");
+	    if (posix_madvise(i->first, i->second, POSIX_MADV_NORMAL))
+		LOG(ERROR, "madvise error on unfreezing\n");
 	}
     }
+
+    return true;
 }
 
-void memory_sub_session::resume()
+bool memory_sub_session::is_frozen() const
 {
-    {
-	scoped_lock am(active_threads_mutex);
-	++active_threads_count;
-
-	if (active_threads_count == 1)
-	{
-	    scoped_read_lock al(alloc_lock);
-
-	    for (std::map<byte*, size_t>::const_iterator i = allocs.begin(); i != allocs.end(); ++i)
-	    {
-		if (madvise(i->first, i->second, MADV_NORMAL))
-		    LOG(ERROR, "madvise error on unfreezing\n");
-	    }
-	}
-    }
-
-    activate();
+    return *frozen.get();
 }
 
 void memory_sub_session::set_current()
@@ -122,7 +149,7 @@ void memory_sub_session::set_current()
 
 size_t memory_sub_session::get_allocated_bytes() const
 {
-    scoped_read_lock al(alloc_lock);
+    scoped_lock l(mutex);
     return allocated_bytes;
 }
 
@@ -133,6 +160,9 @@ memory_session* memory_sub_session::get_parent() const
 
 void memory_sub_session::internal_init(bool autostart)
 {
+    scoped_lock l(parent->mutex);
+    parent->sub_sessions.insert(this);
+
     if (autostart)
 	begin();
 }
@@ -154,11 +184,11 @@ byte* memory_sub_session::allocate(size_t needed_bytes)
 
     byte* res;
 
-    if (needed_bytes > max_small_alloc_pages * page_size)
+    if (needed_bytes > memory_manager::instance->get_max_small_alloc_bytes())
     {
 	size_t bytes = (needed_bytes + page_size - 1) / page_size * page_size;
 
-	byte* p = reinterpret_cast<byte*> (mmap(0, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0));
+	byte* p = reinterpret_cast<byte*> (mmap(0, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
 
 	if (p == MAP_FAILED)
 	    throw std::bad_alloc();
@@ -175,9 +205,9 @@ byte* memory_sub_session::allocate(size_t needed_bytes)
 
 	if (optimal_chunk.first == 0)
 	{
-	    size_t bytes = single_small_alloc_pages * page_size;
+	    size_t bytes = memory_manager::instance->get_single_small_alloc_bytes();
 
-	    byte* p = reinterpret_cast<byte*> (mmap(0, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0));
+	    byte* p = reinterpret_cast<byte*> (mmap(0, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
 
 	    if (p == MAP_FAILED)
 		throw std::bad_alloc();
@@ -212,8 +242,6 @@ byte* memory_sub_session::allocate(size_t needed_bytes)
 
 void memory_sub_session::deallocate(byte* p, size_t bytes)
 {
-    // TODO assertions for bytes
-
     if (is_small_alloc(p))
     {
 	// removing chunk
@@ -248,7 +276,8 @@ void memory_sub_session::add_alloc(byte* p, size_t bytes)
     allocated_bytes += bytes;
     allocs.insert(std::make_pair(p, bytes));
 
-    parent->allocated_bytes += bytes;
+    parent->ram_allocated_bytes += bytes;
+    parent->total_allocated_bytes += bytes;
     parent->allocs.insert(std::make_pair(p, this));
 }
 
@@ -262,7 +291,8 @@ void memory_sub_session::remove_alloc(byte* p)
     allocated_bytes -= bytes;
     allocs.erase(i);
 
-    parent->allocated_bytes -= bytes;
+    parent->ram_allocated_bytes -= bytes;
+    parent->total_allocated_bytes -= bytes;
     parent->allocs.insert(std::make_pair(p, this));
 }
 

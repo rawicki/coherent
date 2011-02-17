@@ -97,8 +97,12 @@ public:
 	{
 		memory_manager_sect(ini_config const& conf);
 
-		uint64_t initialLimitBytes;
-		uint32_t defaultSessionLimitBytes;
+		uint64_t ram_limit_bytes;
+		uint64_t total_limit_bytes;
+		uint64_t default_session_ram_limit_bytes;
+		uint64_t default_session_total_limit_bytes;
+		uint16_t max_small_alloc_pages_1024;
+		uint16_t single_small_alloc_pages;
 	};
 
 	buffer_cache_sect buffer_cache;

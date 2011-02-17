@@ -26,7 +26,6 @@
 #include <memory_manager/allocator.h>
 #include <config/config.h>
 #include <debug/asserts.h>
-#include <cstdio>
 #include <vector>
 #include <math.h>
 
@@ -61,18 +60,22 @@ void* writer(void*)
 	v.resize(alloc_size);
 	v.clear();
 
-	printf("writer ended allocating and writing data\n");
+	LOG(INFO, "writer ended allocating and writing data\n");
     }
-    catch (out_of_session_memory& ex)
+    catch (out_of_session_ram_memory& ex)
     {
-	r_assert(false, "out_of_session_memory");
+	r_assert(false, "out_of_session_ram_memory");
+    }
+    catch (out_of_session_total_memory& ex)
+    {
+	r_assert(false, "out_of_session_total_memory");
     }
     catch (out_of_total_memory)
     {
 	r_assert(false, "out_of_total_memory");
     }
 
-    r_assert(ms.get_allocated_bytes() == 0, "Not all memory was deallocated in writer");
+    r_assert(ms.get_total_allocated_bytes() == 0, "Not all memory was deallocated in writer");
 
     return 0;
 }
@@ -148,7 +151,7 @@ void* merge_sub_sorter(void* data)
 		buffer[i] = d->begin[i];
 
 	    pthread_t* threads = new pthread_t[2];
-	    merge_sub_sorter_data* spawn_data = allocate<merge_sub_sorter_data > (2);
+	    merge_sub_sorter_data* spawn_data = allocate<merge_sub_sorter_data>(2);
 	    for (int i = 0; i < 2; ++i)
 	    {
 		spawn_data[i].ms = d->ms;
@@ -170,9 +173,13 @@ void* merge_sub_sorter(void* data)
 
 	d->ms->end();
     }
-    catch (out_of_session_memory& ex)
+    catch (out_of_session_ram_memory& ex)
     {
-	r_assert(false, "out_of_session_memory");
+	r_assert(false, "out_of_session_ram_memory");
+    }
+    catch (out_of_session_total_memory& ex)
+    {
+	r_assert(false, "out_of_session_total_memory");
     }
     catch (out_of_total_memory)
     {
@@ -188,7 +195,8 @@ void* merge_sorter(void*)
 
     try
     {
-	ms.set_limit_bytes(sorted_bytes * (5 + ceil(log2(sorting_threads_count))));
+	ms.set_ram_limit_bytes(sorted_bytes * (5 + (size_t) ceil(log2((double) sorting_threads_count))));
+	ms.set_total_limit_bytes(sorted_bytes * (5 + (size_t) ceil(log2((double) sorting_threads_count))));
 
 	const int data_size = sorted_bytes / sizeof (int);
 
@@ -198,13 +206,9 @@ void* merge_sorter(void*)
 	    data[i] = rand() - RAND_MAX / 2;
 	}
 
-	clockid_t cid;
-	timespec start_ts;
-	pthread_getcpuclockid(pthread_self(), &cid);
-	clock_gettime(cid, &start_ts);
-	printf("merge_sorter initialized and generated %dB in %4ld.%03ld\n", sorted_bytes, start_ts.tv_sec, start_ts.tv_nsec / 1000000);
+	LOG(INFO, "merge_sorter initialized and generated " << sorted_bytes << " B");
 
-	merge_sub_sorter_data* d = allocate<merge_sub_sorter_data > (1);
+	merge_sub_sorter_data* d = allocate<merge_sub_sorter_data>(1);
 	d->ms = &ms;
 	d->begin = data;
 	d->end = data + data_size;
@@ -223,28 +227,22 @@ void* merge_sorter(void*)
 
 	deallocate(data, data_size);
 
-	timespec ts;
-	pthread_getcpuclockid(pthread_self(), &cid);
-	clock_gettime(cid, &ts);
-	ts.tv_nsec -= start_ts.tv_nsec;
-	ts.tv_sec -= start_ts.tv_sec;
-	if (ts.tv_nsec < 0)
-	{
-	    ts.tv_sec -= 1;
-	    ts.tv_nsec += 1000000000;
-	}
-	printf("merge_sorter sorted %dB in %4ld.%03ld\n", sorted_bytes, ts.tv_sec, ts.tv_nsec / 1000000);
+	LOG(INFO, "merge_sorter sorted " << sorted_bytes << " B");
     }
-    catch (out_of_session_memory& ex)
+    catch (out_of_session_ram_memory& ex)
     {
-	r_assert(false, "out_of_session_memory");
+	r_assert(false, "out_of_session_ram_memory");
+    }
+    catch (out_of_session_total_memory& ex)
+    {
+	r_assert(false, "out_of_session_total_memory");
     }
     catch (out_of_total_memory)
     {
 	r_assert(false, "out_of_total_memory");
     }
 
-    r_assert(ms.get_allocated_bytes() == 0, "Not all memory was deallocated in merge_sorter");
+    r_assert(ms.get_total_allocated_bytes() == 0, "Not all memory was deallocated in merge_sorter");
 
     return 0;
 }
@@ -256,7 +254,7 @@ int main(const int argc, const char *const *const argv)
     scoped_test_enabler test_setup(argc, argv);
 
     memory_manager::init(*test_setup.get_config());
-    fprintf(stderr, "page size: %u\n", memory_manager::instance->get_page_size());
+    LOG(INFO, "page size: " << memory_manager::instance->get_page_size());
 
     try
     {
@@ -278,9 +276,13 @@ int main(const int argc, const char *const *const argv)
 		pthread_join(threads[i], 0);
 	}
     }
-    catch (out_of_session_memory& ex)
+    catch (out_of_session_ram_memory& ex)
     {
-	r_assert(false, "out_of_session_memory");
+	r_assert(false, "out_of_session_ram_memory");
+    }
+    catch (out_of_session_total_memory& ex)
+    {
+	r_assert(false, "out_of_session_total_memory");
     }
     catch (out_of_total_memory)
     {

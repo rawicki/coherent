@@ -364,8 +364,13 @@ global_config::buffer_cache_sect::buffer_cache_sect(ini_config const & conf) :
 
 global_config::memory_manager_sect::memory_manager_sect(ini_config const& conf) :
 	config_section_base("memory_manager", conf),
-	initialLimitBytes(this->get_value<uint64_t>("initialLimitBytes")),
-	defaultSessionLimitBytes(this->get_value<uint32_t>("defaultSessionLimitBytes"))
+	ram_limit_bytes(this->get_value<uint64_t>("ram_limit_bytes")),
+	total_limit_bytes(this->get_value<uint64_t>("total_limit_bytes")),
+	default_session_ram_limit_bytes(this->get_value<uint64_t>("default_session_ram_limit_bytes")),
+	default_session_total_limit_bytes(this->get_value<uint64_t>("default_session_total_limit_bytes")),
+	max_small_alloc_pages_1024(this->get_value<uint16_t>("max_small_alloc_pages_1024")),
+	single_small_alloc_pages(this->get_value<uint16_t>("single_small_alloc_pages"))
+
 {
 	this->check_no_others();
 }

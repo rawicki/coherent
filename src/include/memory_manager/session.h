@@ -27,6 +27,7 @@
 #include <utility>
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
+#include <stdint.h>
 
 namespace coherent
 {
@@ -39,26 +40,42 @@ class memory_sub_session;
 class memory_session : private boost::noncopyable
 {
 public:
+    // constructs memory session and if autostart true, invokes begin()
     memory_session(bool autostart = true);
-    memory_session(size_t starting_limit_bytes, bool autostart = true);
+    memory_session(size_t starting_ram_limit_bytes, size_t starting_total_limit_bytes, bool autostart = true);
+    // destroys memory session and invokes end() if it wasn't called yet
     ~memory_session();
 
     static memory_session* current();
 
+    // begins usage of this session in this thread, nothing can be allocated before it is called
+    // on initial begin, session begins in frozen state if it is frozen on all other threads, otherwise unfrozen
+    // you can ensure session is frozen/unfrozen by calling freeze/unfreeze explicitly
     void begin();
+    // ends usage of this session in this thread, nothing can be allocated after it is called
     void end();
-    void stop();
-    void resume();
+    // freezes ram memory used by session for this thread (if it isn't used by other threads marks it as moveable to swap, frozen memory must not be used)
+    void freeze();
+    // variants of unfreezing session. if resources are not available, session is appended to queue and waits for them.
+    void unfreeze();    
+    bool try_unfreeze();
+    bool timed_unfreeze(const boost::system_time& abs_time);
+    // returns whether session is frozen in this thread
+    bool is_frozen() const;
+
+    // set default sub session as current
     void set_default_current();
 
-    size_t get_limit_bytes() const;
-    void set_limit_bytes(size_t bytes);
-    size_t get_allocated_bytes() const;
+    size_t get_ram_limit_bytes() const;
+    void set_ram_limit_bytes(size_t bytes);
+    size_t get_ram_allocated_bytes() const;
+
+    size_t get_total_limit_bytes() const;
+    void set_total_limit_bytes(size_t bytes);
+    size_t get_total_allocated_bytes() const;
 
 private:
     void internal_init(bool autostart);
-    void activate();
-    void deactivate();
 
     template <typename T>
     friend class allocator;
@@ -67,20 +84,23 @@ private:
 
     static boost::thread_specific_ptr<memory_sub_session> current_sub_session;
 
-    size_t active_threads_count;
-    mutable boost::mutex active_threads_mutex;
+    boost::thread_specific_ptr<bool> frozen;
+    mutable boost::condition_variable unfreeze_condition;
 
-    size_t limit_bytes;
-    mutable boost::shared_mutex limit_lock;
+    // variables accessed with lock on
+    int unfrozen_threads_count;
 
-    size_t allocated_bytes;
+    size_t ram_limit_bytes;
+    size_t total_limit_bytes;
+
+    size_t ram_allocated_bytes;
+    size_t total_allocated_bytes;
     std::map<byte*, memory_sub_session*> allocs;
-    mutable boost::shared_mutex alloc_lock;
 
     memory_sub_session* default_sub_session;
-
     std::set<memory_sub_session*> sub_sessions;
-    mutable boost::shared_mutex sub_sessions_lock;
+
+    mutable boost::recursive_mutex mutex;    
 };
 
 }

@@ -29,21 +29,25 @@ namespace coherent
 namespace memory_manager
 {
 
-typedef boost::shared_lock<boost::shared_mutex> scoped_read_lock;
-typedef boost::unique_lock<boost::shared_mutex> scoped_write_lock;
-typedef boost::unique_lock<boost::mutex> scoped_lock;
+typedef boost::unique_lock<boost::recursive_mutex> scoped_lock;
 
-void dummy_function(memory_sub_session*) {}
+void dummy_function(memory_sub_session*)
+{
+}
 boost::thread_specific_ptr<memory_sub_session> memory_session::current_sub_session(dummy_function);
 
-memory_session::memory_session(bool autostart): allocated_bytes(0), default_sub_session(new memory_sub_session(this, false))
+memory_session::memory_session(bool autostart):
+unfrozen_threads_count(-1), ram_allocated_bytes(0), total_allocated_bytes(0)
 {
-    limit_bytes = memory_manager::instance->get_default_session_limit_bytes();
+    ram_limit_bytes = memory_manager::instance->get_default_session_ram_limit_bytes();
+    total_limit_bytes = memory_manager::instance->get_default_session_total_limit_bytes();
 
     internal_init(autostart);
 }
 
-memory_session::memory_session(size_t starting_limit_bytes, bool autostart) : limit_bytes(starting_limit_bytes), allocated_bytes(0), default_sub_session(new memory_sub_session(this, false))
+memory_session::memory_session(size_t starting_ram_limit_bytes, size_t starting_total_limit_bytes, bool autostart):
+unfrozen_threads_count(-1), ram_limit_bytes(starting_ram_limit_bytes),
+total_limit_bytes(starting_total_limit_bytes), ram_allocated_bytes(0), total_allocated_bytes(0)
 {
     internal_init(autostart);
 }
@@ -54,63 +58,134 @@ memory_session::~memory_session()
 
     delete default_sub_session;
 
-    memory_manager::instance->free_bytes(limit_bytes);
+    memory_manager::instance->free_total_bytes(total_limit_bytes);
+    memory_manager::instance->free_ram_bytes(ram_limit_bytes);
 
-    // TODO triggerable assert if there is non-released memory left
+    if (total_allocated_bytes != 0)
+	LOG(WARN, "memory leak - not all memory was deallocated while destroying memory session\n");
 }
 
 memory_session* memory_session::current()
 {
     if (current_sub_session.get() == 0)
 	return 0;
-    
+
     return current_sub_session->get_parent();
 }
 
 void memory_session::begin()
 {
-    activate();
+    if (!frozen.get())
+    {
+	scoped_lock l(mutex);
+	frozen.reset(new bool(unfrozen_threads_count == 0));
+
+	if (!*frozen.get())
+	{
+	    if (unfrozen_threads_count == -1)
+		unfrozen_threads_count = 1;
+	    else
+		++unfrozen_threads_count;
+	}
+    }
 
     default_sub_session->begin();
-
-    scoped_lock am(active_threads_mutex);
-    ++active_threads_count;
 }
 
 void memory_session::end()
 {
-    deactivate();
-
-    scoped_lock am(active_threads_mutex);
-    if (active_threads_count > 0)
-	--active_threads_count;
+    if (memory_session::current_sub_session.get() && memory_session::current_sub_session.get()->get_parent() == this)
+	memory_session::current_sub_session.reset();
 }
 
-void memory_session::stop()
+void memory_session::freeze()
 {
-    deactivate();
+    d_assert(frozen.get());
 
-    scoped_read_lock ss(sub_sessions_lock);
+    if (*frozen.get())
+	return;
 
-    for (std::set<memory_sub_session*>::const_iterator i = sub_sessions.begin(); i != sub_sessions.end(); ++i)
+    scoped_lock l(mutex);
+    --unfrozen_threads_count;
+    frozen.reset(new bool(true));
+
+    if (unfrozen_threads_count == 0)
     {
-	(*i)->stop();
-    }
+	for (std::set<memory_sub_session*>::const_iterator i = sub_sessions.begin(); i != sub_sessions.end(); ++i)
+	{
+	    (*i)->freeze();
+	}
 
-    scoped_lock am(active_threads_mutex);
-    d_assert(active_threads_count > 0);
-    --active_threads_count;
+	memory_manager::instance->free_ram_bytes(ram_limit_bytes);
+    }
 }
 
-void memory_session::resume()
+void memory_session::unfreeze()
 {
+    d_assert(frozen.get());
+
+    if (!*frozen.get())
+	return;
+
+    scoped_lock l(mutex);
+    if (unfrozen_threads_count == 0)
     {
-	scoped_lock am(active_threads_mutex);
-	++active_threads_count;
+	memory_manager::instance->reserve_ram_bytes(&unfreeze_condition, ram_limit_bytes);
+
+	++unfrozen_threads_count;
+	frozen.reset(new bool(false));
+
+	r_assert(default_sub_session->unfreeze());
+    }
+}
+
+bool memory_session::try_unfreeze()
+{
+    d_assert(frozen.get());
+
+    if (!*frozen.get())
+	return true;
+
+    scoped_lock l(mutex);
+    if (unfrozen_threads_count == 0)
+    {
+	if (!memory_manager::instance->try_reserve_ram_bytes(ram_limit_bytes))
+	    return false;
+
+	++unfrozen_threads_count;
+	frozen.reset(new bool(false));
+
+	r_assert(default_sub_session->unfreeze());
     }
 
-    activate();
-    default_sub_session->resume();
+    return true;
+}
+
+bool memory_session::timed_unfreeze(const boost::system_time& abs_time)
+{
+    d_assert(frozen.get());
+
+    if (!*frozen.get())
+	return true;
+
+    scoped_lock l(mutex);
+    if (unfrozen_threads_count == 0)
+    {
+	if (!memory_manager::instance->timed_reserve_ram_bytes(&unfreeze_condition, ram_limit_bytes, abs_time))
+	    return false;
+
+	++unfrozen_threads_count;
+	frozen.reset(new bool(false));
+
+	r_assert(default_sub_session->unfreeze());
+    }
+
+    return true;
+}
+
+bool memory_session::is_frozen() const
+{
+    return *frozen.get();
 }
 
 void memory_session::set_default_current()
@@ -118,47 +193,55 @@ void memory_session::set_default_current()
     default_sub_session->set_current();
 }
 
-size_t memory_session::get_limit_bytes() const
+size_t memory_session::get_ram_limit_bytes() const
 {
-    scoped_read_lock ll(limit_lock);
-    return limit_bytes;
+    scoped_lock l(mutex);
+    return ram_limit_bytes;
 }
 
-void memory_session::set_limit_bytes(size_t bytes)
+void memory_session::set_ram_limit_bytes(size_t bytes)
 {
-    scoped_write_lock ll(limit_lock);
-    limit_bytes = bytes;
+    scoped_lock l(mutex);
+    ram_limit_bytes = bytes;
+
+    // TODO to queue
 }
 
-size_t memory_session::get_allocated_bytes() const
+size_t memory_session::get_ram_allocated_bytes() const
 {
-    scoped_read_lock al(alloc_lock);
-    return allocated_bytes;
+    scoped_lock l(mutex);
+    return ram_allocated_bytes;
+}
+
+size_t memory_session::get_total_limit_bytes() const
+{
+    scoped_lock l(mutex);
+    return total_limit_bytes;
+}
+
+void memory_session::set_total_limit_bytes(size_t bytes)
+{
+    scoped_lock l(mutex);
+    total_limit_bytes = bytes;
+
+    // TODO to queue
+}
+
+size_t memory_session::get_total_allocated_bytes() const
+{
+    scoped_lock l(mutex);
+    return total_allocated_bytes;
 }
 
 void memory_session::internal_init(bool autostart)
 {
-    memory_manager::instance->reserve_bytes(limit_bytes);
+    memory_manager::instance->reserve_total_bytes(&unfreeze_condition, total_limit_bytes);
+    memory_manager::instance->reserve_ram_bytes(&unfreeze_condition, ram_limit_bytes);
 
-    sub_sessions.insert(default_sub_session);
+    default_sub_session = new memory_sub_session(this, false);
 
     if (autostart)
 	begin();
-}
-
-void memory_session::activate()
-{   
-    if (current_sub_session.get() && current_sub_session->get_parent() != this)
-	current_sub_session->get_parent()->stop();
-    // TODO maybe only assert here
-
-    default_sub_session->set_current();
-}
-
-void memory_session::deactivate()
-{
-    if (current_sub_session.get() && current_sub_session->get_parent() == this)
-	current_sub_session.reset();
 }
 
 }
