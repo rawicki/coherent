@@ -18,40 +18,43 @@
  * http://www.gnu.org/licenses/.
  */
 
-
-// #include <boost/archive/text_oarchive.hpp>
-// #include <boost/archive/text_iarchive.hpp>
+#include <log/log.h>
+#include <util/multi_buffer.h>
 #include <journal/journal_recovery_file.h>
 
+
+#include <boost/smart_ptr.hpp>
+#include <boost/utility.hpp>
+
+
+
 namespace coherent {
-	namespace journal {
+namespace journal {
 
-		using namespace std;
-		using namespace util;
-		using namespace boost;
+	using namespace std;
+	using namespace util;
+	using namespace boost;
 
-		journal_recovery_file::journal_recovery_file(
-				const string & pathname
-			)
-		{
-		  {	dispatch_map disp_map;
-			// create and open an archive for input
-			ifstream ifs(pathname.c_str());
-			archive::text_iarchive ia(ifs);
-			// read class state from archive
-// 			ia >> disp_map;
-			// archive and stream closed when destructors are called
-		}
-		}
 
-		journal_recovery_file::~journal_recovery_file()
-		{
-		}
+	shared_ptr<multi_buffer> random_multibuffer(uint32_t size)
+	{
+		multi_buffer::buffer_list buf_list;
+		return shared_ptr<multi_buffer>( new multi_buffer(buf_list,0,0));
+	}
 
-		void journal_recovery_file::write_dispatch_map_to_file(dispatch_map &disp_map)
-		{
-		}
+	journal_recovery_file::journal_recovery_file(
+			const string & pathname
+		)
+	{    
+	}
 
-	} // namespace journal 
+	journal_recovery_file::~journal_recovery_file()
+	{
+	}
+
+// 	void journal_recovery_file::write_dispatch_map_to_file(dispatch_map &disp_map)
+// 	{
+// 	}
+
+} // namespace journal 
 } // namespace coherent
-
